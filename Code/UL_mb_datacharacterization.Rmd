@@ -1,0 +1,70 @@
+---
+title: "UL_Trib Characterization"
+author: "Sdaly"
+date: "10/5/2020"
+output: html_document
+---
+#Librarys
+
+```{r}
+library(wqTools)
+library(lubridate)
+library(htmlTable)
+library(dplyr)
+```
+
+#Data Import
+
+##Tribs
+
+```{r}
+TribData00<-read.csv("ul_trib data_processed")  
+```
+
+
+```{r}
+file01 <- choose.files(caption="Select DATA files [*.csv]", multi = TRUE)
+Tribdat00 <- read.csv(file01,
+                      check.names=T, stringsAsFactors = FALSE, as.is=TRUE)
+Tribdat00 %<>% 
+  mutate(Sample.Date = case_when(
+    !is.na(datetime) ~ as.Date(substr(.$datetime, 1,
+                              (stringr::str_locate(.$datetime, " ")[,1])-1)),
+    TRUE ~ as.Date(NA))) %>%
+  select(MonitoringLocationIdentifier:datetime, Sample.Date, everything())
+```
+###Initial Trib Data Clean Up
+```{r}
+data.file <- Tribdat00;
+Data.Vars <- data.frame()
+for (i in 1:length(names(data.file))) {
+  class_i <- class(data.file[,i])
+  name_i <- names(data.file[i])
+  num.NAs <- sum(is.na(data.file[,i]))
+  count_levels <- as.numeric(length(unique((data.file[,i]))))
+  num.blanks <- length(data.file[as.character(data.file[,i]) == "",c(i)]) # fixed for dates
+  num.Obs <- nrow(data.file)-num.blanks
+  Data.Vars <- rbind(Data.Vars, data.frame(i, name_i, class_i, num.NAs, count_levels, num.blanks, num.Obs)) }
+Data.Vars %>% {. ->> TribData.vars} %>% htmlTable::htmlTable(., css.cell = rbind(rep("padding-left: 0.8em; padding-right: 0.8em;font-size: 0.75em;", times=ncol(.)), matrix("padding-left: 0.75em; padding-right: 0.75em; font-size: 0.75em;", ncol=ncol(.), nrow=nrow(.))), rnames=F, align="rlc|rrrr|")
+```
+
+### Review Parameters
+```{r}
+Tribdat00 %>% distinct(CharacteristicName) %T>% {print(nrow(.))} %>%  {. ->> Trib.params}
+```
+
+
+```{r}
+TribParms<-distinct(Tribdat00,CharacteristicName) %T>% {print(nrow(.))} %>%  {. ->> Trib.params}
+
+
+```
+
+```{r}
+Tribdat00 %>% distinct(CharacteristicName) %>% 
+  filter(grepl("nitrogen", CharacteristicName)) %>% .$CharacteristicName
+```
+```{r}
+
+```
+

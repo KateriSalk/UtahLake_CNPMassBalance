@@ -1,0 +1,228 @@
+# Utah Lake Automated data query & processing
+This script is designed to automate the data query process for Utah Lake data and generate
+a data output that is readily interface-able with the WASP WRDB.
+
+There are two dataframe outputs which are written to csv in working directory:  
+1. Raw, as queried data from EPA WQP  
+2. Processed data for WRDB interface  
+
+The target output for the WRDB interface product is a dataframe with one unique result value for each site, date, parameter, and depth level, with a single 
+uniform time stamp and required metadata. To generate this product, this script:  
+1. Queries data for Utah Lake sites from EPA WQP  
+2. Removes lab based results for field parameters (pH, temperature, DO, specific conductance)  
+3. Harmonizes multiple depth attribute columns (relative depth, profile result depth, & grab sample activity depth) to a single attribute  
+4. Harmonizes multiple time stamps available for a site & date to a single (earliest) time stamp to apply to all records collected at that site & date  
+5. Extracts a single unique result value for each site, date, parameter, and depth level  
+
+**Last run:  **
+```{r, echo=F}
+Sys.Date()
+```
+
+### Libraries & packages
+```{r, libs}
+#devtools::install_github("utah-dwq/wqTools") # Install DWQ wqTools R package if necessary (see github.com/utah-dwq/wqTools for more info)
+
+
+```
+
+### Utah Lake site list
+```{r, site-list}
+ul_bbox=c("-112.0%2C39.8%2C-111.5%2C40.4")
+```
+
+### Read Utah Lake site locations & generate site map
+```{r, site-read-map}
+ul_sites=wqTools::readWQP(type='sites', bBox=ul_bbox, siteType=c("Stream"), sampleMedia="Water") #Connection to WQP occasionally times out, function tries connection up to 10 times
+map=wqTools::buildMap(sites=ul_sites, plot_polys=F)
+map=leaflet::setView(map, lng=median(ul_sites$LongitudeMeasure), lat=median(ul_sites$LatitudeMeasure), zoom=10)
+map
+```
+
+### Read other WQP components
+*NOTE:*  
+WQP data are queried as four separate components: 1) site metadata, 2) result values (narrow result), 3) activity metadata (activity), and 4) detection/quantitation limits. 
+Site metadata, activity metadata, and detection/quantitation limits are all merged to narrow result to generate a single dataset. Multiple det/quant limits are often available 
+for a single water quality result. These are cast to a wide format before merging to narrow result to maintain all available det/quant limits.
+
+```{r, read-wqp-data}
+ul_nr=wqTools::readWQP(type='narrowresult', bBox=ul_bbox, siteType=c("Stream"), sampleMedia="Water", print=F)
+ul_act=wqTools::readWQP(type='activity', bBox=ul_bbox, sampleMedia="Water")
+ul_dql=wqTools::readWQP(type='detquantlim', bBox=ul_bbox, sampleMedia="Water")
+```
+
+### Cast detquantlim to wide format
+*(values and units cast separately and merged back together)*
+
+```{r, cast-dqls}
+dql_vals=reshape2::dcast(OrganizationIdentifier+OrganizationFormalName+ActivityIdentifier+MonitoringLocationIdentifier+ResultIdentifier+CharacteristicName~DetectionQuantitationLimitTypeName, value.var='DetectionQuantitationLimitMeasure.MeasureValue', data=ul_dql)
+names(dql_vals)=gsub(" ","", names(dql_vals))
+
+dql_units=reshape2::dcast(ResultIdentifier~DetectionQuantitationLimitTypeName, value.var='DetectionQuantitationLimitMeasure.MeasureUnitCode', data=ul_dql)
+names(dql_units)[2:dim(dql_units)[2]] = paste(names(dql_units)[2:dim(dql_units)[2]], "Unit")
+names(dql_units)=gsub(" ","", names(dql_units))
+ul_dql_wide=merge(dql_vals, dql_units)
+
+if(dim(dql_units)[1]!=dim(dql_vals)[1] | dim(dql_units)[1]!=dim(ul_dql_wide)[1]){
+	stop("DQL dimensions do not match.")
+}
+```
+
+
+### Merge metadata to narrowresult
+```{r, merge}
+ul_data=merge(ul_nr,ul_act, all.x=T)
+ul_data=merge(ul_data,ul_sites, all.x=T)
+ul_data=merge(ul_data,ul_dql_wide, all.x=T)
+dim(ul_data)[1] == dim(ul_nr)[1] # Lengths of merged and narrowresult should match
+```
+
+### Write raw, as queried data from EPA WQP
+```{r, write-raw}
+write.csv(file=paste0("ul_Tribdata_wqp_raw_",Sys.Date(),".csv"), ul_data, row.names=F)
+```
+
+### Drop QA/QC field replicate site
+```{r, drop-qaqc-site}
+ul_data=ul_data[ul_data$MonitoringLocationIdentifier!="UTAHDWQ_WQX-4917320",]
+```
+
+### Check field parameters for activity types
+```{r, check-field-act}
+field_params=c("pH","Specific conductance","Dissolved oxygen (DO)","Dissolved oxygen saturation","Temperature, water")
+knitr::kable(table(ul_data[ul_data$CharacteristicName %in% field_params,"ActivityTypeCode"]))
+```
+
+### Remove lab data for field parameters
+```{r, remove-field-lab}
+ul_data=subset(ul_data,
+	!(
+		(CharacteristicName %in% field_params) &
+		(ActivityTypeCode %in% c("Sample-Routine","Sample-Integrated Vertical Profile","Quality Control Sample-Field Replicate"))
+	)
+)
+```
+
+### (double) Check field parameters for activity types
+```{r, double-check-field-lab}
+knitr::kable(table(ul_data[ul_data$CharacteristicName %in% field_params,"ActivityTypeCode"]))
+```
+
+### Merge ActivityDepth and ResultDepth values and units to new columns
+```{r, merge-depth}
+ul_data=within(ul_data,{
+	SampleDepthValue=ifelse(!is.na(ActivityDepthHeightMeasure.MeasureValue), ActivityDepthHeightMeasure.MeasureValue, ResultDepthHeightMeasure.MeasureValue)
+	SampleDepthUnit=ifelse(!is.na(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ResultDepthHeightMeasure.MeasureUnitCode))
+})
+```
+
+
+*NOTE:*  
+Many records missing both depth fields have a RelativeDepth filled in which could potentially be used to fill in values. Others are for CharacteristicName == "Depth, data-logger (ported)" and can be filled with the result value and unit.
+
+```{r}
+knitr::kable(table(is.na(ul_data$SampleDepthValue) & is.na(ul_data$ActivityRelativeDepthName)))
+knitr::kable(table(is.na(ul_data$SampleDepthValue) & ul_data$CharacteristicName=="Depth, data-logger (ported)"))
+```
+
+### Fill sample depths and units for CharacteristicName "Depth, data-logger (ported)"
+```{r, fill-data-logger-depth}
+ul_data=within(ul_data,{
+	SampleDepthValue=ifelse(is.na(SampleDepthValue) & CharacteristicName == "Depth, data-logger (ported)", ResultMeasureValue, SampleDepthValue)
+	SampleDepthUnit=ifelse(is.na(SampleDepthUnit) & CharacteristicName == "Depth, data-logger (ported)", as.character(ResultMeasure.MeasureUnitCode), as.character(SampleDepthUnit))
+})
+knitr::kable(table(is.na(ul_data$SampleDepthValue) & ul_data$CharacteristicName=="Depth, data-logger (ported)"))
+```
+
+### Setting SampleDepthValue to NA for records w/ ActivityRelativeDepthName=="Bottom" & ActivityDepthHeight==0
+```{r}
+ul_data$SampleDepthValue[ul_data$ActivityRelativeDepthName=="Bottom" & ul_data$ActivityDepthHeightMeasure.MeasureValue==0] = NA
+```
+
+### Generating new RelativeDepth column for cases where both ActivityDepth and ResultDepth are NULL
+```{r}
+ul_data$RelativeDepth=ifelse(is.na(ul_data$SampleDepthValue) & !is.na(ul_data$ActivityRelativeDepthName), as.character(ul_data$ActivityRelativeDepthName), NA)
+```
+
+### Extract times by site & date, drop NAs
+```{r, extract-time1}
+times=unique(ul_data[,c("MonitoringLocationIdentifier", "ActivityStartDate", "ActivityStartTime.Time", "ActivityStartTime.TimeZoneCode")])
+times=times[!is.na(times$ActivityStartTime.Time),]
+knitr::kable(table(times$ActivityStartTime.TimeZoneCode))
+```
+*Note - a few samples marked as MDT time zone. Default seems to be MST. Accepting all times and setting tz to "America/Denver".*
+
+```{r, extract-time2}
+times$datetime=as.POSIXct(paste(times$ActivityStartDate, times$ActivityStartTime.Time), format="%Y-%m-%d %H:%M:%S", tz="America/Denver")
+
+site_date_starttime=aggregate(datetime~MonitoringLocationIdentifier+ActivityStartDate, data=times,FUN='min')
+site_date_starttime=within(site_date_starttime, {
+	hour=lubridate::hour(datetime)
+	minute=lubridate::minute(datetime)
+})
+
+dim(site_date_starttime)
+dim(unique(site_date_starttime[,c("MonitoringLocationIdentifier","ActivityStartDate")]))
+```
+
+### Merge unified time stamps back to data (by site & date)
+```{r, merge-time}
+ul_data=merge(ul_data, site_date_starttime, all.x=T)
+dim(ul_data)
+```
+
+### Subset to relevant columns:
+```{r, subset-cols}
+cols_keep=c(
+	"OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
+	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",  
+	### These are the columns that have been added through the code above  
+	"SampleDepthUnit","SampleDepthValue","RelativeDepth","datetime","minute","hour",  
+	"CharacteristicName","ResultSampleFractionText","ResultMeasureValue","ResultMeasure.MeasureUnitCode",  
+	"MethodSpecificationName","MeasureQualifierCode","ResultDetectionConditionText",  
+	"ResultStatusIdentifier","ResultValueTypeName","ActivityMediaName",  
+	"EstimatedQuantitationLimit","LowerQuantitationLimit","LowerReportingLimit","MethodDetectionLevel",  
+	"UpperQuantitationLimit","EstimatedQuantitationLimitUnit",  
+	"LowerQuantitationLimitUnit","LowerReportingLimitUnit","MethodDetectionLevelUnit","UpperQuantitationLimitUnit"  
+	)
+```
+
+### Extracting unique result value for each site, date, depth, parameter, & fraction
+```{r, extract-unique}
+dim(ul_data)
+ul_data=unique(ul_data[,cols_keep])
+dim(ul_data)
+```
+
+### Check for multiple result values by site, date, depth, parameter, & fraction
+```{r, check-unique}
+check_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","CharacteristicName","ResultSampleFractionText")]
+
+dim(unique(check_data))
+dim(ul_data)[1] == dim(unique(check_data))[1]
+dim(ul_data)
+dim(unique(ul_data))
+
+```
+*NOTE:*  
+Some records have one or more unique result value. These are flagged in processed data w/ result_count column.
+
+### Identify multiple result values
+```{r, id-non-unique}
+result_count_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","CharacteristicName","ResultSampleFractionText","ResultMeasureValue")]
+result_count_data=lapply(result_count_data, addNA)
+result_count=aggregate(ResultMeasureValue~MonitoringLocationIdentifier+datetime+SampleDepthValue+RelativeDepth+CharacteristicName+ResultSampleFractionText, result_count_data, FUN='length')
+names(result_count)[names(result_count)=="ResultMeasureValue"]="result_count"
+
+dim(ul_data)
+ul_data=merge(ul_data, result_count, all.x=T)
+dim(ul_data)
+table(ul_data$result_count)
+```
+
+### Write processed data
+```{r, write-processed}
+write.csv(file=paste0("ul_Tribdata_wqp_processed_",Sys.Date(),".csv"), ul_data, row.names=F)
+```
+
+

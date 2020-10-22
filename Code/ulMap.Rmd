@@ -1,0 +1,82 @@
+---
+title: "ulMap"
+author: "Sdaly"
+date: "10/7/2020"
+output: html_document
+---
+
+#Librarys
+
+```{r}
+library(wqTools)
+library(sf)
+library(leaflet)
+library(dplyr)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Import Shapefiles
+##Watershed Boundary
+
+```{r}
+wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+```
+
+# Import Monitoring Locations
+##WQP Monitoring locations
+./Data/Processed/
+```{r}
+Data.WQP_Trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+TribSites <- Data.WQP_Trib %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+```
+
+##Permitted Facilities - WQP
+
+TODO - need to extract several sites from ul_facilitydata_wqp_processed_####-##-##.csv and append to TribData. sites = c("4996640","4996650","5919790","5919800","5919870","5919880","5919890",
+"5919900","5919910")
+
+```{r}
+Data.WQP_Fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
+FacSites <- Data.WQP_Fac %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+```
+
+
+#Permitted Facilities - DMR
+```{r}
+DmrFac <- read.csv("./Data/Processed/DmrFacilityInfo.csv")
+
+Dmr_Sp <- st_as_sf(DmrFac,coords = c("dec_long", "dec_lat"),crs=4236)
+```
+
+
+#Build Map
+
+##wqTools Git resources
+baseMap()
+findSites()
+%>% addMarkers(data = FacSites, lng = ~LongitudeMeasure, lat = ~LatitudeMeasure) 
+
+%>% addLayersControl(overlayGroups = c("WQP-Facility","DMR-Facility","WQP-Trib"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+```{r}
+ul_bbox <- st_bbox(wshds)
+wsdMap <- baseMap() %>% 
+  addMapResetButton() %>% 
+  addTiles() %>% 
+  addPolygons(data=wshds, weight = 1.5, color = "gray", opacity =1, label = ~paste(WS_Name, "--Monitored:", Monitored_,"--WSType",Type),group = "Subwatersheds") %>%
+  addCircleMarkers(data = FacSites, lng = ~LongitudeMeasure, lat = ~LatitudeMeasure, color = "", label = ~paste(MonitoringLocationIdentifier), group = "WQP-Facility") %>%
+  addCircleMarkers(data = DmrFac, lng = ~dec_long, lat = ~dec_lat, color = "red", label = ~paste(CWPName), group = "DMR-Facility") %>%
+  addCircleMarkers(data = TribSites, lng = ~LongitudeMeasure, lat = ~LatitudeMeasure, label = ~paste(MonitoringLocationIdentifier), group = "WQP-Trib") %>%
+  fitBounds(ul_bbox[[1]],ul_bbox[[2]],ul_bbox[[3]],ul_bbox[[4]]) %>% 
+addLayersControl(position ="topright",
+			baseGroups = c("World topo","USGS topo", "Hydrography", "Satellite"),overlayGroups = c("Subwatersheds","DMR-Facility", "WQP-Facility","WQP-Trib"),
+			options = leaflet::layersControlOptions(collapsed = TRUE, autoZIndex=FALSE)) 
+wsdMap
+```
+
+

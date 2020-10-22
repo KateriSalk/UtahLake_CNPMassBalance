@@ -1,0 +1,59 @@
+---
+title: "UL_ReadEcho"
+author: "Sdaly"
+date: "10/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(wqTools)
+
+
+DmrFac <- readECHO_fac(p_pid=c("UT0020427","UT0025950","Ut0020915","Ut0021717","UT0020249","UT0026000","UT0025321","UT0020109","UT0020834","UT0023639","ut0000361","ut0025283","UT0024422","UT0000612","UT0025097","UT0025623","UT0025518"))
+
+
+
+
+```
+
+```{r}
+objects(Dmr_fac)
+```
+```{r}
+DmrFac$geometry
+```
+
+```{r}
+class(DmrFac$geometry$coordinates)
+```
+
+
+```{r}
+fac_coords <- do.call(rbind.data.frame,DmrFac$geometry$coordinates)
+names(fac_coords)=c("dec_long","dec_lat")
+fac_coords
+```
+
+
+```{r}
+fac_df <- data.frame(DmrFac$properties, fac_coords)
+fac_df
+```
+
+```{r}
+write.csv(fac_df, file="DmrFaclityInfo.csv", row.names=F)
+#write.csv(DmrFac,"DmrFacilityinfo.csv")
+```
+
+
+
+```{r}
+DMR<-readECHO_ec(print = FALSE,p_id=c("UT0020427","UT0025950","Ut0020915","Ut0021717","UT0020249","UT0026000","UT0025321","UT0020109","UT0020834","UT0023639","ut0000361","ut0025283","UT0024422","UT0000612","UT0025097","UT0025623","UT0025518"),start_date="01/01/2000",end_date="04/30/2019")
+
+write.csv(DMR,"dmr_export.csv")
+```
+
