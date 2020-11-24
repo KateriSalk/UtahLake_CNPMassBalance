@@ -1,0 +1,63 @@
+---
+title: "UtahLake_TributaryData"
+author: "Kateri Salk"
+date: "11/24/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(viridis)
+
+theme_set(theme_classic())
+```
+
+## Load data
+```{r}
+trib <- read.csv("../Data/Processed/ul_Tribdata_wqp_processed.csv")
+
+siteID <- read.csv("../Data/Processed/LUT.MLID.csv")
+```
+
+## Process data
+```{r}
+trib$datetime <- as.POSIXct(trib$datetime)
+unique(trib$CharacteristicName)
+
+UL_tributarychem <- trib %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2015) %>%
+  droplevels()
+
+UL_tributarychem <- 
+  separate(UL_tributarychem, col = MonitoringLocationIdentifier, 
+          into = c(NA, 'MonitoringLocationIdentifier'), sep = "-")
+
+UL_tributarychem$MonitoringLocationIdentifier <- as.numeric(UL_tributarychem$MonitoringLocationIdentifier)
+
+UL_tributarychem <- UL_tributarychem %>%
+  left_join(., siteID,  by = c("MonitoringLocationIdentifier" = "MonLoc_ID"))
+# UL_tributaryflow <- trib %>%
+#   filter(CharacteristicName %in% 
+#            c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+#   droplevels()
+
+```
+
