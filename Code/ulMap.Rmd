@@ -3,6 +3,8 @@ title: "ulMap"
 author: "Sdaly"
 date: "10/7/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 #Librarys
@@ -31,6 +33,9 @@ wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 ```{r}
 Data.WQP_Trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
 TribSites <- Data.WQP_Trib %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+
+TribSites_as_sf <- st_as_sf(TribSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+
 ```
 
 ##Permitted Facilities - WQP
@@ -41,8 +46,34 @@ TODO - need to extract several sites from ul_facilitydata_wqp_processed_####-##-
 ```{r}
 Data.WQP_Fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 FacSites <- Data.WQP_Fac %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+
+FacSites_as_sf <- st_as_sf(FacSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+
 ```
 
+## Combine sf files for Tributaries and WQP Permitted Facilities
+```{r}
+TribFacSites_as_sf <- rbind(TribSites_as_sf, FacSites_as_sf)
+
+# collapse categories 
+TribFacSites_as_sf <- TribFacSites_as_sf %>%
+  mutate(SiteType = ifelse(MonitoringLocationTypeName %in% 
+                  c("Canal Drainage", "Canal Irrigation", "Canal Transport"), "Canal", 
+                ifelse(MonitoringLocationTypeName %in% c("River/Stream", "Stream", "Stream: Ditch"), "Stream",
+                       ifelse(MonitoringLocationTypeName %in% c("Facility Industrial", "Facility Other"), "Facility", 
+                              "Storm Sewer"))))
+
+```
+
+## Create separate datasets for each watershed
+### Monitored Watersheds
+```{r}
+
+tribfacsites_intersect <- TribFacSites_as_sf %>%
+  st_intersection(wshds)
+```
+
+### Unmonitored watersheds
 
 #Permitted Facilities - DMR
 ```{r}
@@ -79,4 +110,13 @@ addLayersControl(position ="topright",
 wsdMap
 ```
 
+```{r}
+ggplot(wshds) +
+  geom_sf(aes(fill = Monitored_)) +
+  geom_sf(data = TribFacSites_as_sf, aes(color = SiteType),
+          alpha = 0.5) +
+  #geom_sf(data = Dmr_Sp, color = "blue") +
+  scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
+  scale_fill_manual(values = c("darkgray", "lightgray"))
+```
 

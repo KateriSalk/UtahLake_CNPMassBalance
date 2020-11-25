@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Setup
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -18,19 +18,33 @@ library(viridis)
 theme_set(theme_classic())
 ```
 
+## Details
+
+
 ## Load data
 ```{r}
-trib <- read.csv("../Data/Processed/ul_Tribdata_wqp_processed.csv")
+trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+fac <- read.csv("../Data/Processed/ul_Facilitydata_wqp_processed.csv")
+wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 
-siteID <- read.csv("../Data/Processed/LUT.MLID.csv")
+#siteID <- read.csv("./Data/Processed/LUT.MLID.csv")
 ```
 
 ## Process data
+
+### Tributary data
+
+1. Find rows in dataset with C, N, or P data
+2. Clean up rows and columns
+3. Use only data from 2015-present
+4. Pivot to wide format
+
 ```{r}
 trib$datetime <- as.POSIXct(trib$datetime)
-unique(trib$CharacteristicName)
+#unique(trib$CharacteristicName)
+trib$ResultMeasureValue <- as.numeric(trib$ResultMeasureValue)
 
-UL_tributarychem <- trib %>%
+trib_wq <- trib %>%
   filter(CharacteristicName %in% 
            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
@@ -44,20 +58,50 @@ UL_tributarychem <- trib %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
   filter(Year >= 2015) %>%
-  droplevels()
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) %>%
+  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
 
-UL_tributarychem <- 
-  separate(UL_tributarychem, col = MonitoringLocationIdentifier, 
-          into = c(NA, 'MonitoringLocationIdentifier'), sep = "-")
+colnames(trib_wq)[11:26] <- c("NH3.t", "NO23.d", "NO23.t", "DN", "TN", "DOC", 
+                              "TOC", "PO4.d", "PO4.t", "NH3.d", "orthoP.t",
+                              "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
 
-UL_tributarychem$MonitoringLocationIdentifier <- as.numeric(UL_tributarychem$MonitoringLocationIdentifier)
+# some variables represent the same thing. Fill in NAs from other columns.
+summary(trib_wq)
 
-UL_tributarychem <- UL_tributarychem %>%
-  left_join(., siteID,  by = c("MonitoringLocationIdentifier" = "MonLoc_ID"))
-# UL_tributaryflow <- trib %>%
-#   filter(CharacteristicName %in% 
-#            c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
-#   droplevels()
+# UL_tributarychem <- 
+#   separate(UL_tributarychem, col = MonitoringLocationIdentifier, 
+#           into = c(NA, 'MonitoringLocationIdentifier'), sep = "-")
+
+
 
 ```
 
+```{r}
+TribSites <- Data.WQP_Trib %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+
+TribSites_as_sf <- st_as_sf(TribSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+
+FacSites <- Data.WQP_Fac %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+
+FacSites_as_sf <- st_as_sf(FacSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+
+tribfacsites_intersect <- TribFacSites_as_sf %>%
+  st_intersection(wshds)
+
+DmrFac <- read.csv("./Data/Processed/DmrFacilityInfo.csv")
+
+Dmr_Sp <- st_as_sf(DmrFac,coords = c("dec_long", "dec_lat"),crs=4236)
+
+UL_tributaryflow <- trib %>%
+  filter(CharacteristicName %in%
+           c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels()
+
+```
