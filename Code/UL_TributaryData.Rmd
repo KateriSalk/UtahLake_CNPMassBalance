@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(viridis)
+library(wqTools)
+library(sf)
 
 theme_set(theme_classic())
 ```
@@ -24,7 +26,7 @@ theme_set(theme_classic())
 ## Load data
 ```{r}
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
-fac <- read.csv("../Data/Processed/ul_Facilitydata_wqp_processed.csv")
+fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 
 #siteID <- read.csv("./Data/Processed/LUT.MLID.csv")
@@ -61,19 +63,7 @@ trib_wq <- trib %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
-  unite("Variable", CharacteristicName:ResultSampleFractionText) %>%
-  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier,
-           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
-           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable) %>%
-  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
-  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
-
-colnames(trib_wq)[11:26] <- c("NH3.t", "NO23.d", "NO23.t", "DN", "TN", "DOC", 
-                              "TOC", "PO4.d", "PO4.t", "NH3.d", "orthoP.t",
-                              "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
-
-# some variables represent the same thing. Fill in NAs from other columns.
-summary(trib_wq)
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
 # UL_tributarychem <- 
 #   separate(UL_tributarychem, col = MonitoringLocationIdentifier, 
@@ -83,18 +73,242 @@ summary(trib_wq)
 
 ```
 
+
+### Facility data
+
 ```{r}
-TribSites <- Data.WQP_Trib %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+fac$datetime <- as.POSIXct(fac$datetime)
+#unique(fac$CharacteristicName)
 
-TribSites_as_sf <- st_as_sf(TribSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+fac_wq <- fac %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2015) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
-FacSites <- Data.WQP_Fac %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
+```
 
-FacSites_as_sf <- st_as_sf(FacSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+### Combine trib and fac data
+```{r, message = FALSE}
+trib_fac_wq <- rbind(trib_wq, fac_wq)
+  
+trib_fac_wq <- trib_fac_wq %>%
+  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
 
-tribfacsites_intersect <- TribFacSites_as_sf %>%
-  st_intersection(wshds)
+#colnames(trib_fac_wq)
 
+# .d indicates dissolved, .t indicates total.
+colnames(trib_fac_wq)[11:26] <- c("NH3.t", "NO23.d", "NO23.t", "TDN", "TN", "DOC", 
+                              "TOC", "PO4.d", "PO4.t", "NH3.d", "orthoP.t",
+                              "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
+
+# some variables represent the same thing. Fill in NAs from other columns.
+summary(trib_fac_wq)
+
+```
+
+## Create spatial datasets for trib and fac datasets
+
+1. Intersect stations with watersheds
+2. Join water quality data with intersected dataset
+3. If a station is not associated with a watershed, assign it
+4. Determine downstream stations in watersheds
+
+```{r, message = FALSE, warning = FALSE}
+
+trib_fac_sites <- trib_fac_wq %>% 
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, 
+           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure) %>%
+  distinct() %>%
+  mutate(SiteType = ifelse(MonitoringLocationTypeName %in% 
+                  c("Canal Drainage", "Canal Irrigation", "Canal Transport"), "Canal", 
+                ifelse(MonitoringLocationTypeName %in% c("River/Stream", "Stream", "Stream: Ditch"), "Stream",
+                       ifelse(MonitoringLocationTypeName %in% c("Facility Industrial", "Facility Other"), "Facility", 
+                              "Storm Sewer"))))
+
+
+trib_fac_sites_sf <- st_as_sf(trib_fac_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+
+trib_fac_sites_intersect <- trib_fac_sites_sf %>%
+  st_intersection(wshds) %>%
+  left_join(trib_fac_wq, .,)
+
+unique(trib_fac_sites_intersect$MonitoringLocationName[is.na(trib_fac_sites_intersect$WS_Name)])
+unique(trib_fac_sites_intersect$MonitoringLocationIdentifier[is.na(trib_fac_sites_intersect$WS_Name)])
+unique(trib_fac_sites_intersect$WS_Name)
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Powell Slough WMA North Outfall to Utah Lake"] <- "Powell Slough Major"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Powell Slough WMA South Outfall to Utah Lake"] <- "Powell Slough Major"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Dry Ck Near Utah Lake-WLA"] <- "Dry Creek - Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Mill Race at mouth 1.25 miles west of I-15"] <- "Mill Race"  
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Hobble Creek at Utah Lake mouth"] <- "Hobble Creek"
+                                 
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Beer Creek at Utah Lake mouth"] <- "Benjamin Slough"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Lindon Drain at Utah Lake Inlet"] <- "Lindon Drain"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Timpanogos WWTP at Utah Lake mouth"] <- "Timp SSD"
+                                   
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "American Fork River at mouth"] <- "American Fork River"
+                                
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Unnamed flow at 4000 West @ mouth"] <- "4000 South Drain Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "JORDAN R AT UTAH L OUTLET U121 XING"] <- "Jordan River"
+
+trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
+  filter(MonitoringLocationIdentifier %in% 
+           c("UTAHDWQ_WQX-4995312", "UTAHDWQ_WQX-4995465", "WFWQC_UT-4995467",
+             "UTAHDWQ_WQX-5919910", "WFWQC_UT-4917712", "UTAHDWQ_WQX-4995578",
+             "WFWQC_UT-4995575", "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040",
+             "UTAHDWQ_WQX-4996042", "UTAHDWQ_WQX-4996044", "UTAHDWQ_WQX-4996100",
+             "WFWQC_UT-4996100", "WFWQC_UT-4996096", "WFWQC_UT-4996536", 
+             "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", "WFWQC_UT-4996680",
+             "UTAHDWQ_WQX-4996680", "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210",
+             "UTAHDWQ_WQX-4995210", "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", 
+             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", "WFWQC_UT-4994958", 
+             "UTAHDWQ_WQX-4994960", "WFWQC_UT-4994948", "UTAHDWQ_WQX-4994950", 
+             "UTAHDWQ_WQX-4994804", "UTAHDWQ_WQX-4994792"))
+unique(trib_fac_sites_intersect_downstream$WS_Name)
+
+trib_fac_sites_intersect_downstream$SiteType[is.na(trib_fac_sites_intersect_downstream$SiteType)] <- "Unknown"
+
+trib_fac_sites_downstream <- trib_fac_sites_intersect_downstream %>% 
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, OrganizationIdentifier,
+           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure) %>%
+  distinct()
+
+
+trib_fac_sites_downstream_sf <- st_as_sf(trib_fac_sites_downstream, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+                                                                                                                                
+```
+
+## Visualization
+### Map
+```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
+ggplot(wshds) +
+  geom_sf(aes(fill = Monitored_)) +
+  geom_sf(data = trib_fac_sites_sf, aes(color = SiteType),
+          alpha = 0.5) +
+  scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
+  scale_fill_manual(values = c("darkgray", "lightgray"))
+
+ggplot(wshds) +
+  geom_sf(aes(fill = Monitored_)) +
+  geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
+  labs(fill = "Monitored", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  scale_fill_manual(values = c("darkgray", "lightgray")) +
+  theme(legend.position = "top")
+
+```
+
+
+### Time Series
+```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
+# TN
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TN, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+  
+# TDN
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TDN, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "TDN (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# PO4.t
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.t, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "Total PO4 (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# PO4.d
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.d, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "Dissolved PO4 (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# TOC
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TOC, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "TOC (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# DOC
+ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = DOC, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  labs(x = "", y = "DOC (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+```
+
+
+## Spare code
+
+```{r, include = FALSE}
 DmrFac <- read.csv("./Data/Processed/DmrFacilityInfo.csv")
 
 Dmr_Sp <- st_as_sf(DmrFac,coords = c("dec_long", "dec_lat"),crs=4236)
@@ -103,5 +317,5 @@ UL_tributaryflow <- trib %>%
   filter(CharacteristicName %in%
            c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels()
-
 ```
+
