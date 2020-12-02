@@ -16,6 +16,7 @@ library(lubridate)
 library(viridis)
 library(wqTools)
 library(sf)
+library(tmap)
 
 theme_set(theme_classic())
 ```
@@ -33,6 +34,14 @@ wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 ```
 
 ## Process data
+
+### Watersheds
+
+```{r}
+wshds_monitored <- wshds %>%
+  filter(Monitored_ == "YES")
+```
+
 
 ### Tributary data
 
@@ -65,12 +74,25 @@ trib_wq <- trib %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
   unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
-# UL_tributarychem <- 
-#   separate(UL_tributarychem, col = MonitoringLocationIdentifier, 
-#           into = c(NA, 'MonitoringLocationIdentifier'), sep = "-")
+trib_flow <- trib %>%
+  filter(CharacteristicName %in%
+           c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels() %>%
+  filter(!is.na(datetime), 
+         ResultStatusIdentifier != "Preliminary", 
+         ResultMeasure.MeasureUnitCode %in% c("ft", "ft3/s")) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+         -MonitoringLocationTypeName, -ResultMeasure.MeasureUnitCode) %>%
+  mutate(date = date(datetime)) %>%
+  group_by(MonitoringLocationIdentifier, date, CharacteristicName, 
+           OrganizationIdentifier, OrganizationFormalName, MonitoringLocationName,
+           LatitudeMeasure, LongitudeMeasure) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue)
 
-
-
+colnames(trib_flow)[8:10] <- c("Q.cfs", "gageheight.ft", "Q.daily.cfs")
+  
 ```
 
 
@@ -116,7 +138,7 @@ trib_fac_wq <- trib_fac_wq %>%
 
 # .d indicates dissolved, .t indicates total.
 colnames(trib_fac_wq)[11:26] <- c("NH3.t", "NO23.d", "NO23.t", "TDN", "TN", "DOC", 
-                              "TOC", "PO4.d", "PO4.t", "NH3.d", "orthoP.t",
+                              "TOC", "TDP", "TP", "NH3.d", "PO4",
                               "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
 
 # some variables represent the same thing. Fill in NAs from other columns.
@@ -151,7 +173,7 @@ trib_fac_sites_sf <- st_as_sf(trib_fac_sites, coords = c("LongitudeMeasure", "La
 
 trib_fac_sites_intersect <- trib_fac_sites_sf %>%
   st_intersection(wshds) %>%
-  left_join(trib_fac_wq, .,)
+  left_join(trib_fac_wq, .,) 
 
 unique(trib_fac_sites_intersect$MonitoringLocationName[is.na(trib_fac_sites_intersect$WS_Name)])
 unique(trib_fac_sites_intersect$MonitoringLocationIdentifier[is.na(trib_fac_sites_intersect$WS_Name)])
@@ -190,19 +212,34 @@ trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName
 trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
                                    "JORDAN R AT UTAH L OUTLET U121 XING"] <- "Jordan River"
 
+trib_fac_sites_wsds <- trib_fac_sites_intersect %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure, 
+         SiteType:Shape_Area) %>%
+  distinct() %>%
+  arrange(WS_Name)
+write.csv(trib_fac_sites_wsds, file = "./Data/Processed/trib_fac_sites.csv",
+          row.names = FALSE)
+
 trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
   filter(MonitoringLocationIdentifier %in% 
-           c("UTAHDWQ_WQX-4995312", "UTAHDWQ_WQX-4995465", "WFWQC_UT-4995467",
-             "UTAHDWQ_WQX-5919910", "WFWQC_UT-4917712", "UTAHDWQ_WQX-4995578",
-             "WFWQC_UT-4995575", "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040",
-             "UTAHDWQ_WQX-4996042", "UTAHDWQ_WQX-4996044", "UTAHDWQ_WQX-4996100",
-             "WFWQC_UT-4996100", "WFWQC_UT-4996096", "WFWQC_UT-4996536", 
-             "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", "WFWQC_UT-4996680",
-             "UTAHDWQ_WQX-4996680", "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210",
-             "UTAHDWQ_WQX-4995210", "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", 
-             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", "WFWQC_UT-4994958", 
-             "UTAHDWQ_WQX-4994960", "WFWQC_UT-4994948", "UTAHDWQ_WQX-4994950", 
-             "UTAHDWQ_WQX-4994804", "UTAHDWQ_WQX-4994792"))
+           c("UTAHDWQ_WQX-4995312", # Currant Creek
+             "UTAHDWQ_WQX-4995465", "WFWQC_UT-4995467", # Benjamin Slough
+             "UTAHDWQ_WQX-5919910", "WFWQC_UT-4917712", # 4000 South Drain Spanish Fork
+             "UTAHDWQ_WQX-4995578", "WFWQC_UT-4995575", # Spanish Fork River
+             "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040", # Dry Creek - Spanish Fork
+             "UTAHDWQ_WQX-4996042", # Provo Bay 3
+             "UTAHDWQ_WQX-4996044", # Provo Bay 5
+             "WFWQC_UT-4996100", "UTAHDWQ_WQX-4996100", "WFWQC_UT-4996096", # Hobble Creek
+             "WFWQC_UT-4996536", "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", # Mill Race
+             "WFWQC_UT-4996680", "UTAHDWQ_WQX-4996680", # Provo River
+             "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210", "UTAHDWQ_WQX-4995210", # Powell Slough Major
+             "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", # Lindon Drain 
+             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", # Timp SSD
+             "WFWQC_UT-4994958", "UTAHDWQ_WQX-4994960", # American Fork River
+             "WFWQC_UT-4994948", "UTAHDWQ_WQX-4994950", #Lehi Spring Creek
+             "UTAHDWQ_WQX-4994804", # Dry Creek - Saratoga
+             "UTAHDWQ_WQX-4994792")) #Lake Mountain - Israel Canyon
 unique(trib_fac_sites_intersect_downstream$WS_Name)
 
 trib_fac_sites_intersect_downstream$SiteType[is.na(trib_fac_sites_intersect_downstream$SiteType)] <- "Unknown"
@@ -210,7 +247,7 @@ trib_fac_sites_intersect_downstream$SiteType[is.na(trib_fac_sites_intersect_down
 trib_fac_sites_downstream <- trib_fac_sites_intersect_downstream %>% 
   ungroup() %>%
   select(MonitoringLocationIdentifier, MonitoringLocationName, OrganizationIdentifier,
-           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure) %>%
+           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure, WS_Name) %>%
   distinct()
 
 
@@ -230,6 +267,30 @@ ggplot(wshds) +
   scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
   scale_fill_manual(values = c("darkgray", "lightgray"))
 
+ggplot(subset(wshds, Monitored_ == "YES")) +
+  geom_sf() +
+  geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
+  facet_wrap(vars(WS_Name)) 
+
+tm_shape(subset(wshds, Monitored_ == "YES")) +
+  tm_polygons("wsa_sqkm")  +
+  tm_facets(by = "WS_Name")
+
+map.grid <- purrr::map(wshds_monitored$WS_Name,
+           function(x) {
+             ggplot() +
+               geom_sf(data = filter(wshds_monitored, WS_Name == x), 
+                       aes(fill = wsa_sqkm)) +
+               geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x), 
+                       aes(color = OrganizationIdentifier)) +
+               scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
+               scale_fill_viridis_c(option = "magma", direction = -1) +
+               guides(fill = FALSE) +
+               theme(legend.position = "none") +
+               ggtitle(x)
+           })
+plot_grid(plotlist = map.grid)
+
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
   geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
@@ -241,7 +302,7 @@ ggplot(wshds) +
 ```
 
 
-### Time Series
+### Water Quality Time Series
 ```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
 # TN
 ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TN, shape = SiteType,
@@ -305,6 +366,15 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = DOC, shape = S
 
 ```
 
+### Stream Flow Time Series
+
+```{r}
+ggplot(trib_flow, aes(x = date, y = Q.cfs)) +
+  geom_point() +
+  scale_y_log10() +
+  facet_wrap(vars(MonitoringLocationName))
+```
+
 
 ## Spare code
 
@@ -313,9 +383,6 @@ DmrFac <- read.csv("./Data/Processed/DmrFacilityInfo.csv")
 
 Dmr_Sp <- st_as_sf(DmrFac,coords = c("dec_long", "dec_lat"),crs=4236)
 
-UL_tributaryflow <- trib %>%
-  filter(CharacteristicName %in%
-           c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
-  droplevels()
+
 ```
 
