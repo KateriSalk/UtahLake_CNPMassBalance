@@ -224,8 +224,22 @@ trib_fac_sites_wsds <- trib_fac_sites_intersect %>%
          SiteType:Shape_Area) %>%
   distinct() %>%
   arrange(WS_Name)
-write.csv(trib_fac_sites_wsds, file = "./Data/Processed/trib_fac_sites.csv",
-          row.names = FALSE)
+# write.csv(trib_fac_sites_wsds, file = "./Data/Processed/trib_fac_sites_initial.csv",
+#           row.names = FALSE)
+
+trib_fac_sites_counts <- trib_fac_sites_intersect %>%
+  ungroup() %>%
+  group_by(MonitoringLocationIdentifier, OrganizationIdentifier, OrganizationFormalName,
+           MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,
+           LongitudeMeasure, SiteType, OBJECTID_1, OBJECTID, TARGET_FID,
+           Type, wsa_sqkm, WS_Name, Monitored_, WS_NAME_1, WS_NAME_12, 
+           Shape_Leng, Shape_Le_1, Shape_Area) %>%
+  tally()
+
+trib_fac_sites_wsds <- trib_fac_sites_wsds %>%
+  full_join(., trib_fac_sites_counts)
+# write.csv(trib_fac_sites_wsds, file = "./Data/Processed/trib_fac_sites_counts.csv",
+#           row.names = FALSE)
 
 trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
   filter(MonitoringLocationIdentifier %in% 
