@@ -75,24 +75,30 @@ trib_wq <- trib %>%
   unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
 trib_flow <- trib %>%
-  filter(CharacteristicName %in%
-           c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  filter(CharacteristicName == "Flow") %>%
+           #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels() %>%
   filter(!is.na(datetime), 
-         ResultStatusIdentifier != "Preliminary", 
-         ResultMeasure.MeasureUnitCode %in% c("ft", "ft3/s")) %>%
+         ResultStatusIdentifier != "Provisional") %>%
   select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
-         -MonitoringLocationTypeName, -ResultMeasure.MeasureUnitCode) %>%
-  mutate(date = date(datetime)) %>%
-  group_by(MonitoringLocationIdentifier, date, CharacteristicName, 
-           OrganizationIdentifier, OrganizationFormalName, MonitoringLocationName,
-           LatitudeMeasure, LongitudeMeasure) %>%
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  #mutate(date = date(datetime)) %>%
+  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier, 
+           OrganizationFormalName, MonitoringLocationName,
+           LatitudeMeasure, LongitudeMeasure, ResultMeasure.MeasureUnitCode) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
-  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue)
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
-colnames(trib_flow)[8:10] <- c("Q.cfs", "gageheight.ft", "Q.daily.cfs")
-  
+colnames(trib_flow)[8:12] <- c("cfs", "gal.min", "mgd", "g.min", "m3.sec")
+
+# convert everything to cfs
+trib_flow$gal.min <- trib_flow$gal.min*0.002228017
+
+trib_flow$cfs[is.na(trib_flow$cfs)] <- trib_flow$gal.min*0.002228017[is.na(trib_flow$cfs)]
+ 
+
+test <- left_join(trib_fac_sites_intersect_downstream, trib_flow) 
 ```
 
 
@@ -369,10 +375,10 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = DOC, shape = S
 ### Stream Flow Time Series
 
 ```{r}
-ggplot(trib_flow, aes(x = date, y = Q.cfs)) +
+ggplot(test, aes(x = datetime, y = cfs)) +
   geom_point() +
   scale_y_log10() +
-  facet_wrap(vars(MonitoringLocationName))
+  facet_wrap(~MonitoringLocationName, drop = TRUE)
 ```
 
 
