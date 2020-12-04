@@ -234,7 +234,15 @@ trib_fac_sites_counts <- trib_fac_sites_intersect %>%
            LongitudeMeasure, SiteType, OBJECTID_1, OBJECTID, TARGET_FID,
            Type, wsa_sqkm, WS_Name, Monitored_, WS_NAME_1, WS_NAME_12, 
            Shape_Leng, Shape_Le_1, Shape_Area) %>%
-  tally()
+  tally() %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, n)
+
+trib_fac_sites_SD <- read.csv("./Data/Processed/trib_fac_sites.csv")
+
+trib_fac_sites_combined <- full_join(trib_fac_sites_SD, trib_fac_sites_counts)
+write.csv(trib_fac_sites_combined, file = "./Data/Processed/trib_fac_sites_counts.csv",
+          row.names = FALSE)
 
 trib_fac_sites_wsds <- trib_fac_sites_wsds %>%
   full_join(., trib_fac_sites_counts)
