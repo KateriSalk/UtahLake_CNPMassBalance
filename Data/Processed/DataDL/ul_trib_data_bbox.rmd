@@ -22,7 +22,7 @@ Sys.Date()
 ### Libraries & packages
 ```{r, libs}
 #devtools::install_github("utah-dwq/wqTools") # Install DWQ wqTools R package if necessary (see github.com/utah-dwq/wqTools for more info)
-
+library(wqTools)
 
 ```
 
@@ -33,7 +33,7 @@ ul_bbox=c("-112.0%2C39.8%2C-111.5%2C40.4")
 
 ### Read Utah Lake site locations & generate site map
 ```{r, site-read-map}
-ul_sites=wqTools::readWQP(type='sites', bBox=ul_bbox, siteType=c("Stream"), sampleMedia="Water") #Connection to WQP occasionally times out, function tries connection up to 10 times
+ul_sites=wqTools::readWQP(type='sites', bBox=ul_bbox, siteType=c("Stream","Wetland"), sampleMedia="Water") #Connection to WQP occasionally times out, function tries connection up to 10 times
 map=wqTools::buildMap(sites=ul_sites, plot_polys=F)
 map=leaflet::setView(map, lng=median(ul_sites$LongitudeMeasure), lat=median(ul_sites$LatitudeMeasure), zoom=10)
 map
@@ -46,7 +46,7 @@ Site metadata, activity metadata, and detection/quantitation limits are all merg
 for a single water quality result. These are cast to a wide format before merging to narrow result to maintain all available det/quant limits.
 
 ```{r, read-wqp-data}
-ul_nr=wqTools::readWQP(type='narrowresult', bBox=ul_bbox, siteType=c("Stream"), sampleMedia="Water", print=F)
+ul_nr=wqTools::readWQP(type='narrowresult', bBox=ul_bbox, siteType=c("Stream","Wetland"), sampleMedia="Water", print=F)
 ul_act=wqTools::readWQP(type='activity', bBox=ul_bbox, sampleMedia="Water")
 ul_dql=wqTools::readWQP(type='detquantlim', bBox=ul_bbox, sampleMedia="Water")
 ```
