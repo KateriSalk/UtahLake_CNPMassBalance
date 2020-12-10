@@ -94,11 +94,21 @@ colnames(trib_flow)[8:12] <- c("cfs", "gal.min", "mgd", "g.min", "m3.sec")
 
 # convert everything to cfs
 trib_flow$gal.min <- trib_flow$gal.min*0.002228017
+trib_flow$mgd <- trib_flow$mgd/64317
+trib_flow$g.min <- trib_flow$g.min*0.002228017
+trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
 
-trib_flow$cfs[is.na(trib_flow$cfs)] <- trib_flow$gal.min*0.002228017[is.na(trib_flow$cfs)]
- 
+# trib_flow$cfs[is.na(trib_flow$cfs)] <- trib_flow$gal.min*0.002228017[is.na(trib_flow$cfs)]
 
-test <- left_join(trib_fac_sites_intersect_downstream, trib_flow) 
+ggplot(trib_flow, aes(x = datetime)) +
+  geom_point(aes(y = cfs)) +
+  geom_point(aes(y = gal.min), color = "blue") +
+  geom_point(aes(y = mgd), color = "red") +
+  geom_point(aes(y = g.min), color = "purple") +
+  geom_point(aes(y = m3.sec), color = "gray") +
+  scale_y_log10()
+
+#test <- left_join(trib_fac_sites_intersect_downstream, trib_flow) 
 ```
 
 
@@ -241,8 +251,8 @@ trib_fac_sites_counts <- trib_fac_sites_intersect %>%
 trib_fac_sites_SD <- read.csv("./Data/Processed/trib_fac_sites.csv")
 
 trib_fac_sites_combined <- full_join(trib_fac_sites_SD, trib_fac_sites_counts)
-write.csv(trib_fac_sites_combined, file = "./Data/Processed/trib_fac_sites_counts.csv",
-          row.names = FALSE)
+# write.csv(trib_fac_sites_combined, file = "./Data/Processed/trib_fac_sites_counts.csv",
+#           row.names = FALSE)
 
 trib_fac_sites_wsds <- trib_fac_sites_wsds %>%
   full_join(., trib_fac_sites_counts)
@@ -307,17 +317,15 @@ tm_shape(subset(wshds, Monitored_ == "YES")) +
 map.grid <- purrr::map(wshds_monitored$WS_Name,
            function(x) {
              ggplot() +
-               geom_sf(data = filter(wshds_monitored, WS_Name == x), 
-                       aes(fill = wsa_sqkm)) +
+               geom_sf(data = filter(wshds_monitored, WS_Name == x)) +
                geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x), 
                        aes(color = OrganizationIdentifier)) +
                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
-               scale_fill_viridis_c(option = "magma", direction = -1) +
                guides(fill = FALSE) +
                theme(legend.position = "none") +
-               ggtitle(x)
+               labs(title = x)
            })
-plot_grid(plotlist = map.grid)
+plot_grid(plotlist = map.grid, label_size = 8)
 
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
