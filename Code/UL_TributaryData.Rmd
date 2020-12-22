@@ -19,6 +19,7 @@ library(sf)
 library(tmap)
 
 theme_set(theme_classic())
+options(scipen = 4)
 ```
 
 ## Details
@@ -26,7 +27,9 @@ theme_set(theme_classic())
 
 ## Load data
 ```{r}
-trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
+trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 
@@ -51,8 +54,8 @@ wshds_monitored <- wshds %>%
 4. Pivot to wide format
 
 ```{r}
-trib$datetime <- as.POSIXct(trib$datetime)
-#unique(trib$CharacteristicName)
+trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
+# unique(trib$CharacteristicName)
 trib$ResultMeasureValue <- as.numeric(trib$ResultMeasureValue)
 
 trib_wq <- trib %>%
@@ -65,9 +68,12 @@ trib_wq <- trib %>%
              "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
              "Total Kjeldahl nitrogen")) %>%
   filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
-  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
-  mutate(Month = month(datetime), 
-         Year = year(datetime)) %>%
+  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+         ResultStatusIdentifier) %>%
+  mutate(Month = month(ActivityStartDate), 
+         Year = year(ActivityStartDate)) %>%
   filter(Year >= 2015) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
@@ -78,37 +84,44 @@ trib_flow <- trib %>%
   filter(CharacteristicName == "Flow") %>%
            #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels() %>%
-  filter(!is.na(datetime), 
-         ResultStatusIdentifier != "Provisional") %>%
-  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+         ResultStatusIdentifier) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
          -MonitoringLocationTypeName, -CharacteristicName) %>%
-  #mutate(date = date(datetime)) %>%
-  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier, 
-           OrganizationFormalName, MonitoringLocationName,
-           LatitudeMeasure, LongitudeMeasure, ResultMeasure.MeasureUnitCode) %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier, 
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(ActivityStartDate), 
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2015) %>%
+  droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
-colnames(trib_flow)[8:12] <- c("cfs", "gal.min", "mgd", "g.min", "m3.sec")
+colnames(trib_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
 
 # convert everything to cfs
-trib_flow$gal.min <- trib_flow$gal.min*0.002228017
 trib_flow$mgd <- trib_flow$mgd/64317
 trib_flow$g.min <- trib_flow$g.min*0.002228017
 trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
 
-# trib_flow$cfs[is.na(trib_flow$cfs)] <- trib_flow$gal.min*0.002228017[is.na(trib_flow$cfs)]
+trib_flow_long <- trib_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs")
 
-ggplot(trib_flow, aes(x = datetime)) +
-  geom_point(aes(y = cfs)) +
-  geom_point(aes(y = gal.min), color = "blue") +
-  geom_point(aes(y = mgd), color = "red") +
-  geom_point(aes(y = g.min), color = "purple") +
-  geom_point(aes(y = m3.sec), color = "gray") +
-  scale_y_log10()
+```
 
-#test <- left_join(trib_fac_sites_intersect_downstream, trib_flow) 
+#### Flow data visualization
+
+The different units don't seem to match up in value when we convert them to cfs
+```{r}
+ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
+  geom_point(alpha = 0.5) +
+  scale_y_log10() +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
 ```
 
 
@@ -128,7 +141,8 @@ fac_wq <- fac %>%
              "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
              "Total Kjeldahl nitrogen")) %>%
   filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
-  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
   filter(Year >= 2015) %>%
@@ -137,6 +151,8 @@ fac_wq <- fac %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
   unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
+# match date field with trib
+colnames(fac_wq)[2] <- "ActivityStartDate"
 ```
 
 ### Combine trib and fac data
@@ -144,23 +160,34 @@ fac_wq <- fac %>%
 trib_fac_wq <- rbind(trib_wq, fac_wq)
   
 trib_fac_wq <- trib_fac_wq %>%
-  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier,
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
            OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
-           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable) %>%
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
   pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
 
-#colnames(trib_fac_wq)
+colnames(trib_fac_wq)
 
 # .d indicates dissolved, .t indicates total.
-colnames(trib_fac_wq)[11:26] <- c("NH3.t", "NO23.d", "NO23.t", "TDN", "TN", "DOC", 
-                              "TOC", "TDP", "TP", "NH3.d", "PO4",
-                              "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
+colnames(trib_fac_wq)[12:27] <- c("NH3.d", "NH3.t", "NO23.d", "NO23.t", "TDN", 
+                                  "TN", "DOC", "TOC", "TDP", "TP", "PO4", 
+                                  "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
 
 # some variables represent the same thing. Fill in NAs from other columns.
 summary(trib_fac_wq)
 
+test <- full_join(trib_fac_wq, trib_flow) 
+
 ```
+
+#### Preliminary C-Q plots
+```{r}
+ggplot(test, aes(x = cfs, y = TN)) +
+  geom_point()
+```
+
+
 
 ## Create spatial datasets for trib and fac datasets
 
