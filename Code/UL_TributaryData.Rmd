@@ -17,6 +17,7 @@ library(viridis)
 library(wqTools)
 library(sf)
 library(tmap)
+library(cowplot)
 
 theme_set(theme_classic())
 options(scipen = 4)
@@ -43,6 +44,17 @@ wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 ```{r}
 wshds_monitored <- wshds %>%
   filter(Monitored_ == "YES")
+
+wshds_monitored$WS_Name <- 
+  factor(wshds_monitored$WS_Name, 
+         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
+                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
+                    "Lindon Drain", "Powell Slough Major", "Provo River", 
+                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
+                    "Spanish Fork River", "4000 South Drain Spanish Fork",
+                    "Benjamin Slough", "Currant Creek"))
+levels(wshds_monitored$WS_Name)
+
 ```
 
 
@@ -196,6 +208,71 @@ ggplot(test, aes(x = cfs, y = TN)) +
 3. If a station is not associated with a watershed, assign it
 4. Determine downstream stations in watersheds
 
+Sites located downstream of diversion
+
+* UTAHDWQ_WQX-4995465
+* WFWQC_UT-4995467
+* UTAHDWQ_WQX-4995312
+* UTAHDWQ_WQX-4995578
+* WFWQC_UT-4995575
+* UTAHDWQ_WQX-4995578
+* WFWQC_UT-4995575
+
+
+Sites that may be backwatered at times
+
+* WFWQC_UT-4917712
+* WFWQC_UT-4994958
+* UTAHDWQ_WQX-4995465
+* WFWQC_UT-4995467
+* WFWQC_UT-4996536
+* UTAHDWQ_WQX-4995210
+* UTAHDWQ_WQX-4995230
+* WFWQC_UT-4995210
+* WFWQC_UT-4995575
+
+Intermittent sites
+
+* UTAHDWQ_WQX-4994804
+* UTAHDWQ_WQX-4994792
+
+Sites located far from lake
+
+* UTAHDWQ_WQX-4995312
+
+Effluent-dominated sites
+
+* UTAHDWQ_WQX-4996040
+* WFWQC_UT-4996040
+
+Sites included in ULWQS SAP
+* UTAHDWQ_WQX-5919910
+* UTAHDWQ_WQX-4994960
+* UTAHDWQ_WQX-4995465
+* UTAHDWQ_WQX-4994804
+* UTAHDWQ_WQX-4996040
+* UTAHDWQ_WQX-4996100
+* UTAHDWQ_WQX-4994792
+* UTAHDWQ_WQX-4994950
+* UTAHDWQ_WQX-4995120
+* UTAHDWQ_WQX-4996540
+* UTAHDWQ_WQX-4995210
+* UTAHDWQ_WQX-4995230
+* UTAHDWQ_WQX-4996680
+* UTAHDWQ_WQX-4995578
+* UTAHDWQ_WQX-4995041
+* WFWQC_UT-4995043
+
+Items that still need to be addressed: 
+
+* UTAHDWQ_WQX-4996030 is an upstream site
+* UTAHDWQ_WQX-4994792 water originates from Jordan River
+* UTAHDWQ_WQX-4994950 has site at 2100 south road/stream crossing
+* WFWQC_UT-4996536 represents the sum of UTAHDWQ_WQX-4996540 and UTAHDWQ_WQX-4996566
+* UTAHDWQ_WQX-4995578 Located just downstream of a major diversion but above UL backwater. Flow difficult to collect at very hi flows. Look at 4995580 to supplement chemistry and flow, but for some reason I don't see this site in the list. Also look at 5919970 for flow during runoff in spring of 2020.
+* UTAHDWQ_WQX-4995041 There are two outfalls from TSSD to the lake. 
+
+
 ```{r, message = FALSE, warning = FALSE}
 
 trib_fac_sites <- trib_fac_wq %>% 
@@ -255,6 +332,12 @@ trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName
 trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
                                    "JORDAN R AT UTAH L OUTLET U121 XING"] <- "Jordan River"
 
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "DRY CK EAST TRIBUTARY"] <- "Dry Creek - Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Drainage Canal 0.5 mile bl I-15 at about 2500 West, Springville"] <- "Dry Creek - Spanish Fork"
+
 trib_fac_sites_wsds <- trib_fac_sites_intersect %>%
   ungroup() %>%
   select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure, 
@@ -293,8 +376,7 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
              "UTAHDWQ_WQX-5919910", "WFWQC_UT-4917712", # 4000 South Drain Spanish Fork
              "UTAHDWQ_WQX-4995578", "WFWQC_UT-4995575", # Spanish Fork River
              "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040", # Dry Creek - Spanish Fork
-             "UTAHDWQ_WQX-4996042", # Provo Bay 3
-             "UTAHDWQ_WQX-4996044", # Provo Bay 5
+             "UTAHDWQ_WQX-4996042", "UTAHDWQ_WQX-4996044", # Dry Creek - Spanish Fork
              "WFWQC_UT-4996100", "UTAHDWQ_WQX-4996100", "WFWQC_UT-4996096", # Hobble Creek
              "WFWQC_UT-4996536", "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", # Mill Race
              "WFWQC_UT-4996680", "UTAHDWQ_WQX-4996680", # Provo River
@@ -319,6 +401,14 @@ trib_fac_sites_downstream <- trib_fac_sites_intersect_downstream %>%
 trib_fac_sites_downstream_sf <- st_as_sf(trib_fac_sites_downstream, coords = c("LongitudeMeasure", "LatitudeMeasure"),
                               crs = 4326, dim = "XY") #CRS = WGS84
 
+trib_fac_sites_downstream_sf$WS_Name <- 
+  factor(trib_fac_sites_downstream_sf$WS_Name, 
+         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
+                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
+                    "Lindon Drain", "Powell Slough Major", "Provo River", 
+                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
+                    "Spanish Fork River", "4000 South Drain Spanish Fork",
+                    "Benjamin Slough", "Currant Creek"))
                                                                                                                                 
 ```
 
@@ -332,12 +422,13 @@ ggplot(wshds) +
   scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
   scale_fill_manual(values = c("darkgray", "lightgray"))
 
-ggplot(subset(wshds, Monitored_ == "YES")) +
+ggplot(wshds_monitored) +
   geom_sf() +
   geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
-  facet_wrap(vars(WS_Name)) 
+  facet_wrap(~WS_Name, nrow = 3) +
+  theme(legend.position = "top")
 
-tm_shape(subset(wshds, Monitored_ == "YES")) +
+tm_shape(wshds_monitored) +
   tm_polygons("wsa_sqkm")  +
   tm_facets(by = "WS_Name")
 
