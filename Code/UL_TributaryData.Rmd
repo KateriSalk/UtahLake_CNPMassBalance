@@ -122,13 +122,14 @@ trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
 
 trib_flow_long <- trib_flow %>%
   pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
-               names_to = "orig.units", values_to = "Flow.cfs")
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
 
 ```
 
 #### Flow data visualization
 
-The different units don't seem to match up in value when we convert them to cfs
+The different units don't seem to match up in value when we convert them to cfs. May be due to site types. Revisit.
 ```{r}
 ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
   geom_point(alpha = 0.5) +
@@ -165,6 +166,42 @@ fac_wq <- fac %>%
 
 # match date field with trib
 colnames(fac_wq)[2] <- "ActivityStartDate"
+
+
+fac_flow <- fac %>%
+  filter(CharacteristicName == "Flow") %>%
+           #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels() %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier, 
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2015) %>%
+  droplevels() %>%
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
+
+fac_flow$datetime <- as.Date(fac_flow$datetime)
+colnames(fac_flow)[2] <- "ActivityStartDate"
+
+colnames(fac_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
+
+# convert everything to cfs
+fac_flow$mgd <- fac_flow$mgd/64317
+fac_flow$g.min <- fac_flow$g.min*0.002228017
+fac_flow$m3.sec <- fac_flow$m3.sec*35.3147
+
+fac_flow_long <- fac_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
+
 ```
 
 ### Combine trib and fac data
@@ -186,19 +223,13 @@ colnames(trib_fac_wq)[12:27] <- c("NH3.d", "NH3.t", "NO23.d", "NO23.t", "TDN",
                                   "TN", "DOC", "TOC", "TDP", "TP", "PO4", 
                                   "NO3.t", "CO3.t", "TKN.d", "NO2.t", "TKN.t")
 
-# some variables represent the same thing. Fill in NAs from other columns.
 summary(trib_fac_wq)
 
-test <- full_join(trib_fac_wq, trib_flow) 
+trib_fac_flow <- rbind(trib_flow, fac_flow)
+
+trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow) 
 
 ```
-
-#### Preliminary C-Q plots
-```{r}
-ggplot(test, aes(x = cfs, y = TN)) +
-  geom_point()
-```
-
 
 
 ## Create spatial datasets for trib and fac datasets
@@ -265,7 +296,6 @@ Sites included in ULWQS SAP
 
 Items that still need to be addressed: 
 
-* UTAHDWQ_WQX-4996030 is an upstream site
 * UTAHDWQ_WQX-4994792 water originates from Jordan River
 * UTAHDWQ_WQX-4994950 has site at 2100 south road/stream crossing
 * WFWQC_UT-4996536 represents the sum of UTAHDWQ_WQX-4996540 and UTAHDWQ_WQX-4996566
@@ -275,7 +305,7 @@ Items that still need to be addressed:
 
 ```{r, message = FALSE, warning = FALSE}
 
-trib_fac_sites <- trib_fac_wq %>% 
+trib_fac_sites <- trib_fac_wq_flow %>% 
   ungroup() %>%
   select(MonitoringLocationIdentifier, MonitoringLocationName, 
            MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure) %>%
@@ -293,7 +323,7 @@ trib_fac_sites_sf <- st_as_sf(trib_fac_sites, coords = c("LongitudeMeasure", "La
 
 trib_fac_sites_intersect <- trib_fac_sites_sf %>%
   st_intersection(wshds) %>%
-  left_join(trib_fac_wq, .,) 
+  left_join(trib_fac_wq_flow, .,) 
 
 unique(trib_fac_sites_intersect$MonitoringLocationName[is.na(trib_fac_sites_intersect$WS_Name)])
 unique(trib_fac_sites_intersect$MonitoringLocationIdentifier[is.na(trib_fac_sites_intersect$WS_Name)])
@@ -358,9 +388,9 @@ trib_fac_sites_counts <- trib_fac_sites_intersect %>%
   ungroup() %>%
   select(MonitoringLocationIdentifier, n)
 
-trib_fac_sites_SD <- read.csv("./Data/Processed/trib_fac_sites.csv")
-
-trib_fac_sites_combined <- full_join(trib_fac_sites_SD, trib_fac_sites_counts)
+# trib_fac_sites_SD <- read.csv("./Data/Processed/trib_fac_sites.csv")
+# 
+# trib_fac_sites_combined <- full_join(trib_fac_sites_SD, trib_fac_sites_counts)
 # write.csv(trib_fac_sites_combined, file = "./Data/Processed/trib_fac_sites_counts.csv",
 #           row.names = FALSE)
 
@@ -378,7 +408,7 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
              "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040", # Dry Creek - Spanish Fork
              "UTAHDWQ_WQX-4996042", "UTAHDWQ_WQX-4996044", # Dry Creek - Spanish Fork
              "WFWQC_UT-4996100", "UTAHDWQ_WQX-4996100", "WFWQC_UT-4996096", # Hobble Creek
-             "WFWQC_UT-4996536", "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", # Mill Race
+             "WFWQC_UT-4996536", "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566", # Mill Race
              "WFWQC_UT-4996680", "UTAHDWQ_WQX-4996680", # Provo River
              "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210", "UTAHDWQ_WQX-4995210", # Powell Slough Major
              "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", # Lindon Drain 
@@ -389,6 +419,7 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
              "UTAHDWQ_WQX-4994792")) #Lake Mountain - Israel Canyon
 unique(trib_fac_sites_intersect_downstream$WS_Name)
 
+# REVISIT
 trib_fac_sites_intersect_downstream$SiteType[is.na(trib_fac_sites_intersect_downstream$SiteType)] <- "Unknown"
 
 trib_fac_sites_downstream <- trib_fac_sites_intersect_downstream %>% 
@@ -436,14 +467,18 @@ map.grid <- purrr::map(wshds_monitored$WS_Name,
            function(x) {
              ggplot() +
                geom_sf(data = filter(wshds_monitored, WS_Name == x)) +
-               geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x), 
+               geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
                        aes(color = OrganizationIdentifier)) +
                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
                guides(fill = FALSE) +
-               theme(legend.position = "none") +
+               theme(legend.position = "none", title = element_text(size = 8),
+                     axis.text = element_blank(), axis.ticks = element_blank()) +
                labs(title = x)
            })
-plot_grid(plotlist = map.grid, label_size = 8)
+plot_grid(map.grid[[15]], map.grid[[5]], map.grid[[4]], map.grid[[6]], map.grid[[7]],
+          map.grid[[8]], map.grid[[1]], map.grid[[9]], map.grid[[10]], map.grid[[12]],
+          map.grid[[11]], map.grid[[13]], map.grid[[3]], map.grid[[2]], map.grid[[14]],
+          nrow = 3)
 
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
@@ -459,7 +494,7 @@ ggplot(wshds) +
 ### Water Quality Time Series
 ```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
 # TN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TN, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TN, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -469,7 +504,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TN, shape = Si
   theme(legend.position = "top")
   
 # TDN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TDN, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TDN, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -479,7 +514,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TDN, shape = S
   theme(legend.position = "top")
 
 # PO4.t
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.t, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = PO4.t, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -489,7 +524,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.t, shape =
   theme(legend.position = "top")
 
 # PO4.d
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.d, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = PO4.d, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -499,7 +534,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = PO4.d, shape =
   theme(legend.position = "top")
 
 # TOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TOC, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TOC, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -509,7 +544,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = TOC, shape = S
   theme(legend.position = "top")
 
 # DOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = DOC, shape = SiteType,
+ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = DOC, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
@@ -520,13 +555,24 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = datetime, y = DOC, shape = S
 
 ```
 
-### Stream Flow Time Series
+### C-Q
 
 ```{r}
-ggplot(test, aes(x = datetime, y = cfs)) +
-  geom_point() +
-  scale_y_log10() +
-  facet_wrap(~MonitoringLocationName, drop = TRUE)
+# TN
+ggplot(trib_fac_sites_intersect_downstream, aes(x = cfs, y = TN, shape = SiteType,
+                                                color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_point(aes(x = mgd), alpha = 0.7, size = 2) +
+  geom_point(aes(x = g.min), alpha = 0.7, size = 2) +
+  geom_point(aes(x = m3.sec), alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  labs(x = "Flow (cfs)", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+
 ```
 
 
