@@ -29,10 +29,12 @@ options(scipen = 4)
 ## Load data
 ```{r}
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
-trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+#trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
 
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+
+activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
 
 #siteID <- read.csv("./Data/Processed/LUT.MLID.csv")
 ```
@@ -65,7 +67,7 @@ levels(wshds_monitored$WS_Name)
 3. Use only data from 2015-present
 4. Pivot to wide format
 
-```{r}
+```{r, include = FALSE}
 trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
 # unique(trib$CharacteristicName)
 trib$ResultMeasureValue <- as.numeric(as.character(trib$ResultMeasureValue))
@@ -125,22 +127,38 @@ trib_flow_long <- trib_flow %>%
                names_to = "orig.units", values_to = "Flow.cfs") %>%
   drop_na(Flow.cfs)
 
+# conversions seem to match up, except Mg/d which is only used for one site.
+# ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
+#   geom_point(alpha = 0.5) +
+#   scale_y_log10() +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
 ```
 
-#### Flow data visualization
-REVISIT
-The different units don't seem to match up in value when we convert them to cfs. May be due to site types. Revisit.
-```{r}
-ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
-  geom_point(alpha = 0.5) +
-  scale_y_log10() +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
-```
+### Find non-sampled dates
 
+Sample type of "11" indicates a site was not sampled. Sample type of "10" indicates there was no flow. The latter should appear in the flow data as a zero; this was verified by inspecting the two datasets.
+
+REVISIT: what to do about unsampled sites? 
+```{r, include = FALSE}
+activitylog$Activity.Start.Date <- as.Date(activitylog$Activity.Start.Date, 
+                                           "%m-%d-%Y")
+activitylog_unsampled <- activitylog %>%
+  filter(Activity.Start.Date > "2014-12-31") %>%
+  separate(Activity.ID, into = c("SamplingRun", "MLID", "Date", "SampleType", "type"), "-") %>%
+  filter(SampleType == "11")
+
+
+activitylog_noflow <- activitylog %>%
+  filter(Activity.Start.Date > "2014-12-31") %>%
+  separate(Activity.ID, into = c("SamplingRun", "MLID", "Date", "SampleType", "type"), "-") %>%
+  filter(SampleType == "10")
+
+  
+```
 
 ### Facility data
 
-```{r}
+```{r, include = FALSE}
 fac$datetime <- as.POSIXct(fac$datetime)
 #unique(fac$CharacteristicName)
 
@@ -205,7 +223,7 @@ fac_flow_long <- fac_flow %>%
 ```
 
 ### Combine trib and fac data
-```{r, message = FALSE}
+```{r, include = FALSE}
 trib_fac_wq <- rbind(trib_wq, fac_wq)
   
 trib_fac_wq <- trib_fac_wq %>%
@@ -225,7 +243,7 @@ colnames(trib_fac_wq)[12:27] <- c("NH3.d", "NH3.t", "NO23.d", "NO23.t", "TDN",
 
 summary(trib_fac_wq)
 
-trib_fac_flow <- rbind(trib_flow, fac_flow)
+trib_fac_flow <- rbind(trib_flow_long, fac_flow_long)
 
 trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow) 
 
@@ -277,6 +295,7 @@ Effluent-dominated sites
 * WFWQC_UT-4996040
 
 Sites included in ULWQS SAP
+
 * UTAHDWQ_WQX-5919910
 * UTAHDWQ_WQX-4994960
 * UTAHDWQ_WQX-4995465
@@ -303,7 +322,7 @@ Items that still need to be addressed:
 * UTAHDWQ_WQX-4995041 There are two outfalls from TSSD to the lake. 
 
 
-```{r, message = FALSE, warning = FALSE}
+```{r, message = FALSE, warning = FALSE, include = FALSE}
 
 trib_fac_sites <- trib_fac_wq_flow %>% 
   ungroup() %>%
@@ -482,22 +501,22 @@ ggplot(wshds) +
 #   tm_polygons("wsa_sqkm")  +
 #   tm_facets(by = "WS_Name")
 
-# map.grid <- purrr::map(wshds_monitored$WS_Name,
-#            function(x) {
-#              ggplot() +
-#                geom_sf(data = filter(wshds_monitored, WS_Name == x)) +
-#                geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
-#                        aes(color = OrganizationIdentifier)) +
-#                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
-#                scale_x_continuous()
-#                theme(legend.position = "none", title = element_text(size = 8),
-#                      axis.text = element_blank(), axis.ticks = element_blank()) +
-#                labs(title = x)
-#            })
-# plot_grid(map.grid[[15]], map.grid[[5]], map.grid[[4]], map.grid[[6]], map.grid[[7]],
-#           map.grid[[8]], map.grid[[1]], map.grid[[9]], map.grid[[10]], map.grid[[12]],
-#           map.grid[[11]], map.grid[[13]], map.grid[[3]], map.grid[[2]], map.grid[[14]],
-#           nrow = 3)
+map.grid <- purrr::map(wshds_monitored$WS_Name,
+           function(x) {
+             ggplot() +
+               geom_sf(data = filter(wshds_monitored, WS_Name == x)) +
+               geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
+                       aes(color = OrganizationIdentifier)) +
+               scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
+               scale_x_continuous()
+               theme(legend.position = "none", #title = element_text(size = 8),
+                     axis.text = element_blank(), axis.ticks = element_blank()) +
+               labs(title = x)
+           })
+plot_grid(map.grid[[15]], map.grid[[5]], map.grid[[4]], map.grid[[6]], map.grid[[7]],
+          map.grid[[8]], map.grid[[1]], map.grid[[9]], map.grid[[10]], map.grid[[12]],
+          map.grid[[11]], map.grid[[13]], map.grid[[3]], map.grid[[2]], map.grid[[14]],
+          nrow = 3)
 
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
@@ -511,7 +530,7 @@ ggplot(wshds) +
 
 
 ### Water Quality Time Series
-```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
 ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TN, shape = SiteType,
                                                 color = OrganizationIdentifier)) +
@@ -586,11 +605,12 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = DOC, 
 ```{r, include = FALSE}
 # code to generate sample sizes 
 give.n <- function(x){
-   return(c(y = (max(x) + 0.1*(max(x))), label = length(x)))
+   return(c(y = (max(x) + 0.2*(max(x))), label = length(x)))
 }
 ```
 
 Lake Mountain - Israel Canyon
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
@@ -673,6 +693,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Dry Creek - Saratoga
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
@@ -755,6 +776,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Lehi Spring Creek
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
@@ -843,6 +865,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 American Fork River
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
@@ -931,6 +954,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Timp SSD
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
@@ -1019,6 +1043,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Lindon Drain
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
@@ -1107,6 +1132,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Powell Slough Major
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
@@ -1195,6 +1221,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Provo River
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
@@ -1283,6 +1310,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Mill Race
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
@@ -1371,6 +1399,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Hobble Creek
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
@@ -1459,6 +1488,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Dry Creek - Spanish Fork
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
@@ -1547,6 +1577,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Spanish Fork River
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
@@ -1635,6 +1666,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 4000 South Drain Spanish Fork
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
@@ -1644,7 +1676,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1657,7 +1689,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1670,7 +1702,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1683,7 +1715,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1696,7 +1728,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -1708,7 +1740,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -1723,6 +1755,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Benjamin Slough
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
@@ -1811,6 +1844,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 Currant Creek
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
@@ -1898,25 +1932,328 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-### 
+### Flow time series
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = ActivityStartDate, y = Flow.cfs, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_y_log10() +
+  labs(x = "", y = "Flow (cfs)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+```
+
+### Flow by month
+
+Lake Mountain - Israel Canyon
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Dry Creek - Saratoga
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Lehi Spring Creek
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+American Fork River
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  # scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Timp SSD
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Lindon Drain
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Powell Slough Major
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Provo River
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Mill Race
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(ncol = 2))
+```
+
+Hobble Creek
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Dry Creek - Spanish Fork
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(ncol = 2))
+```
+
+Spanish Fork River
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+4000 South Drain Spanish Fork
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Benjamin Slough
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
+Currant Creek
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+```
+
 
 ### C-Q
 
-```{r}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = cfs, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = TN, shape = SiteType, 
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  geom_point(aes(y = mgd), alpha = 0.7, size = 2) +
-  geom_point(aes(y = g.min), alpha = 0.7, size = 2) +
-  geom_point(aes(y = m3.sec), alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
   scale_y_log10() +
   labs(x = "Flow (cfs)", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
 
+# TDN
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = TDN, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "TDN (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# TP
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = TP, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "TP (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# TDP
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = TDP, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "TDP (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# TOC
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = TOC, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "TOC (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+# DOC
+ggplot(trib_fac_sites_intersect_downstream, 
+       aes(x = Flow.cfs, y = DOC, shape = SiteType, 
+           color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "DOC (mg/L)", shape = "Site Type", color = "Organization") +
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
 
 ```
 
