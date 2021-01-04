@@ -18,6 +18,7 @@ library(wqTools)
 library(sf)
 library(tmap)
 library(cowplot)
+library(openxlsx)
 
 theme_set(theme_classic())
 options(scipen = 4)
@@ -29,14 +30,12 @@ options(scipen = 4)
 ## Load data
 ```{r}
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
-#trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
-
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
-
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
-
-#siteID <- read.csv("./Data/Processed/LUT.MLID.csv")
+gw <- read.csv("./Data/Processed/ul_wqp_gwdata_processed.csv")
+p_et <- read.xlsx("./Data/Processed/ULEFDCFlowBoundaries_WY2006-2018.xlsx", 
+                  sheet = "Precip-ET", startRow = 2)
 ```
 
 ## Process data
@@ -250,7 +249,79 @@ trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow)
 ```
 
 
-## Create spatial datasets for trib and fac datasets
+
+### Groundwater (spring and well) data
+
+```{r}
+gw_wq_flow <- gw %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen", 
+             "Flow rate, instantaneous", "Flow", "Stream flow, instantaneous")) %>%
+  droplevels() %>%
+  filter(ResultMeasure.MeasureUnitCode %in% 
+           c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
+             "mg/l", "mg/l as N", "mg/l as P")) #%>% # chemistry units, by element not by compound
+#   select(MonitoringLocationIdentifier:ResultSampleFractionText,
+#          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+#          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+#          ResultStatusIdentifier) %>%
+#   mutate(Month = month(ActivityStartDate), 
+#          Year = year(ActivityStartDate)) %>%
+#   filter(Year >= 2015) %>%
+#   droplevels() %>%
+#   filter(!is.na(ResultMeasureValue)) %>%
+#   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+#   unite("Variable", CharacteristicName:ResultSampleFractionText) 
+# 
+# trib_flow <- trib %>%
+#   filter(CharacteristicName == "Flow") %>%
+#            #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+#   droplevels() %>%
+#   #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+#   select(MonitoringLocationIdentifier:ResultSampleFractionText,
+#          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+#          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+#          ResultStatusIdentifier) %>%
+#   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+#          -MonitoringLocationTypeName, -CharacteristicName) %>%
+#   group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier, 
+#            OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+#            LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+#   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+#   mutate(Month = month(ActivityStartDate), 
+#          Year = year(ActivityStartDate)) %>%
+#   filter(Year >= 2015) %>%
+#   droplevels() %>%
+#   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
+
+```
+
+### Precipitation and Evapotranspiration data
+
+REVISIT should I use average area of Utah Lake to calculate areal rates? 
+
+```{r}
+colnames(p_et) <- c("Date", "precip.mm", "et.mm")
+
+p_et$Date <- as.Date(p_et$Date, origin = "1899-12-30")
+
+p_et_monthly <- p_et %>%
+  group_by(Date = floor_date(Date, unit = "1 month")) %>%
+  summarise(precip.mm = sum(precip.mm), 
+            et.mm = sum(et.mm)) %>%
+  mutate(Year = year(Date), 
+         Month = month(Date))
+
+```
+
+
+### Create spatial datasets for trib and fac datasets
 
 1. Intersect stations with watersheds
 2. Join water quality data with intersected dataset
@@ -320,6 +391,31 @@ Items that still need to be addressed:
 * WFWQC_UT-4996536 represents the sum of UTAHDWQ_WQX-4996540 and UTAHDWQ_WQX-4996566
 * UTAHDWQ_WQX-4995578 Located just downstream of a major diversion but above UL backwater. Flow difficult to collect at very hi flows. Look at 4995580 to supplement chemistry and flow, but for some reason I don't see this site in the list. Also look at 5919970 for flow during runoff in spring of 2020.
 * UTAHDWQ_WQX-4995041 There are two outfalls from TSSD to the lake. 
+
+REVISIT watersheds with > 2 stations: 
+
+Powell Slough Major: 
+
+* Powell Slough WMA North Outfall to Utah Lake (UTAHDWQ_WQX-4995210, WFWQC_UT-4995210)
+* Powell Slough WMA South Outfall to Utah Lake (UTAHDWQ_WQX-4995230)
+
+Mill Race: 
+
+* MILL RACE CREEK AT I-15 CROSSING (2 MI S PROVO COURTHOUSE) (UTAHDWQ_WQX-4996540, WFWQC_UT-4996540)
+* PROVO STATION 6-WLA (UTAHDWQ_WQX-4996566)
+* Mill Race at mouth 1.25 miles west of I-15 (WFWQC_UT-4996536)
+
+Hobble Creek: 
+
+* HOBBLE CK AT I-15 BDG 3MI S OF PROVO (UTAHDWQ_WQX-4996100, WFWQC_UT-4996100)
+* Hobble Creek at Utah Lake mouth (WFWQC_UT-4996096)
+
+Dry Creek - Spanish Fork
+
+* Dry Ck Near Utah Lake-WLA (UTAHDWQ_WQX-4996040, WFWQC_UT-4996040)
+* DRY CK EAST TRIBUTARY (UTAHDWQ_WQX-4996042)
+* Drainage Canal 0.5 mile bl I-15 at about 2500 West, Springville (UTAHDWQ_WQX-4996044)
+
 
 
 ```{r, message = FALSE, warning = FALSE, include = FALSE}
@@ -503,13 +599,13 @@ ggplot(wshds) +
 
 map.grid <- purrr::map(wshds_monitored$WS_Name,
            function(x) {
-             ggplot() +
-               geom_sf(data = filter(wshds_monitored, WS_Name == x)) +
+             ggplot(data = filter(wshds_monitored, WS_Name == x)) +
+               geom_sf() +
                geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
                        aes(color = OrganizationIdentifier)) +
                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
-               scale_x_continuous()
-               theme(legend.position = "none", #title = element_text(size = 8),
+               scale_x_continuous() +
+               theme(legend.position = "none", title = element_text(size = 8),
                      axis.text = element_blank(), axis.ticks = element_blank()) +
                labs(title = x)
            })
@@ -2254,6 +2350,34 @@ ggplot(trib_fac_sites_intersect_downstream,
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+
+```
+
+### Precipitation and evaporation
+
+REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
+```{r}
+ggplot(p_et_monthly, aes(x = Date, y = precip.mm)) +
+  geom_point() +
+  geom_line() +
+  labs(y = "Monthly precipitation (mm)")
+
+ggplot(p_et_monthly, aes(x = Date, y = et.mm)) +
+  geom_point() +
+  geom_line() +
+  labs(y = "Monthly evaporation (mm)")
+
+ggplot(p_et_monthly, aes(x = as.factor(Month), y = precip.mm)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = as.factor(Year)), width = 0.15, alpha = 0.8) +
+  labs(y = "Monthly precipitation (mm)") +
+  scale_color_viridis_d(option = "magma", end = 0.8)
+
+ggplot(p_et_monthly, aes(x = as.factor(Month), y = et.mm)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = as.factor(Year)), width = 0.15, alpha = 0.8) +
+  labs(y = "Monthly evaporation (mm)") +
+  scale_color_viridis_d(option = "magma", end = 0.8)
 
 ```
 
