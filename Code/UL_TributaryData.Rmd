@@ -1,9 +1,11 @@
 ---
 title: "UtahLake_TributaryData"
 author: "Kateri Salk"
-date: "11/24/2020"
-output: html_document
-editor_options: 
+date: "1/5/2021"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -28,19 +30,30 @@ options(scipen = 4)
 
 
 ## Load data
+
+Data were loaded from spreadsheets obtained by Utah DWQ: 
+
 ```{r}
+# tributary data
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
+# facility data
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
+# watershed spatial data
 wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+# sampling activity logs
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
+# groundwater data
 gw <- read.csv("./Data/Processed/ul_wqp_gwdata_processed.csv")
+# precipitation and evaporation data
 p_et <- read.xlsx("./Data/Processed/ULEFDCFlowBoundaries_WY2006-2018.xlsx", 
                   sheet = "Precip-ET", startRow = 2)
 ```
 
-## Process data
+## Data processing
 
 ### Watersheds
+
+Watersheds were divided into monitored and unmonitored and arranged in clockwise order.
 
 ```{r}
 wshds_monitored <- wshds %>%
@@ -61,10 +74,12 @@ levels(wshds_monitored$WS_Name)
 
 ### Tributary data
 
-1. Find rows in dataset with C, N, or P data
-2. Clean up rows and columns
-3. Use only data from 2015-present
-4. Pivot to wide format
+Tributary dataset was filtered for: 
+
+1. Variables pertaining to C, N, P, or flow (discharge)
+2. Years 2015-2020
+
+Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
 
 ```{r, include = FALSE}
 trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
@@ -135,16 +150,21 @@ trib_flow_long <- trib_flow %>%
 
 ### Find non-sampled dates
 
-Sample type of "11" indicates a site was not sampled. Sample type of "10" indicates there was no flow. The latter should appear in the flow data as a zero; this was verified by inspecting the two datasets.
+A sample type of "11" indicates a site was not sampled. A sample type of "10" indicates there was no flow. The latter should appear in the flow data as a zero; this was verified by inspecting the two datasets.
 
-REVISIT: what to do about unsampled sites? 
-```{r, include = FALSE}
+Locations and dates when sites were not sampled: 
+
+```{r, echo = FALSE}
 activitylog$Activity.Start.Date <- as.Date(activitylog$Activity.Start.Date, 
                                            "%m-%d-%Y")
 activitylog_unsampled <- activitylog %>%
   filter(Activity.Start.Date > "2014-12-31") %>%
   separate(Activity.ID, into = c("SamplingRun", "MLID", "Date", "SampleType", "type"), "-") %>%
-  filter(SampleType == "11")
+  filter(SampleType == "11") %>%
+  droplevels()
+
+unique(activitylog_unsampled$Monitoring.Location.Name)
+unique(activitylog_unsampled$Activity.Start.Date)
 
 
 activitylog_noflow <- activitylog %>%
@@ -156,6 +176,13 @@ activitylog_noflow <- activitylog %>%
 ```
 
 ### Facility data
+
+Tributary dataset was filtered for: 
+
+1. Variables pertaining to C, N, P, or flow (discharge)
+2. Years 2015-2020
+
+Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
 
 ```{r, include = FALSE}
 fac$datetime <- as.POSIXct(fac$datetime)
@@ -222,6 +249,9 @@ fac_flow_long <- fac_flow %>%
 ```
 
 ### Combine trib and fac data
+
+Tributary and facility water quality and flow datasets were combined.
+
 ```{r, include = FALSE}
 trib_fac_wq <- rbind(trib_wq, fac_wq)
   
@@ -252,7 +282,7 @@ trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow)
 
 ### Groundwater (spring and well) data
 
-```{r}
+```{r, include = FALSE}
 gw_wq_flow <- gw %>%
   filter(CharacteristicName %in% 
            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
@@ -304,9 +334,10 @@ gw_wq_flow <- gw %>%
 
 ### Precipitation and Evapotranspiration data
 
-REVISIT should I use average area of Utah Lake to calculate areal rates? 
+TO DO: Use area vs. elevation relationship to establish average monthly lake area, with variability quantified.
 
-```{r}
+REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
+```{r, include= FALSE}
 colnames(p_et) <- c("Date", "precip.mm", "et.mm")
 
 p_et$Date <- as.Date(p_et$Date, origin = "1899-12-30")
@@ -321,7 +352,7 @@ p_et_monthly <- p_et %>%
 ```
 
 
-### Create spatial datasets for trib and fac datasets
+### Create spatial datasets for tributary and facility datasets
 
 1. Intersect stations with watersheds
 2. Join water quality data with intersected dataset
@@ -578,7 +609,10 @@ trib_fac_sites_intersect_downstream$WS_Name <-
 ```
 
 ## Visualization
-### Map
+### Maps
+
+The top graph depicts all tributary and facility monitoring sites. The second graph depicts each monitored watershed individually from the NW side of the lake moving clockwise, with downstream monitoring sites marked. The third graph depicts all watersheds with only downstream monitoring sites marked.
+
 ```{r, fig.height = 8, fig.width = 8, echo = FALSE, message = FALSE}
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
@@ -2355,8 +2389,9 @@ ggplot(trib_fac_sites_intersect_downstream,
 
 ### Precipitation and evaporation
 
-REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
-```{r}
+TO DO: Change y axis to volumes after determining monthly lake area
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, width = 5, height = 4}
 ggplot(p_et_monthly, aes(x = Date, y = precip.mm)) +
   geom_point() +
   geom_line() +
