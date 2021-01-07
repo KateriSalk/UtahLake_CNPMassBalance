@@ -84,7 +84,7 @@ write.csv(file=paste0("ul_Tribdata_wqp_raw_",Sys.Date(),".csv"), ul_data, row.na
 
 ### Drop QA/QC field replicate site
 ```{r, drop-qaqc-site}
-ul_data=ul_data[ul_data$MonitoringLocationIdentifier!="UTAHDWQ_WQX-4917320",]
+#ul_data=ul_data[ul_data$MonitoringLocationIdentifier!="UTAHDWQ_WQX-4917320",]
 ```
 
 ### Check field parameters for activity types
@@ -112,7 +112,7 @@ knitr::kable(table(ul_data[ul_data$CharacteristicName %in% field_params,"Activit
 ```{r, merge-depth}
 ul_data=within(ul_data,{
 	SampleDepthValue=ifelse(!is.na(ActivityDepthHeightMeasure.MeasureValue), ActivityDepthHeightMeasure.MeasureValue, ResultDepthHeightMeasure.MeasureValue)
-	SampleDepthUnit=ifelse(!is.na(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ResultDepthHeightMeasure.MeasureUnitCode))
+SampleDepthUnit=ifelse(!is.na(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ActivityDepthHeightMeasure.MeasureUnitCode), as.character(ResultDepthHeightMeasure.MeasureUnitCode))
 })
 ```
 
@@ -128,8 +128,8 @@ knitr::kable(table(is.na(ul_data$SampleDepthValue) & ul_data$CharacteristicName=
 ### Fill sample depths and units for CharacteristicName "Depth, data-logger (ported)"
 ```{r, fill-data-logger-depth}
 ul_data=within(ul_data,{
-	SampleDepthValue=ifelse(is.na(SampleDepthValue) & CharacteristicName == "Depth, data-logger (ported)", ResultMeasureValue, SampleDepthValue)
-	SampleDepthUnit=ifelse(is.na(SampleDepthUnit) & CharacteristicName == "Depth, data-logger (ported)", as.character(ResultMeasure.MeasureUnitCode), as.character(SampleDepthUnit))
+SampleDepthValue=ifelse(is.na(SampleDepthValue) & CharacteristicName == "Depth, data-logger (ported)", ResultMeasureValue, SampleDepthValue)
+SampleDepthUnit=ifelse(is.na(SampleDepthUnit) & CharacteristicName == "Depth, data-logger (ported)", as.character(ResultMeasure.MeasureUnitCode), as.character(SampleDepthUnit))
 })
 knitr::kable(table(is.na(ul_data$SampleDepthValue) & ul_data$CharacteristicName=="Depth, data-logger (ported)"))
 ```
@@ -174,7 +174,7 @@ dim(ul_data)
 ### Subset to relevant columns:
 ```{r, subset-cols}
 cols_keep=c(
-	"OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName","ActivityStartDate","ActivityStartTime.Time",  
+	"ActivityStartDate","ActivityStartTime.Time","OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
 	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",  
 	### These are the columns that have been added through the code above  
 	"SampleDepthUnit","SampleDepthValue","RelativeDepth","datetime","minute","hour",  

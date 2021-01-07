@@ -79,7 +79,7 @@ dim(ul_data)[1] == dim(ul_nr)[1] # Lengths of merged and narrowresult should mat
 
 ### Write raw, as queried data from EPA WQP
 ```{r, write-raw}
-write.csv(file=paste0("ul_wqpspringdata_raw_",Sys.Date(),".csv"), ul_data, row.names=F)
+write.csv(file=paste0("ul_wqp_gwdata_raw_",Sys.Date(),".csv"), ul_data, row.names=F)
 ```
 
 
@@ -171,7 +171,7 @@ dim(ul_data)
 ### Subset to relevant columns:
 ```{r, subset-cols}
 cols_keep=c(
-	"OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
+	"ActivityStartDate","ActivityStartTime.Time","OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
 	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",  
 	### These are the columns that have been added through the code above  
 	"SampleDepthUnit","SampleDepthValue","RelativeDepth","datetime","minute","hour",  
@@ -193,7 +193,7 @@ dim(ul_data)
 
 ### Check for multiple result values by site, date, depth, parameter, & fraction
 ```{r, check-unique}
-check_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","CharacteristicName","ResultSampleFractionText")]
+check_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","CharacteristicName","ResultSampleFractionText","ActivityStartDate","ActivityStartTime.Time")]
 
 dim(unique(check_data))
 dim(ul_data)[1] == dim(unique(check_data))[1]
@@ -206,7 +206,7 @@ Some records have one or more unique result value. These are flagged in processe
 
 ### Identify multiple result values
 ```{r, id-non-unique}
-result_count_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","CharacteristicName","ResultSampleFractionText","ResultMeasureValue")]
+result_count_data=ul_data[,c("MonitoringLocationIdentifier","datetime","SampleDepthValue","RelativeDepth","ActivityStartDate","ActivityStartTime.Time","CharacteristicName","ResultSampleFractionText","ResultMeasureValue")]
 result_count_data=lapply(result_count_data, addNA)
 result_count=aggregate(ResultMeasureValue~MonitoringLocationIdentifier+datetime+SampleDepthValue+RelativeDepth+CharacteristicName+ResultSampleFractionText, result_count_data, FUN='length')
 names(result_count)[names(result_count)=="ResultMeasureValue"]="result_count"
@@ -219,7 +219,7 @@ table(ul_data$result_count)
 
 ### Write processed data
 ```{r, write-processed}
-write.csv(file=paste0("ul_wqpspringdata_processed_",Sys.Date(),".csv"), ul_data, row.names=F)
+write.csv(file=paste0("ul_wqp_gwdata_processed_",Sys.Date(),".csv"), ul_data, row.names=F)
 ```
 
 
