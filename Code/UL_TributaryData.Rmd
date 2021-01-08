@@ -132,7 +132,7 @@ trib_flow <- trib %>%
 colnames(trib_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
 
 # convert everything to cfs
-trib_flow$mgd <- trib_flow$mgd/64317
+trib_flow$mgd <- trib_flow$mgd/0.646317
 trib_flow$g.min <- trib_flow$g.min*0.002228017
 trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
 
@@ -141,7 +141,7 @@ trib_flow_long <- trib_flow %>%
                names_to = "orig.units", values_to = "Flow.cfs") %>%
   drop_na(Flow.cfs)
 
-# conversions seem to match up, except Mg/d which is only used for one site.
+# conversions seem to match up
 # ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
 #   geom_point(alpha = 0.5) +
 #   scale_y_log10() +
@@ -237,7 +237,7 @@ colnames(fac_flow)[2] <- "ActivityStartDate"
 colnames(fac_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
 
 # convert everything to cfs
-fac_flow$mgd <- fac_flow$mgd/64317
+fac_flow$mgd <- fac_flow$mgd/0.646317
 fac_flow$g.min <- fac_flow$g.min*0.002228017
 fac_flow$m3.sec <- fac_flow$m3.sec*35.3147
 
@@ -563,7 +563,7 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
              "WFWQC_UT-4996680", "UTAHDWQ_WQX-4996680", # Provo River
              "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210", "UTAHDWQ_WQX-4995210", # Powell Slough Major
              "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", # Lindon Drain 
-             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", # Timp SSD
+             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", "UTAHDWQ_WQX-4995038", # Timp SSD
              "WFWQC_UT-4994958", "UTAHDWQ_WQX-4994960", # American Fork River
              "WFWQC_UT-4994948", "UTAHDWQ_WQX-4994950", #Lehi Spring Creek
              "UTAHDWQ_WQX-4994804", # Dry Creek - Saratoga
@@ -1094,7 +1094,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1107,7 +1107,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1120,7 +1120,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1133,7 +1133,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -1146,7 +1146,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -1158,7 +1158,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -2147,7 +2147,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
 ```
