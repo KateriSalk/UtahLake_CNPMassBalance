@@ -316,15 +316,15 @@ gw_wq_flow <- gw %>%
   filter(ResultMeasure.MeasureUnitCode %in% 
            c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
              "mg/l", "mg/l as N", "mg/l as P")) #%>% # chemistry units, by element not by compound
-  select(MonitoringLocationIdentifier: RelativeDepth, CharacteristicName:ActivityStartDate,
+  select(MonitoringLocationIdentifier:RelativeDepth, CharacteristicName:ActivityStartDate,
          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
          LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
          ResultStatusIdentifier) %>%
-#   mutate(Month = month(ActivityStartDate), 
-#          Year = year(ActivityStartDate)) %>%
-#   filter(Year >= 2015) %>%
-#   droplevels() %>%
-#   filter(!is.na(ResultMeasureValue)) %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) #%>%
 #   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
 #   unite("Variable", CharacteristicName:ResultSampleFractionText) 
 # 
