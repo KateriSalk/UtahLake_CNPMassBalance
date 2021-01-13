@@ -43,7 +43,7 @@ wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 # sampling activity logs
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
 # groundwater data
-gw <- read.csv("./Data/Processed/ul_wqp_gwdata_processed.csv")
+gw <- read.csv("./Data/Processed/ul_wqp_gwdata_processed_2021-01-07.csv")
 # precipitation and evaporation data
 p_et <- read.xlsx("./Data/Processed/ULEFDCFlowBoundaries_WY2006-2018.xlsx", 
                   sheet = "Precip-ET", startRow = 2)
@@ -86,7 +86,16 @@ trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
 # unique(trib$CharacteristicName)
 trib$ResultMeasureValue <- as.numeric(as.character(trib$ResultMeasureValue))
 
+# 
+trib$ResultMeasureValue[trib$MeasureQualifierCode == "U"] <- trib$MethodDetectionLevel
+
+
 trib_wq <- trib %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
@@ -102,30 +111,31 @@ trib_wq <- trib %>%
          ResultStatusIdentifier) %>%
   mutate(Month = month(ActivityStartDate), 
          Year = year(ActivityStartDate)) %>%
-  filter(Year >= 2015) %>%
+  filter(Year >= 2010) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
   unite("Variable", CharacteristicName:ResultSampleFractionText) 
 
 trib_flow <- trib %>%
-  filter(CharacteristicName == "Flow") %>%
+  #REVISIT
+  filter(CharacteristicName %in% c("Flow", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
            #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels() %>%
   #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
-  select(MonitoringLocationIdentifier:ResultSampleFractionText,
-         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
-         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
-         ResultStatusIdentifier) %>%
-  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
-         -MonitoringLocationTypeName, -CharacteristicName) %>%
-  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier, 
-           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
-           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
-  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
-  mutate(Month = month(ActivityStartDate), 
+  # select(MonitoringLocationIdentifier:ResultSampleFractionText,
+  #        OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+  #        LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+  #        ResultStatusIdentifier) %>%
+  # select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+  #        -MonitoringLocationTypeName, -CharacteristicName) %>%
+  # group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier, 
+  #          OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+  #          LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  # summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(ActivityStartDate),
          Year = year(ActivityStartDate)) %>%
-  filter(Year >= 2015) %>%
+  filter(Year >= 2010) %>%
   droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
@@ -189,6 +199,11 @@ fac$datetime <- as.POSIXct(fac$datetime)
 #unique(fac$CharacteristicName)
 
 fac_wq <- fac %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
@@ -202,7 +217,7 @@ fac_wq <- fac %>%
          ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
-  filter(Year >= 2015) %>%
+  filter(Year >= 2010) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
@@ -227,7 +242,7 @@ fac_flow <- fac %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
-  filter(Year >= 2015) %>%
+  filter(Year >= 2010) %>%
   droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
@@ -284,6 +299,10 @@ trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow)
 
 ```{r, include = FALSE}
 gw_wq_flow <- gw %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
@@ -297,10 +316,10 @@ gw_wq_flow <- gw %>%
   filter(ResultMeasure.MeasureUnitCode %in% 
            c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
              "mg/l", "mg/l as N", "mg/l as P")) #%>% # chemistry units, by element not by compound
-#   select(MonitoringLocationIdentifier:ResultSampleFractionText,
-#          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
-#          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
-#          ResultStatusIdentifier) %>%
+  select(MonitoringLocationIdentifier: RelativeDepth, CharacteristicName:ActivityStartDate,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
+         LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
+         ResultStatusIdentifier) %>%
 #   mutate(Month = month(ActivityStartDate), 
 #          Year = year(ActivityStartDate)) %>%
 #   filter(Year >= 2015) %>%
