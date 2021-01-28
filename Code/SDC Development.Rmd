@@ -1,0 +1,359 @@
+---
+title: "Stage Discharge Curve Development"
+author: "Scott Daly"
+date: ""
+output:
+    html_notebook:
+        toc: yes
+        toc_float: yes
+---
+
+<!-- Please don't mess with the next few lines! -->
+<style>h5{font-size:2em;color:#0000FF}h6{font-size:1.5em;color:#0000FF}div.answer{margin-left:5%;border:1px solid #0000FF;border-left-width:10px;padding:25px} div.summary{background-color:rgba(30,144,255,0.1);border:3px double #0000FF;padding:25px}</style>`r options(scipen=999)`<p style="color:#ffffff">`r intToUtf8(c(49,46,51))`</p>
+<!-- Please don't mess with the previous few lines! -->
+
+#TO DO
+*Data type issue for 2017 to 2019? PT values are not plotting correctly.
+*DST tz correction of PT datetime
+*Address differnces between WFWQC and DWQ flow
+*Address outliers
+
+
+
+# Load packages
+
+```{r, warning = FALSE, message = FALSE}
+library(mosaic)
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(minpack.lm)
+library(zoo)
+```
+
+#Read and Clean Pressure Transducer Data
+##Read in data
+```{r}
+PT_2018 <- read.csv("./Data/Processed/PT2018.csv")
+PT_2019 <- read.csv("./Data/Processed/PT2019.csv")
+PT_2020 <- read.csv("./Data/Processed/PT2020.csv")
+PTData <- rbind(PT_2018,PT_2019,PT_2020)
+```
+
+##Clean Data
+###Rename Fields
+```{r}
+names(PTData)[1] <- "DateTime"
+names(PTData)[2] <- "ElapTime"
+names(PTData)[3] <- "TempC"
+names(PTData)[4] <- "PPSI"
+names(PTData)[5] <- "DepthFt"
+names(PTData)[6] <- "MLID"
+names(PTData)[7] <- "Site"
+names(PTData)[8] <- "SN"
+PTData<-PTData[c(1:8)]
+```
+
+### Set data type
+```{r}
+PTData$PPSI <- as.numeric(as.character(PTData$PPSI))
+PTData$TempC <- as.numeric(as.character(PTData$TempC))
+PTData$ElapTime <- as.numeric(as.character(PTData$ElapTime))
+PTData$MLID<-factor(PTData$MLID)
+
+```
+
+###Reformat date/time
+```{r}
+DateTime2 <- strptime(x = as.character(PTData$DateTime), format = "%m/%d/%Y %H:%M", tz="America/Denver")
+DateTime2 <- as.POSIXct(DateTime2)
+PTData2 <- mutate(PTData,DateTime2)
+```
+
+   
+#### DST Adjustment
+ PT sensor records all time in MST and does not correct for MDST. Need to verify tz of observed grab sample flow.
+
+```{r}
+#This code does not work for adjusting tz for dst. Needs modified.
+
+PTData2 <- mutate(PTData2, DateRound = force_tz(PTData2$DateTime2),
+  quiet = FALSE,
+  tz = "America/Denver",
+  locale = Sys.getlocale("LC_TIME"),
+  truncated = 0
+)
+```
+
+###Round Date to nearest 15 minutes for join with grab sample flow
+```{r}
+PTData2$DateRound <- round_date(PTData2$DateRound, "15 minutes") 
+```
+
+
+```{r}
+PTData2 <- PTData2 %>% 
+  mutate(Month = month(DateRound), 
+         Year = year(DateRound))
+```
+
+####
+Test out rolling mean of PPSI to smooth variability
+k=# of 15 minute intervals on either side of the origin.
+
+```{r}
+ PTData2 <- PTData2 %>% dplyr::arrange(MLID, DateRound) %>% 
+    dplyr::mutate(PPSI_1hr = zoo::rollmean(PPSI, k = 5, fill = NA),
+                  PPSI_2hr = zoo::rollmean(PPSI, k = 9, fill = NA),
+                  PPSI_3hr = zoo::rollmean(PPSI, k = 13, fill = NA),
+                  PPSI_6hr = zoo::rollmean(PPSI, k = 25, fill = NA),
+                  PPSI_12hr = zoo::rollmean(PPSI, k = 49, fill = NA)
+                 ) %>% 
+  dplyr::ungroup()
+```
+
+## Summary statistics by group
+```{r}
+favstats(PPSI ~ MLID, data = PTData2)
+```
+
+
+## Plot
+```{r}
+ggplot(data=PTData2, mapping = aes(x = MLID, y=PPSI)) +
+    geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  labs(x = "MLID", y= "Pressure (PSI)")   
+
+```
+
+## Plot
+```{r}
+ggplot(data=PTData2, mapping = aes(x = Year, y=PPSI, group = Year)) +
+    geom_boxplot()  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  labs(x = "Year", y= "Pressure (PSI)")   
+```
+
+```{r}
+ggplot(data = PTData2, mapping = aes(x = DateRound, y = PPSI)) +
+    geom_line() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
+    facet_wrap(facets = vars(MLID))# + scale_y_continuous(trans='log10')
+```
+
+
+
+
+```{r}
+ggplot(PTData2, mapping = aes(x = DateTime, y = PPSI, color = MLID)) +
+    geom_point()#+ scale_y_continuous(trans='log10')
+```
+
+
+# Read and Clean Grab Sample Flow data
+####Code borrowed and modified from UL_TributaryData.RMD
+
+##Data were loaded from spreadsheets obtained by Utah DWQ: 
+
+```{r}
+# tributary data
+trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
+
+# watershed spatial data
+wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+# sampling activity logs
+activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
+```
+
+## Data processing
+
+### Watersheds
+
+Watersheds were divided into monitored and unmonitored and arranged in clockwise order.
+
+```{r}
+wshds_monitored <- wshds %>%
+  filter(Monitored_ == "YES")
+
+wshds_monitored$WS_Name <- 
+  factor(wshds_monitored$WS_Name, 
+         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
+                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
+                    "Lindon Drain", "Powell Slough Major", "Provo River", 
+                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
+                    "Spanish Fork River", "4000 South Drain Spanish Fork",
+                    "Benjamin Slough", "Currant Creek"))
+levels(wshds_monitored$WS_Name)
+
+```
+
+
+### Tributary data
+
+Tributary dataset was filtered for: 
+
+1. Variables pertaining to C, N, P, or flow (discharge)
+2. Years 2015-2020
+
+Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
+###Reformat date/time
+
+```{r}
+DateRound <- strptime(x = as.character(trib$datetime), format = "%m/%d/%Y %H:%M", tz="America/Denver")
+trib <- mutate(trib,DateRound)
+trib$DateRound <- round_date(trib$DateRound, "15 minutes") 
+```
+
+
+```{r, include = FALSE}
+trib$ActivityStartDate <- as.Date(trib$ActivityStartDate,"%m/%d/%Y")
+
+# unique(trib$CharacteristicName)
+trib$ResultMeasureValue <- as.numeric(as.character(trib$ResultMeasureValue))
+
+#trib_wq <- trib %>% # filter(CharacteristicName %in% 
+#         c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+#          "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+#             "Phosphorus", "Ammonia and ammonium", 
+#             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+#             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+#             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+#             "Total Kjeldahl nitrogen")) %>%
+#  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
+#  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+#         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+#         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+#         ResultStatusIdentifier) %>%
+#  mutate(Month = month(ActivityStartDate), 
+#         Year = year(ActivityStartDate)) %>%
+#  filter(Year >= 2015) %>%
+#  droplevels() %>%
+#  filter(!is.na(ResultMeasureValue)) %>%
+#  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+#  unite("Variable", CharacteristicName:ResultSampleFractionText) 
+
+trib_flow <- trib %>%
+  filter(CharacteristicName == "Flow") %>%
+           #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels() %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+         ResultStatusIdentifier,DateRound) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  group_by(MonitoringLocationIdentifier, DateRound, OrganizationIdentifier, 
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(DateRound), 
+         Year = year(DateRound)) %>%
+  filter(Year >= 2015) %>%
+  droplevels() %>%
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
+
+colnames(trib_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
+
+# convert everything to cfs
+trib_flow$mgd <- trib_flow$mgd/0.646317
+trib_flow$g.min <- trib_flow$g.min*0.002228017
+trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
+
+trib_flow_long <- trib_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
+
+# conversions seem to match up
+# ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
+#   geom_point(alpha = 0.5) +
+#   scale_y_log10() +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
+```
+
+
+###Remove org from MLID
+```{r}
+trib_flow_long$MonitoringLocationIdentifier <- substr(trib_flow_long$MonitoringLocationIdentifier,
+                  str_locate(trib_flow_long$MonitoringLocationIdentifier, "-")[,1]+1,
+                  nchar(trib_flow_long$MonitoringLocationIdentifier))
+names(trib_flow_long)[1] <- "MLID"
+```
+
+
+### Find non-sampled dates
+
+A sample type of "11" indicates a site was not sampled. A sample type of "10" indicates there was no flow. The latter should appear in the flow data as a zero; this was verified by inspecting the two datasets.
+
+Locations and dates when sites were not sampled: 
+
+```{r, echo = FALSE}
+activitylog$Activity.Start.Date <- as.Date(activitylog$Activity.Start.Date, 
+                                           "%m-%d-%Y")
+activitylog_unsampled <- activitylog %>%
+  filter(Activity.Start.Date > "2014-12-31") %>%
+  separate(Activity.ID, into = c("SamplingRun", "MLID", "Date", "SampleType", "type"), "-") %>%
+  filter(SampleType == "11") %>%
+  droplevels()
+
+unique(activitylog_unsampled$Monitoring.Location.Name)
+unique(activitylog_unsampled$Activity.Start.Date)
+
+
+activitylog_noflow <- activitylog %>%
+  filter(Activity.Start.Date > "2014-12-31") %>%
+  separate(Activity.ID, into = c("SamplingRun", "MLID", "Date", "SampleType", "type"), "-") %>%
+  filter(SampleType == "10")
+
+  
+```
+
+
+# Join Trib Grab Flow with matching PT observation
+```{r}
+PT_flow_match <- trib_flow_long %>% inner_join(PTData2, by=c("MLID","DateRound"))
+```
+
+#Rating Curve Development
+#source: https://thewetlandblog.wordpress.com/2013/06/17/fitting-rating-curves-with-r/
+##Filter MLID
+
+```{r}
+#PT_4792 <- 
+PT_5578 <- PT_flow_match %>%  filter(MLID %in% c("4995578"))
+PT_6540 <- PT_flow_match %>%  filter(MLID %in% c("4996540"))
+```
+
+
+```{r}
+#This code (borrowed from The Wetland Lab) does not work. INstead used nlsLM function below.
+
+#power.nls<-
+nls(Flow.cfs~C*(PPSI+a)^n, data=PT_6540, start=list(C=1, a=0, n=1))
+summary(Power.nls)
+```
+
+
+```{r}
+nls <- nlsLM(data = PT_6540, formula = Flow.cfs~C*(PPSI+a)^n, start=list(a=1, n=0, C=2))
+nls
+coef(nls)
+C <- coef(nls)["C"]
+a <- coef(nls)["a"]
+n <- coef(nls)["n"]
+
+```
+```{r}
+with(PT_6540, plot(PPSI, Flow.cfs))
+curve(C*(x+a)^n, add=TRUE)
+```
+
+```{r}
+ggplot(data = PT_6540, mapping = aes(x = PPSI, y = Flow.cfs)) +
+    geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1) ) +  geom_smooth(method= 'loess', formula = y~C*(x+a)^n)   
+    #facet_wrap(facets = vars(MLID))
+# + scale_y_continuous(trans='log10')
+```
+
+
+) 
+```
+
+
