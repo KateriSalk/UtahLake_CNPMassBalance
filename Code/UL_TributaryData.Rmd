@@ -1,7 +1,7 @@
 ---
 title: "UtahLake_TributaryData"
 author: "Kateri Salk"
-date: "1/5/2021"
+date: "2/5/2021"
 output:
   html_document: default
   pdf_document: default
@@ -1821,7 +1821,7 @@ Powell Slough has both North and South outfalls. Need to add together load from 
 
 
 ```{r, include = FALSE}
-loading_PowellSloughMajor <- trib_fac_sites_intersect_downstream %>%
+loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Powell Slough Major") %>%
   group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
@@ -1852,6 +1852,56 @@ loading_PowellSloughMajor <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+# calculate load from N and S outfalls with WFWQC data from N outfall (DWQ site only at S outfall)
+loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4995210 + UTAHDWQ_WQX-4995230", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate load from N and S outfalls with DWQ data 
+loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "UTAHDWQ_WQX-4995210")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4995210 + UTAHDWQ_WQX-4995230", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
 ```
 #### Provo River
 
@@ -2102,10 +2152,10 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 Calculate mean monthly loads
 
-4996536 represents the sum total of loading from the watershed. 4996540 and 4996536 should be added together to represent total flow.
+4996536 represents the sum total of loading from the watershed. 4996540 and 4996566 should be added together to represent total flow.
 
 ```{r, include = FALSE}
-loading_MillRace <- trib_fac_sites_intersect_downstream %>%
+loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Mill Race") %>%
   group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
@@ -2136,6 +2186,57 @@ loading_MillRace <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+# calculate mean of 6536 and 6540
+loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
+  rbind(., loading_HobbleCreek_WFWQCloads_initial) %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996536", "WFWQC_UT-4996540")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996536 + WFWQC_UT-4996540", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate sum of 6540 and 6566
+loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996540 + UTAHDWQ_WQX-4996566", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_MillRace<- rbind(loading_MillRace_UTAHDWQloads, loading_MillRace_WFWQCloads)
 ```
 
 
@@ -2252,7 +2353,7 @@ Calculate mean monthly loads
 4996096 and 4996100 are equivalent sites. 4996275 is a separate flow representing Springville and represents its own load.
 
 ```{r, include = FALSE}
-loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
+loading_HobbleCreek_initial <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Hobble Creek") %>%
   group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
@@ -2283,6 +2384,84 @@ loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+
+# calculate load from 6100/6096 and 6275 with WFWQC data 
+# first, take average of 6100 and 6096 (equivalent sites)
+# second, sum 6100/6096 and 6275
+loading_HobbleCreek_WFWQCloads_initial <- loading_HobbleCreek_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096", "WFWQC_UT-4996100")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096 + WFWQC_UT-4996100", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+
+loading_HobbleCreek_WFWQCloads <- loading_HobbleCreek_initial %>%
+  rbind(., loading_HobbleCreek_WFWQCloads_initial) %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096 + WFWQC_UT-4996100", "WFWQC_UT-4996275")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096/4996100 + WFWQC_UT-4996275", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate load from 6100 and 6275 with DWQ data 
+loading_HobbleCreek_UTAHDWQloads <- loading_HobbleCreek_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996100", "UTAHDWQ_WQX-4996275")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996100 + UTAHDWQ_WQX-4996275", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_HobbleCreek <- rbind(loading_HobbleCreek_UTAHDWQloads, loading_HobbleCreek_WFWQCloads)
 ```
 
 #### Dry Creek - Spanish Fork
@@ -3000,7 +3179,8 @@ loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
 ```
 
 
-### Monthly load across watersheds
+### Monthly and annual load across watersheds
+
 
 ```{r}
 loading_AllWatersheds <- rbind(
@@ -3011,6 +3191,37 @@ loading_AllWatersheds <- rbind(
   loading_SpanishFork, loading_4000SouthDrain, loading_BenjaminSlough, 
   loading_CurrantCreek)
 
+# calculate difference between UTAHDWQ and WFWQC load estimates
+loading_AllWatersheds_differences <- loading_AllWatersheds %>%
+  filter(WS_Name %in% c("Lehi Spring Creek", "American Fork River", "Timp SSD",
+                        "Lindon Drain", "Powell Slough Major", "Provo River", 
+                        "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork", 
+                        "Spanish Fork River", "4000 South Drain Spanish Fork", 
+                        "Benjamin Slough")) %>%
+  select(-(load.TN.kgd:load.DOC.kgd)) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(load.TN.difference = load.TN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+            load.TDN.difference = load.TDN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.TDN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+            load.TP.difference = load.TP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.TP.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+            load.TDP.difference = load.TDP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+            load.TOC.difference = load.TOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.TOC.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+            load.DOC.difference = load.DOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+              load.DOC.tonmo[OrganizationIdentifier == "WFWQC_UT"])
+
+loading_AllWatersheds_annual <- loading_AllWatersheds %>%
+  group_by(WS_Name, OrganizationIdentifier) %>%
+  summarise(Flow.cfs = sum(Flow.cfs), 
+            load.TN.tonmo = sum(load.TN.tonmo), 
+            load.TDN.tonmo = sum(load.TDN.tonmo), 
+            load.TP.tonmo = sum(load.TP.tonmo), 
+            load.TDP.tonmo = sum(load.TDP.tonmo), 
+            load.TOC.tonmo = sum(load.TOC.tonmo), 
+            load.DOC.tonmo = sum(load.DOC.tonmo))
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -3067,6 +3278,71 @@ ggplot(loading_AllWatersheds, aes(x = Month, y = load.DOC.tonmo, color = Organiz
   labs(y = "DOC load (ton/mo)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+
+```
+
+
+```{r}
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TN.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDN.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TDN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TP.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDP.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TDP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TOC.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.DOC.difference)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "DOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+
+```
+
+
+```{r}
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.TN.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 ```
 
