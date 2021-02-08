@@ -315,56 +315,67 @@ colnames(USGS_flow_processed) <- c("WS_Name", "ActivityStartDate", "Flow.USGS.cf
 ### Groundwater (spring and well) data
 REVISIT
 ```{r, include = FALSE}
-# gw_wq_flow <- gw %>%
-#   # Set nondetects (qualifier code U) as 1/2 MDL. 
-#   # Qualifier code J is above detection but below reporting. Values retained as-is.
-#   mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
-#                                         TRUE ~ ResultMeasureValue)) %>%
-#   filter(CharacteristicName %in% 
-#            c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
-#              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
-#              "Phosphorus", "Ammonia and ammonium", 
-#              "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
-#              "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
-#              "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
-#              "Total Kjeldahl nitrogen", 
-#              "Flow rate, instantaneous", "Flow", "Stream flow, instantaneous")) %>%
-#   droplevels() %>%
-#   filter(ResultMeasure.MeasureUnitCode %in% 
-#            c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
-#              "mg/l", "mg/l as N", "mg/l as P")) #%>% # chemistry units, by element not by compound
-#   select(MonitoringLocationIdentifier:RelativeDepth, CharacteristicName:ActivityStartDate,
-#          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
-#          LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
-#          ResultStatusIdentifier) %>%
-#   mutate(Month = month(ActivityStartDate),
-#          Year = year(ActivityStartDate)) %>%
-#   filter(Year >= 2010) %>%
-#   droplevels() %>%
-#   filter(!is.na(ResultMeasureValue)) #%>%
-#   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
-#   unite("Variable", CharacteristicName:ResultSampleFractionText) 
+gw$ActivityStartDate <- as.Date(gw$ActivityStartDate)
+
+gw_wq_flow <- gw %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL.
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2,
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in%
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen",
+             "Phosphorus", "Ammonia and ammonium",
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate",
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen",
+             "Flow rate, instantaneous", "Flow", "Stream flow, instantaneous")) %>%
+  droplevels() %>%
+  filter(ResultMeasure.MeasureUnitCode %in%
+           c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
+             "mg/l", "mg/l as N", "mg/l as P")) %>% # chemistry units, by element not by compound
+  select(MonitoringLocationIdentifier:RelativeDepth, CharacteristicName:ActivityStartDate,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
+         LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
+         ResultStatusIdentifier) %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+
+colnames(gw_wq_flow)[12:25] <- c("NO23.d", "PO4", "CO3.d", "Flow.galmin", 
+                                 "NO3.d", "DIN+DON", "DOC", "TDN", "NH3.d", 
+                                 "NO23.t", "TP", "TDP", "NH3.t", "CO3.t")
+
+gw_sites <- gw_wq_flow %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure) %>%
+  distinct()
+  
+gw_sites_sf <- st_as_sf(gw_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+
+gw_wq_intersect <- gw_sites_sf %>%
+  st_intersection(wshds) %>%
+  left_join(., gw_wq_flow) 
+
+
+# TP and PO4 measurements are always distinct (agencies may report one or the other). Combine into one column.
 # 
-# trib_flow <- trib %>%
-#   filter(CharacteristicName == "Flow") %>%
-#            #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
-#   droplevels() %>%
-#   #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
-#   select(MonitoringLocationIdentifier:ResultSampleFractionText,
-#          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
-#          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
-#          ResultStatusIdentifier) %>%
-#   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
-#          -MonitoringLocationTypeName, -CharacteristicName) %>%
-#   group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier, 
-#            OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
-#            LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
-#   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
-#   mutate(Month = month(ActivityStartDate), 
-#          Year = year(ActivityStartDate)) %>%
-#   filter(Year >= 2015) %>%
-#   droplevels() %>%
-#   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
+
+#gw_wq_intersect <- gw_wq_intersect %>%
+  
 
 ```
 
@@ -587,7 +598,24 @@ unique(trib_fac_sites_intersect_downstream$WS_Name)
 trib_fac_sites_intersect_downstream$Flow.cfs[is.na(trib_fac_sites_intersect_downstream$Flow.cfs)] <-
   trib_fac_sites_intersect_downstream$Flow.USGS.cfs[is.na(trib_fac_sites_intersect_downstream$Flow.cfs)]
 
+# remove zero flow samples from watersheds that do not go dry
+
+
+# then, calculate daily loads
+
 trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
+  mutate(Flow.cfs = case_when(WS_Name == "Lehi Spring Creek" & Flow.cfs == 0 ~ NA_real_, 
+                              WS_Name == "Timp SSD" & OrganizationIdentifier == "WFWQC_UT" & 
+                                Flow.cfs == 0 ~ NA_real_, 
+                              WS_Name == "Powell Slough Major" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Provo River" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Mill Race" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Hobble Creek" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Dry Creek - Spanish Fork" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Spanish Fork River" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "4000 South Drain Spanish Fork" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Benjamin Slough" & Flow.cfs == 0 ~ NA_real_, 
+                              TRUE ~ Flow.cfs)) %>%
   mutate(load.TN.kgd = TN * Flow.cfs * 28.3168 * 86400 / 1000000, 
          load.TDN.kgd = TDN * Flow.cfs * 28.3168 * 86400 / 1000000,
          load.TP.kgd = TP * Flow.cfs * 28.3168 * 86400 / 1000000,
@@ -631,6 +659,13 @@ trib_fac_sites_intersect_downstream$WS_Name <-
                     "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
                     "Spanish Fork River", "4000 South Drain Spanish Fork",
                     "Benjamin Slough", "Currant Creek"))          
+
+# Create two datasets: one starting in 2010, one starting in 2015. The later period of record is the main dataset. 
+
+trib_fac_sites_intersect_downstream_early <- trib_fac_sites_intersect_downstream
+
+trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
+  filter(Year >= 2015)
 ```
 
 ## Visualization
@@ -642,6 +677,13 @@ The top graph depicts all tributary and facility monitoring sites. The second gr
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
   geom_sf(data = trib_fac_sites_sf, aes(color = SiteType),
+          alpha = 0.5) +
+  scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
+  scale_fill_manual(values = c("darkgray", "lightgray"))
+
+ggplot(wshds) +
+  geom_sf(aes(fill = Monitored_)) +
+  geom_sf(data = gw_sites_sf,
           alpha = 0.5) +
   scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
   scale_fill_manual(values = c("darkgray", "lightgray"))
@@ -682,14 +724,16 @@ ggplot(wshds) +
   scale_fill_manual(values = c("darkgray", "lightgray")) +
   theme(legend.position = "top")
 
+
 ```
 
 
 ### Water Quality Time Series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TN, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = TN, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -700,8 +744,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TN, s
   guides(fill = guide_legend(ncol = 2))
   
 # TDN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TDN, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = TDN, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -712,8 +757,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TDN, 
   guides(fill = guide_legend(ncol = 2))
 
 # TP
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TP, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = TP, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -724,8 +770,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TP, s
   guides(fill = guide_legend(ncol = 2))
 
 # TDP
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TDP, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = TDP, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -736,8 +783,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TDP, 
   guides(fill = guide_legend(ncol = 2))
 
 # TOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TOC, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = TOC, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -748,8 +796,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = TOC, 
   guides(fill = guide_legend(ncol = 2))
 
 # DOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = DOC, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = DOC, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -763,7 +812,7 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = DOC, 
 
 ### Flow time series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(trib_fac_sites_intersect_downstream, 
+ggplot(trib_fac_sites_intersect_downstream_early, 
        aes(x = ActivityStartDate, y = Flow.cfs, shape = SiteType, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
@@ -780,8 +829,9 @@ ggplot(trib_fac_sites_intersect_downstream,
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.TN.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.TN.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -792,8 +842,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.
   guides(fill = guide_legend(ncol = 2))
   
 # TDN
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.TDN.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.TDN.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -804,8 +855,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.
   guides(fill = guide_legend(ncol = 2))
 
 # TP
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.TP.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.TP.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -816,8 +868,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.
   guides(fill = guide_legend(ncol = 2))
 
 # TDP
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.TDP.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.TDP.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -828,8 +881,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.
   guides(fill = guide_legend(ncol = 2))
 
 # TOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.TOC.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.TOC.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -840,8 +894,9 @@ ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.
   guides(fill = guide_legend(ncol = 2))
 
 # DOC
-ggplot(trib_fac_sites_intersect_downstream, aes(x = ActivityStartDate, y = load.DOC.kgd, shape = SiteType,
-                                                color = OrganizationIdentifier)) +
+ggplot(trib_fac_sites_intersect_downstream_early, 
+       aes(x = ActivityStartDate, y = load.DOC.kgd, shape = SiteType,
+           color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -1819,7 +1874,6 @@ Calculate mean monthly loads
 
 Powell Slough has both North and South outfalls. Need to add together load from North and South to compute total load. WFWQC samples only at the north outfall. 
 
-
 ```{r, include = FALSE}
 loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
@@ -2188,7 +2242,6 @@ loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
 
 # calculate mean of 6536 and 6540
 loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
-  rbind(., loading_HobbleCreek_WFWQCloads_initial) %>%
   filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996536", "WFWQC_UT-4996540")) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
@@ -3349,42 +3402,45 @@ ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.DOC.difference
 
 
 ```{r}
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(loading_AllWatersheds, 
        aes(x = WS_Name, y = load.TN.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
+  facet_wrap(vars(OrganizationIdentifier)) +
   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
        aes(x = WS_Name, y = load.TDN.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
   labs(x = "", y = "TDN loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(loading_AllWatersheds, 
        aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
+  facet_wrap(vars(OrganizationIdentifier)) +
   labs(x = "", y = "TP loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(loading_AllWatersheds, 
        aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
+  facet_wrap(vars(OrganizationIdentifier)) +
   labs(x = "", y = "TDP loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
        aes(x = WS_Name, y = load.TOC.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
   labs(x = "", y = "TOC loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
        aes(x = WS_Name, y = load.DOC.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
