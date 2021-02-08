@@ -3216,12 +3216,25 @@ loading_AllWatersheds_differences <- loading_AllWatersheds %>%
 loading_AllWatersheds_annual <- loading_AllWatersheds %>%
   group_by(WS_Name, OrganizationIdentifier) %>%
   summarise(Flow.cfs = sum(Flow.cfs), 
-            load.TN.tonmo = sum(load.TN.tonmo), 
-            load.TDN.tonmo = sum(load.TDN.tonmo), 
-            load.TP.tonmo = sum(load.TP.tonmo), 
-            load.TDP.tonmo = sum(load.TDP.tonmo), 
-            load.TOC.tonmo = sum(load.TOC.tonmo), 
-            load.DOC.tonmo = sum(load.DOC.tonmo))
+            load.TN.tonyr = sum(load.TN.tonmo, na.rm = TRUE), 
+            load.TDN.tonyr = sum(load.TDN.tonmo, na.rm = TRUE), 
+            load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
+            load.TOC.tonyr = sum(load.TOC.tonmo, na.rm = TRUE), 
+            load.DOC.tonyr = sum(load.DOC.tonmo, na.rm = TRUE))
+
+loading_Total_annual <- loading_AllWatersheds_annual %>%
+  filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
+  ungroup() %>%
+  summarise(Flow.cfs = sum(Flow.cfs), 
+            load.TN.tonyr = sum(load.TN.tonyr, na.rm = TRUE), 
+            load.TDN.tonyr = sum(load.TDN.tonyr, na.rm = TRUE), 
+            load.TP.tonyr = sum(load.TP.tonyr, na.rm = TRUE), 
+            load.TDP.tonyr = sum(load.TDP.tonyr, na.rm = TRUE), 
+            load.TOC.tonyr = sum(load.TOC.tonyr, na.rm = TRUE), 
+            load.DOC.tonyr = sum(load.DOC.tonyr, na.rm = TRUE))
+  
+  
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -3341,6 +3354,41 @@ ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.TDN.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TDN loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TP loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TDP loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.TOC.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TOC loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"), 
+       aes(x = WS_Name, y = load.DOC.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "DOC loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
 
