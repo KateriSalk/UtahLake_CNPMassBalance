@@ -11,18 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(wqTools)
+```
 
 
+```{r}
 DmrFac <- readECHO_fac(p_pid=c("UT0020427","UT0025950","Ut0020915","Ut0021717","UT0020249","UT0026000","UT0025321","UT0020109","UT0020834","UT0023639","ut0000361","ut0025283","UT0024422","UT0000612","UT0025097","UT0025623","UT0025518"))
-
-
-
-
 ```
 
 ```{r}
-objects(Dmr_fac)
+objects(Dmr_Fac)
 ```
+
 ```{r}
 DmrFac$geometry
 ```
@@ -52,7 +51,7 @@ write.csv(fac_df, file="DmrFaclityInfo.csv", row.names=F)
 
 
 ```{r}
-DMR<-readECHO_ec(print = FALSE,p_id=c("UT0020427","UT0025950","Ut0020915","Ut0021717","UT0020249","UT0026000","UT0025321","UT0020109","UT0020834","UT0023639","ut0000361","ut0025283","UT0024422","UT0000612","UT0025097","UT0025623","UT0025518"),start_date="01/01/2000",end_date="04/30/2019")
+DMR<-readECHO_ec(print = FALSE,p_id=c("UT0020427","UT0025950","Ut0020915","Ut0021717","UT0020249","UT0026000","UT0025321","UT0020109","UT0020834","UT0023639","ut0000361","ut0025283","UT0024422","UT0000612","UT0025097","UT0025623","UT0025518"),start_date="01/01/2000",end_date="02/10/2021")
 
 write.csv(DMR,"dmr_export.csv")
 ```
