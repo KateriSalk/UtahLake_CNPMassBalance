@@ -48,6 +48,12 @@ gw <- read.csv("./Data/Processed/ul_wqp_gwdata_processed_2021-01-07.csv")
 # precipitation and evaporation data
 p_et <- read.xlsx("./Data/Processed/ULEFDCFlowBoundaries_WY2006-2018.xlsx", 
                   sheet = "Precip-ET", startRow = 2)
+# DMR data
+dmr <- read.xlsx("./Data/Processed/DMR_Analysis_v3_updated 12-7-20.xlsx", 
+                 sheet = "DMR.Formatted")
+dmr_LUT <- read.xlsx("./Data/Processed/DMR_Analysis_v3_updated 12-7-20.xlsx", 
+                     sheet = "LUT_SiteList", startRow = 2, cols = 1:5)
+
 ```
 
 ## Data processing
@@ -396,6 +402,81 @@ p_et_monthly <- p_et %>%
   mutate(Year = year(Date), 
          Month = month(Date))
 
+```
+
+
+
+### DMR data
+
+```{r}
+dmr_load <- dmr %>%
+  filter(perm_feature_type_desc == "External Outfall") %>%
+  filter(Nuts.ParmName %in% 
+           c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]", 
+             "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]", 
+             "Phosphorus, total [as P]")) %>%
+  select(npdes_id, Year, Month, 
+         value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+         NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName, Load) %>%
+  na.omit(Load) %>%
+  group_by(npdes_id, Year, Month, 
+           value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+           NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName) %>%
+  summarise(Load = mean(Load)) %>%
+  ungroup() %>%
+  separate(col = NPDESID.Date, into = c(NA, "Date")) %>%
+  pivot_wider(names_from = "Nuts.ParmName", values_from = "Load")
+
+dmr_load$Date <- as.Date(as.numeric(dmr_load$Date), origin = "1899-12-30")
+colnames(dmr_load) <- c("NPDES.ID", "Year", "Month", "value.type", "value", 
+                        "units", "stat", "NPDES.Name", "Type", "Date", 
+                        "TP", "NH3", "PO4", "TKN", "NO3")
+
+# # 30 day avg most available for TP
+# ggplot(dmr_load, aes(x = NPDES.Name, y = TP, fill = stat)) +
+#   geom_boxplot()
+# 
+# # 30 day avg most available for PO4
+# ggplot(dmr_load, aes(x = NPDES.Name, y = PO4, fill = stat)) +
+#   geom_boxplot()
+# 
+# # 30 day avg most available for TKN
+# ggplot(dmr_load, aes(x = NPDES.Name, y = TKN, fill = stat)) +
+#   geom_boxplot()
+# 
+# # data very limited for NO3. may want to use TKN instead.
+# ggplot(dmr_load, aes(x = NPDES.Name, y = NO3, fill = stat)) +
+#   geom_boxplot()
+# 
+# # several stats  available for NH3. may want to use TKN instead.
+# ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
+#   geom_boxplot()
+
+dmr_load <- dmr_load %>%
+  filter(stat == "30DA AVG") %>%
+  # load is in ton/yr. convert to metric tons/mo
+  mutate(TP.tonmo = TP/(12*1.10231), 
+         PO4.tonmo = PO4/(12*1.10231),
+         TKN.tonmo = TKN/(12*1.10231),
+         NH3.tonmo = NH3/(12*1.10231),
+         NO3.tonmo = NO3/(12*1.10231)) %>%
+  select(-TP, -PO4, -TKN, -NH3, -NO3)
+
+# REVISIT move this down
+ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
 ```
 
 
