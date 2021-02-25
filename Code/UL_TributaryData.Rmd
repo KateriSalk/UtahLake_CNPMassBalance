@@ -317,169 +317,6 @@ USGS_flow_processed <- USGS_flow %>%
 colnames(USGS_flow_processed) <- c("WS_Name", "ActivityStartDate", "Flow.USGS.cfs")
 ```
 
-
-### Groundwater (spring and well) data
-REVISIT
-```{r, include = FALSE}
-gw$ActivityStartDate <- as.Date(gw$ActivityStartDate)
-
-gw_wq_flow <- gw %>%
-  # Set nondetects (qualifier code U) as 1/2 MDL.
-  # Qualifier code J is above detection but below reporting. Values retained as-is.
-  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2,
-                                        TRUE ~ ResultMeasureValue)) %>%
-  filter(CharacteristicName %in%
-           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
-             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen",
-             "Phosphorus", "Ammonia and ammonium",
-             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate",
-             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
-             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
-             "Total Kjeldahl nitrogen",
-             "Flow rate, instantaneous", "Flow", "Stream flow, instantaneous")) %>%
-  droplevels() %>%
-  filter(ResultMeasure.MeasureUnitCode %in%
-           c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
-             "mg/l", "mg/l as N", "mg/l as P")) %>% # chemistry units, by element not by compound
-  select(MonitoringLocationIdentifier:RelativeDepth, CharacteristicName:ActivityStartDate,
-         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
-         LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
-         ResultStatusIdentifier) %>%
-  mutate(Month = month(ActivityStartDate),
-         Year = year(ActivityStartDate)) %>%
-  filter(Year >= 2010) %>%
-  droplevels() %>%
-  filter(!is.na(ResultMeasureValue)) %>%
-  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
-  unite("Variable", CharacteristicName:ResultSampleFractionText) %>%
-  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
-           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
-           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
-           ResultStatusIdentifier) %>%
-  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
-  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
-
-colnames(gw_wq_flow)[12:25] <- c("NO23.d", "PO4", "CO3.d", "Flow.galmin", 
-                                 "NO3.d", "DIN+DON", "DOC", "TDN", "NH3.d", 
-                                 "NO23.t", "TP", "TDP", "NH3.t", "CO3.t")
-
-gw_sites <- gw_wq_flow %>%
-  ungroup() %>%
-  select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure) %>%
-  distinct()
-  
-gw_sites_sf <- st_as_sf(gw_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
-                              crs = 4326, dim = "XY") #CRS = WGS84
-
-
-gw_wq_intersect <- gw_sites_sf %>%
-  st_intersection(wshds) %>%
-  left_join(., gw_wq_flow) 
-
-
-# TP and PO4 measurements are always distinct (agencies may report one or the other). Combine into one column.
-# 
-
-#gw_wq_intersect <- gw_wq_intersect %>%
-  
-
-```
-
-### Precipitation and Evapotranspiration data
-
-TO DO: Use area vs. elevation relationship to establish average monthly lake area, with variability quantified.
-
-REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
-```{r, include= FALSE}
-colnames(p_et) <- c("Date", "precip.mm", "et.mm")
-
-p_et$Date <- as.Date(p_et$Date, origin = "1899-12-30")
-
-p_et_monthly <- p_et %>%
-  group_by(Date = floor_date(Date, unit = "1 month")) %>%
-  summarise(precip.mm = sum(precip.mm), 
-            et.mm = sum(et.mm)) %>%
-  mutate(Year = year(Date), 
-         Month = month(Date))
-
-```
-
-
-
-### DMR data
-
-```{r}
-dmr_load <- dmr %>%
-  filter(perm_feature_type_desc == "External Outfall") %>%
-  filter(Nuts.ParmName %in% 
-           c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]", 
-             "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]", 
-             "Phosphorus, total [as P]")) %>%
-  select(npdes_id, Year, Month, 
-         value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
-         NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName, Load) %>%
-  na.omit(Load) %>%
-  group_by(npdes_id, Year, Month, 
-           value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
-           NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName) %>%
-  summarise(Load = mean(Load)) %>%
-  ungroup() %>%
-  separate(col = NPDESID.Date, into = c(NA, "Date")) %>%
-  pivot_wider(names_from = "Nuts.ParmName", values_from = "Load")
-
-dmr_load$Date <- as.Date(as.numeric(dmr_load$Date), origin = "1899-12-30")
-colnames(dmr_load) <- c("NPDES.ID", "Year", "Month", "value.type", "value", 
-                        "units", "stat", "NPDES.Name", "Type", "Date", 
-                        "TP", "NH3", "PO4", "TKN", "NO3")
-
-# # 30 day avg most available for TP
-# ggplot(dmr_load, aes(x = NPDES.Name, y = TP, fill = stat)) +
-#   geom_boxplot()
-# 
-# # 30 day avg most available for PO4
-# ggplot(dmr_load, aes(x = NPDES.Name, y = PO4, fill = stat)) +
-#   geom_boxplot()
-# 
-# # 30 day avg most available for TKN
-# ggplot(dmr_load, aes(x = NPDES.Name, y = TKN, fill = stat)) +
-#   geom_boxplot()
-# 
-# # data very limited for NO3. may want to use TKN instead.
-# ggplot(dmr_load, aes(x = NPDES.Name, y = NO3, fill = stat)) +
-#   geom_boxplot()
-# 
-# # several stats  available for NH3. may want to use TKN instead.
-# ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
-#   geom_boxplot()
-
-dmr_load <- dmr_load %>%
-  filter(stat == "30DA AVG") %>%
-  # load is in ton/yr. convert to metric tons/mo
-  mutate(TP.tonmo = TP/(12*1.10231), 
-         PO4.tonmo = PO4/(12*1.10231),
-         TKN.tonmo = TKN/(12*1.10231),
-         NH3.tonmo = NH3/(12*1.10231),
-         NO3.tonmo = NO3/(12*1.10231)) %>%
-  select(-TP, -PO4, -TKN, -NH3, -NO3)
-
-# REVISIT move this down
-ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-```
-
-
 ### Create spatial datasets for tributary and facility datasets
 
 1. Intersect stations with watersheds
@@ -749,6 +586,191 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
   filter(Year >= 2015)
 ```
 
+
+### Groundwater (spring and well) data
+REVISIT
+```{r, include = FALSE}
+gw$ActivityStartDate <- as.Date(gw$ActivityStartDate)
+
+gw_wq_flow <- gw %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL.
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2,
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in%
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen",
+             "Phosphorus", "Ammonia and ammonium",
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate",
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen",
+             "Flow rate, instantaneous", "Flow", "Stream flow, instantaneous")) %>%
+  droplevels() %>%
+  filter(ResultMeasure.MeasureUnitCode %in%
+           c("ft3/s", "ft3/sec", "g/min", "gal/min", "m3/sec", # flow units
+             "mg/l", "mg/l as N", "mg/l as P")) %>% # chemistry units, by element not by compound
+  select(MonitoringLocationIdentifier:RelativeDepth, CharacteristicName:ActivityStartDate,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
+         LongitudeMeasure, SampleDepthUnit, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
+         ResultStatusIdentifier) %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+
+colnames(gw_wq_flow)[12:25] <- c("NO23.d", "PO4", "CO3.d", "Flow.galmin", 
+                                 "NO3.d", "DIN+DON", "DOC", "TDN", "NH3.d", 
+                                 "NO23.t", "TP", "TDP", "NH3.t", "CO3.t")
+
+gw_sites <- gw_wq_flow %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure) %>%
+  distinct()
+  
+gw_sites_sf <- st_as_sf(gw_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+
+gw_wq_intersect <- gw_sites_sf %>%
+  st_intersection(wshds) %>%
+  left_join(., gw_wq_flow) 
+
+
+# TP and PO4 measurements are always distinct (agencies may report one or the other). Combine into one column.
+# 
+
+#gw_wq_intersect <- gw_wq_intersect %>%
+  
+
+```
+
+### Precipitation and Evapotranspiration data
+
+TO DO: Use area vs. elevation relationship to establish average monthly lake area, with variability quantified.
+
+REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
+```{r, include= FALSE}
+colnames(p_et) <- c("Date", "precip.mm", "et.mm")
+
+p_et$Date <- as.Date(p_et$Date, origin = "1899-12-30")
+
+p_et_monthly <- p_et %>%
+  group_by(Date = floor_date(Date, unit = "1 month")) %>%
+  summarise(precip.mm = sum(precip.mm), 
+            et.mm = sum(et.mm)) %>%
+  mutate(Year = year(Date), 
+         Month = month(Date))
+
+```
+
+
+### DMR data
+
+```{r}
+dmr_load <- dmr %>%
+  filter(perm_feature_type_desc == "External Outfall") %>%
+  filter(Nuts.ParmName %in% 
+           c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]", 
+             "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]", 
+             "Phosphorus, total [as P]")) %>%
+  select(npdes_id, Year, Month, 
+         value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+         NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName, Load) %>%
+  na.omit(Load) %>%
+  group_by(npdes_id, Year, Month, 
+           value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+           NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName) %>%
+  summarise(Load = mean(Load)) %>%
+  ungroup() %>%
+  separate(col = NPDESID.Date, into = c(NA, "Date")) %>%
+  pivot_wider(names_from = "Nuts.ParmName", values_from = "Load")
+
+dmr_load$Date <- as.Date(as.numeric(dmr_load$Date), origin = "1899-12-30")
+colnames(dmr_load) <- c("NPDES.ID", "Year", "Month", "value.type", "value", 
+                        "units", "stat", "NPDES.Name", "Type", "Date", 
+                        "TP", "NH3", "PO4", "TKN", "NO3")
+
+# # 30 day avg most available for TP
+# ggplot(dmr_load, aes(x = NPDES.Name, y = TP, fill = stat)) +
+#   geom_boxplot()
+# 
+# # 30 day avg most available for PO4
+# ggplot(dmr_load, aes(x = NPDES.Name, y = PO4, fill = stat)) +
+#   geom_boxplot()
+# 
+# # 30 day avg most available for TKN
+# ggplot(dmr_load, aes(x = NPDES.Name, y = TKN, fill = stat)) +
+#   geom_boxplot()
+# 
+# # data very limited for NO3. may want to use TKN instead.
+# ggplot(dmr_load, aes(x = NPDES.Name, y = NO3, fill = stat)) +
+#   geom_boxplot()
+# 
+# # several stats  available for NH3. may want to use TKN instead.
+# ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
+#   geom_boxplot()
+
+dmr_load <- dmr_load %>%
+  filter(stat == "30DA AVG") %>%
+  # load is in ton/yr. convert to metric tons/mo
+  mutate(TP.tonmo = TP/(12*1.10231), 
+         PO4.tonmo = PO4/(12*1.10231),
+         TKN.tonmo = TKN/(12*1.10231),
+         NH3.tonmo = NH3/(12*1.10231),
+         NO3.tonmo = NO3/(12*1.10231)) %>%
+  select(-TP, -PO4, -TKN, -NH3, -NO3) %>%
+  mutate(MonitoringLocationIdentifier = 
+           case_when(NPDES.Name == "MCWANE DUCTILE-UTAH" ~ "UTAHDWQ_WQX-4996430", 
+                     NPDES.Name == "OREM CITY CORP" ~ "UTAHDWQ_WQX-4995250",
+                     NPDES.Name == "PacifiCorp Energy" ~ "UTAHDWQ_WQX-4995124",
+                     NPDES.Name == "PAYSON POWER PROJECT" ~ "UTAHDWQ_WQX-4995480",
+                     NPDES.Name == "PROVO CITY CORP" ~ "UTAHDWQ_WQX-4996560",
+                     NPDES.Name == "SALEM CITY CORP" ~ "UTAHDWQ_WQX-4995440",
+                     NPDES.Name == "SPANISH FORK CITY CORP" ~ "UTAHDWQ_WQX-4996020",
+                     NPDES.Name == "SPRINGVILLE- CITY OF" ~ "UTAHDWQ_WQX-4996280",
+                     NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "UTAHDWQ_WQX-4995040"))
+
+dmr_sites <- dmr_load %>%
+  select(NPDES.Name, MonitoringLocationIdentifier) %>%
+  distinct() %>%
+  left_join(., trib_fac_sites) %>%
+  filter(!is.na(MonitoringLocationTypeName))
+
+dmr_sites_sf <- st_as_sf(dmr_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+dmr_sites_sf <- st_intersection(dmr_sites_sf, wshds)
+
+# REVISIT move this down
+ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name)) +
+  scale_y_log10()
+
+
+```
+
+
+
 ## Visualization
 ### Maps
 
@@ -769,6 +791,13 @@ ggplot(wshds) +
   scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
   scale_fill_manual(values = c("darkgray", "lightgray"))
 
+ggplot(wshds) +
+  geom_sf(aes(fill = Monitored_)) +
+  geom_sf(data = dmr_sites_sf,
+          alpha = 0.5) +
+  scale_color_viridis_d(option = "magma", end = 0.8, direction = -1) +
+  scale_fill_manual(values = c("darkgray", "lightgray"))
+
 # ggplot(wshds_monitored) +
 #   geom_sf() +
 #   geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
@@ -785,6 +814,7 @@ map.grid <- purrr::map(wshds_monitored$WS_Name,
                geom_sf() +
                geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
                        aes(color = OrganizationIdentifier)) +
+               geom_sf(data = filter(dmr_sites_sf, WS_Name == x), color = "black") +
                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
                scale_x_continuous() +
                theme(legend.position = "none", title = element_text(size = 8),
@@ -1712,6 +1742,22 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 ```
+
+Calculate monthly loading from WWTP
+```{r}
+loading_TimpSSD_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Timp SSD")
+  
+```
+
+
 #### Lindon Drain
 
 There are two sites in Lindon Drain. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
@@ -1851,6 +1897,21 @@ loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 ```
+
+Calculate monthly loading from energy facility
+```{r}
+loading_LindonDrain_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "PacifiCorp Energy") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Lindon Drain")
+  
+```
+
 #### Powell Slough Major
 
 Flow
@@ -2038,6 +2099,21 @@ loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
 #combine loading from different organizations
 loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
 ```
+
+Calculate monthly loading from Orem WWTP
+```{r}
+loading_PowellSloughMajor_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "OREM CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Powell Slough Major")
+  
+```
+
 #### Provo River
 
 There are two site codes in Provo River (one DWQ and one WFWQC), but these are in the same location. Will compare loads to determine if the estimates can be combined.
@@ -2373,7 +2449,19 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
 loading_MillRace<- rbind(loading_MillRace_UTAHDWQloads, loading_MillRace_WFWQCloads)
 ```
 
-
+Calculate monthly loading from Provo WWTP
+```{r}
+loading_MillRace_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "PROVO CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Mill Race")
+  
+```
 #### Hobble Creek
 
 Flow
@@ -2598,6 +2686,19 @@ loading_HobbleCreek_UTAHDWQloads <- loading_HobbleCreek_initial %>%
 loading_HobbleCreek <- rbind(loading_HobbleCreek_UTAHDWQloads, loading_HobbleCreek_WFWQCloads)
 ```
 
+Calculate loading from Springville WWTP
+```{r}
+loading_HobbleCreek_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "SPRINGVILLE- CITY OF") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Hobble Creek")
+```
+
 #### Dry Creek - Spanish Fork
 
 Flow
@@ -2743,6 +2844,19 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+```
+
+Calculate loading from Spanish Fork WWTP
+```{r}
+loading_DryCreekSpanishFork_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "SPANISH FORK CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Dry Creek - Spanish Fork")
 ```
 
 #### Spanish Fork River
@@ -3162,6 +3276,25 @@ loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
 
 ```
 
+Calculate loading from Payson and Salem. Add loads together.
+```{r}
+loading_BenjaminSlough_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name %in% c("SALEM CITY CORP", "PAYSON POWER PROJECT")) %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  group_by(Month) %>%
+  summarise(load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = sum(load.TKN.tonmo, na.rm = TRUE)) %>%
+  mutate(WS_Name = "Benjamin Slough", 
+         NPDES.Name = "SALEM CITY CORP & PAYSON POWER PROJECT") %>%
+  select(NPDES.Name, Month, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
+```
+
 #### Currant Creek
 
 Two sites, UTAHDWQ_WQX-4995310 and UTAHDWQ_WQX-4995312, are located at the same coordinates. These sites are pooled in load calculations, as they represent the same location.
@@ -3368,7 +3501,21 @@ loading_Total_annual <- loading_AllWatersheds_annual %>%
             load.TOC.tonyr = sum(load.TOC.tonyr, na.rm = TRUE), 
             load.DOC.tonyr = sum(load.DOC.tonyr, na.rm = TRUE))
   
-  
+loading_AllWatersheds_dmr <- 
+  rbind(loading_BenjaminSlough_dmr, loading_DryCreekSpanishFork_dmr, 
+        loading_HobbleCreek_dmr, loading_LindonDrain_dmr, loading_MillRace_dmr,
+        loading_PowellSloughMajor_dmr, loading_TimpSSD_dmr)
+
+loading_AllWatersheds_dmr$WS_Name <- 
+  factor(loading_AllWatersheds_dmr$WS_Name, 
+         levels = c("Timp SSD", "Lindon Drain", "Powell Slough Major",  
+                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
+                    "Benjamin Slough"))
+loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%  
+  group_by(NPDES.Name, WS_Name) %>%
+  summarise(load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
+            load.TKN.tonyr = sum(load.TKN.tonmo, na.rm = TRUE))  
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -3491,6 +3638,13 @@ ggplot(loading_AllWatersheds,
   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplot(loading_AllWatersheds_dmr, 
+       aes(x = WS_Name, y = load.TKN.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
 ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
        aes(x = WS_Name, y = load.TDN.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
@@ -3506,12 +3660,26 @@ ggplot(loading_AllWatersheds,
   labs(x = "", y = "TP loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplot(loading_AllWatersheds_dmr, 
+       aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
 ggplot(loading_AllWatersheds, 
        aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
   geom_bar(stat = "identity") +
     scale_fill_viridis_d(option = "magma") +
   facet_wrap(vars(OrganizationIdentifier)) +
   labs(x = "", y = "TDP loading (tons/year)", fill = "Month") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(loading_AllWatersheds_dmr, 
+       aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
+  geom_bar(stat = "identity") +
+    scale_fill_viridis_d(option = "magma") +
+  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
