@@ -1135,42 +1135,6 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_LakeMountainIsraelCanyon <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Lake Mountain - Israel Canyon") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 #### Dry Creek - Saratoga
 
 There is only one inflow monitored in Dry Creek - Saratoga. Estimates are based on this site.
@@ -1280,41 +1244,7 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
 
-```{r, include = FALSE}
-loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Dry Creek - Saratoga") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 #### Lehi Spring Creek
 
 There are two sites in Lehi Spring Creek. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
@@ -1423,41 +1353,7 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-Calculate mean monthly loading
 
-```{r, include = FALSE}
-loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Lehi Spring Creek") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 
 #### American Fork River
 
@@ -1563,41 +1459,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "American Fork River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 #### Timp SSD
 
 Flow
@@ -1704,58 +1565,7 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loading
-
-REVISIT East side tributary (UTAHDWQ_WQX-4995041) has measurable concentrations but no flow (one near-zero flow, one flow duplicated from 4995038). Scott's recommendation was to average concentrations at 4995041 and 4995038 and apply them to the flow at 4995038, but this assumes that the volume-weighted average is the same as the arithmetic average (i.e., that the volumes at both sites are the same). I'm not sure if this assumption is valid. For now, I will ignore the east side tributary and calculate loads based on the sites that have flow data. 
-```{r, include = FALSE}
-loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Timp SSD") %>%
-  filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4995041") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
-
-Calculate monthly loading from WWTP
-```{r}
-loading_TimpSSD_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Timp SSD")
-  
-```
+REVISIT East side tributary (UTAHDWQ_WQX-4995041) has measurable concentrations but no flow (one near-zero flow, one flow duplicated from 4995038). Scott's recommendation was to average concentrations at 4995041 and 4995038 and apply them to the flow at 4995038, but this assumes that the volume-weighted average is the same as the arithmetic average (i.e., that the volumes at both sites are the same). I'm not sure if this assumption is valid. For now, I will ignore the east side tributary and calculate loads based on the sites that have flow data.
 
 
 #### Lindon Drain
@@ -1862,56 +1672,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Lindon Drain") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
-
-Calculate monthly loading from energy facility
-```{r}
-loading_LindonDrain_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "PacifiCorp Energy") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Lindon Drain")
-  
-```
-
 #### Powell Slough Major
 
 Flow
@@ -2012,107 +1772,7 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-Calculate mean monthly loads
-
 Powell Slough has both North and South outfalls. Need to add together load from North and South to compute total load. WFWQC samples only at the north outfall. 
-
-```{r, include = FALSE}
-loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Powell Slough Major") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-# calculate load from N and S outfalls with WFWQC data from N outfall (DWQ site only at S outfall)
-loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4995210 + UTAHDWQ_WQX-4995230", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-# calculate load from N and S outfalls with DWQ data 
-loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "UTAHDWQ_WQX-4995210")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4995210 + UTAHDWQ_WQX-4995230", 
-         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-#combine loading from different organizations
-loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
-```
-
-Calculate monthly loading from Orem WWTP
-```{r}
-loading_PowellSloughMajor_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "OREM CITY CORP") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Powell Slough Major")
-  
-```
 
 #### Provo River
 
@@ -2216,42 +1876,6 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Provo River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 
 #### Mill Race
 
@@ -2360,108 +1984,9 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loads
-
 4996536 represents the sum total of loading from the watershed. 4996540 and 4996566 should be added together to represent total flow.
 
-```{r, include = FALSE}
-loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Mill Race") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
 
-# calculate mean of 6536 and 6540
-loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996536", "WFWQC_UT-4996540")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996536 + WFWQC_UT-4996540", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-# calculate sum of 6540 and 6566
-loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996540 + UTAHDWQ_WQX-4996566", 
-         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-#combine loading from different organizations
-loading_MillRace<- rbind(loading_MillRace_UTAHDWQloads, loading_MillRace_WFWQCloads)
-```
-
-Calculate monthly loading from Provo WWTP
-```{r}
-loading_MillRace_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "PROVO CITY CORP") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Mill Race")
-  
-```
 #### Hobble Creek
 
 Flow
@@ -2569,135 +2094,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loads
-
 4996096 and 4996100 are equivalent sites. 4996275 is a separate flow representing Springville and represents its own load.
 
-```{r, include = FALSE}
-loading_HobbleCreek_initial <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Hobble Creek") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-
-# calculate load from 6100/6096 and 6275 with WFWQC data 
-# first, take average of 6100 and 6096 (equivalent sites)
-# second, sum 6100/6096 and 6275
-loading_HobbleCreek_WFWQCloads_initial <- loading_HobbleCreek_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096", "WFWQC_UT-4996100")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096 + WFWQC_UT-4996100", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-
-loading_HobbleCreek_WFWQCloads <- loading_HobbleCreek_initial %>%
-  rbind(., loading_HobbleCreek_WFWQCloads_initial) %>%
-  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096 + WFWQC_UT-4996100", "WFWQC_UT-4996275")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096/4996100 + WFWQC_UT-4996275", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-# calculate load from 6100 and 6275 with DWQ data 
-loading_HobbleCreek_UTAHDWQloads <- loading_HobbleCreek_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996100", "UTAHDWQ_WQX-4996275")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996100 + UTAHDWQ_WQX-4996275", 
-         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-#combine loading from different organizations
-loading_HobbleCreek <- rbind(loading_HobbleCreek_UTAHDWQloads, loading_HobbleCreek_WFWQCloads)
-```
-
-Calculate loading from Springville WWTP
-```{r}
-loading_HobbleCreek_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "SPRINGVILLE- CITY OF") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Hobble Creek")
-```
 
 #### Dry Creek - Spanish Fork
 
@@ -2806,58 +2204,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-Calculate mean monthly loads
-
 4996040 is the primary site in this watershed and represents the sum total of loads. 4996042 and 4996044 represent equivalent sites for the East tributary but do not include the south fork. East tributary sites will be removed and the primary site used for loads.
 
-```{r, include = FALSE}
-loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Dry Creek - Spanish Fork") %>%
-  filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996042" &
-           MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996044") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
-
-Calculate loading from Spanish Fork WWTP
-```{r}
-loading_DryCreekSpanishFork_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name == "SPANISH FORK CITY CORP") %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  mutate(WS_Name = "Dry Creek - Spanish Fork")
-```
 
 #### Spanish Fork River
 
@@ -2962,42 +2310,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_SpanishFork <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Spanish Fork River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
-
 #### 4000 South Drain Spanish Fork
 
 There are two sites in 4000 South Drain Spanish Fork. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
@@ -3101,41 +2413,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "4000 South Drain Spanish Fork") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
 
 #### Benjamin Slough
 
@@ -3239,61 +2516,6 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-Calculate mean monthly loading
-
-```{r, include = FALSE}
-loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
-  ungroup() %>%
-  filter(WS_Name == "Benjamin Slough") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-```
-
-Calculate loading from Payson and Salem. Add loads together.
-```{r}
-loading_BenjaminSlough_dmr <- dmr_load %>%
-  ungroup() %>%
-  filter(NPDES.Name %in% c("SALEM CITY CORP", "PAYSON POWER PROJECT")) %>%
-  group_by(NPDES.Name, Month) %>%
-  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
-  distinct() %>%
-  group_by(Month) %>%
-  summarise(load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = sum(load.TKN.tonmo, na.rm = TRUE)) %>%
-  mutate(WS_Name = "Benjamin Slough", 
-         NPDES.Name = "SALEM CITY CORP & PAYSON POWER PROJECT") %>%
-  select(NPDES.Name, Month, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
-```
 
 #### Currant Creek
 
@@ -3404,9 +2626,645 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
 
-Calculate mean monthly loading
 
-```{r, include = FALSE}
+### Monthly and annual load across watersheds
+
+Monitoring locations
+```{r}
+# Lake Mountain - Israel Canyon
+loading_LakeMountainIsraelCanyon <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Lake Mountain - Israel Canyon") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Dry Creek - Saratoga
+loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Dry Creek - Saratoga") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Lehi Spring Creek
+loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Lehi Spring Creek") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# American Fork River
+loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "American Fork River") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Timp SSD
+loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Timp SSD") %>%
+  filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4995041") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Lindon Drain
+loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Lindon Drain") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Powell Slough 
+loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Powell Slough Major") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# calculate load from N and S outfalls with WFWQC data from N outfall (DWQ site only at S outfall)
+loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4995210 + UTAHDWQ_WQX-4995230", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate load from N and S outfalls with DWQ data 
+loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "UTAHDWQ_WQX-4995210")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4995210 + UTAHDWQ_WQX-4995230", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
+
+# Provo River
+loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Provo River") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Mill Race
+loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Mill Race") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# calculate mean of 6536 and 6540
+loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996536", "WFWQC_UT-4996540")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996536 + WFWQC_UT-4996540", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate sum of 6540 and 6566
+loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996540 + UTAHDWQ_WQX-4996566", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_MillRace<- rbind(loading_MillRace_UTAHDWQloads, loading_MillRace_WFWQCloads)
+
+# Hobble Creek
+loading_HobbleCreek_initial <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Hobble Creek") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+
+# calculate load from 6100/6096 and 6275 with WFWQC data 
+# first, take average of 6100 and 6096 (equivalent sites)
+# second, sum 6100/6096 and 6275
+loading_HobbleCreek_WFWQCloads_initial <- loading_HobbleCreek_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096", "WFWQC_UT-4996100")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096 + WFWQC_UT-4996100", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+
+loading_HobbleCreek_WFWQCloads <- loading_HobbleCreek_initial %>%
+  rbind(., loading_HobbleCreek_WFWQCloads_initial) %>%
+  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096 + WFWQC_UT-4996100", "WFWQC_UT-4996275")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096/4996100 + WFWQC_UT-4996275", 
+         OrganizationIdentifier = "WFWQC_UT") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate load from 6100 and 6275 with DWQ data 
+loading_HobbleCreek_UTAHDWQloads <- loading_HobbleCreek_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996100", "UTAHDWQ_WQX-4996275")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996100 + UTAHDWQ_WQX-4996275", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+#combine loading from different organizations
+loading_HobbleCreek <- rbind(loading_HobbleCreek_UTAHDWQloads, loading_HobbleCreek_WFWQCloads)
+
+# Dry Creek - Spanish Fork
+loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Dry Creek - Spanish Fork") %>%
+  filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996042" &
+           MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996044") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Spanish Fork
+loading_SpanishFork <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Spanish Fork River") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# 4000 South Drain Spanish Fork
+loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "4000 South Drain Spanish Fork") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+
+# Benjamin Slough
+loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Benjamin Slough") %>%
+  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Currant Creek
 # set site codes to the same site
 trib_fac_sites_intersect_downstream$MonitoringLocationIdentifier[trib_fac_sites_intersect_downstream$MonitoringLocationIdentifier == "UTAHDWQ_WQX-4995312"] <- 
   "UTAHDWQ_WQX-4995310"
@@ -3442,11 +3300,119 @@ loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
-
 ```
 
 
-### Monthly and annual load across watersheds
+DMR Data
+```{r}
+
+# Timp SSD
+loading_TimpSSD_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Timp SSD")
+
+# Lindon Drain
+# Calculate monthly loading from energy facility
+loading_LindonDrain_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "PacifiCorp Energy") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Lindon Drain")
+
+# Powell Slough
+# Calculate monthly loading from Orem WWTP
+loading_PowellSloughMajor_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "OREM CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Powell Slough Major")
+
+# Mill Race
+# Calculate monthly loading from Provo WWTP
+loading_MillRace_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "PROVO CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Mill Race")
+
+# Hobble Creek
+# Calculate loading from Springville WWTP
+loading_HobbleCreek_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "SPRINGVILLE- CITY OF") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Hobble Creek")
+
+# Dry Creek Spanish Fork
+# Calculate loading from Spanish Fork WWTP
+loading_DryCreekSpanishFork_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "SPANISH FORK CITY CORP") %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  mutate(WS_Name = "Dry Creek - Spanish Fork")
+
+# Benjamin Slough
+# Calculate loading from Payson and Salem. Add loads together.
+
+loading_BenjaminSlough_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name %in% c("SALEM CITY CORP", "PAYSON POWER PROJECT")) %>%
+  group_by(NPDES.Name, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  group_by(Month) %>%
+  summarise(load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = sum(load.TKN.tonmo, na.rm = TRUE)) %>%
+  mutate(WS_Name = "Benjamin Slough", 
+         NPDES.Name = "SALEM CITY CORP & PAYSON POWER PROJECT") %>%
+  select(NPDES.Name, Month, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
+
+
+loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
+  ungroup() %>%
+  mutate(OrganizationIdentifier = "DMR", 
+         Flow.cfs = NA, 
+         load.TN.tonyr = load.TKN.tonyr, 
+         load.TDN.tonyr = NA,
+         load.TOC.tonyr = NA,
+         load.DOC.tonyr = NA) %>%
+  select(-NPDES.Name, -load.TKN.tonyr) %>%
+  select(WS_Name, OrganizationIdentifier, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, 
+         load.TP.tonyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
+
+
+loading_AllWatersheds_annual_combined <- 
+  rbind(loading_AllWatersheds_annual, loading_AllWatersheds_dmr2_annual)  
+```
 
 
 ```{r}
@@ -3516,6 +3482,13 @@ loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%
   summarise(load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
             load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
             load.TKN.tonyr = sum(load.TKN.tonmo, na.rm = TRUE))  
+
+
+write.csv(loading_AllWatersheds_annual, file = "./Data/Processed/loading_AllWatersheds_annual.csv",
+       row.names = FALSE)
+write.csv(loading_AllWatersheds_dmr_annual, 
+          file = "./Data/Processed/loading_AllWatersheds_dmr_annual.csv",
+       row.names = FALSE)
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -3696,7 +3669,20 @@ ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
   labs(x = "", y = "DOC loading (tons/year)", fill = "Month") +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplot(loading_AllWatersheds_annual_combined, 
+       aes(x = WS_Name, y = load.TP.tonyr, fill = OrganizationIdentifier)) +
+  geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
+  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
+  labs(x = "", y = "TP loading (tons/year)", fill = "Source") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplot(loading_AllWatersheds_annual_combined, 
+       aes(x = WS_Name, y = load.TN.tonyr, fill = OrganizationIdentifier)) +
+  geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
+  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
+  labs(x = "", y = "TN loading (tons/year)", fill = "Source") +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+  
 ```
 
 ### C-Q
