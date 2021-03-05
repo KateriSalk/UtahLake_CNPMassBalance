@@ -1,7 +1,7 @@
 ---
 title: "UtahLake_TributaryData"
 author: "Kateri Salk"
-date: "2/5/2021"
+date: "3/5/2021"
 output:
   html_document: default
   pdf_document: default
@@ -750,22 +750,6 @@ dmr_sites_sf <- st_as_sf(dmr_sites, coords = c("LongitudeMeasure", "LatitudeMeas
                               crs = 4326, dim = "XY") #CRS = WGS84
 dmr_sites_sf <- st_intersection(dmr_sites_sf, wshds)
 
-# REVISIT move this down
-ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name)) +
-  scale_y_log10()
-
 
 ```
 
@@ -1016,6 +1000,47 @@ ggplot(trib_fac_sites_intersect_downstream_early,
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+
+```
+
+
+```{r}
+ggplot(dmr_load, aes(x = Date, y = TP.tonmo)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TP load (metric ton/mo)")
+
+ggplot(dmr_load, aes(x = Date, y = PO4.tonmo)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TDP load (metric ton/mo)")
+
+ggplot(dmr_load, aes(x = Date, y = TKN.tonmo)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TKN load (metric ton/mo)")
+
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TP load (metric ton/mo)", x = "Month")
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TDP load (metric ton/mo)", x = "Month")
+
+ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
+  geom_boxplot() +
+  facet_wrap(vars(NPDES.Name), nrow = 2) +
+  scale_y_log10() +
+  labs(y = "TKN load (metric ton/mo)", x = "Month")
 
 ```
 
@@ -3396,6 +3421,22 @@ loading_BenjaminSlough_dmr <- dmr_load %>%
          NPDES.Name = "SALEM CITY CORP & PAYSON POWER PROJECT") %>%
   select(NPDES.Name, Month, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
 
+loading_AllWatersheds_dmr <- 
+  rbind(loading_BenjaminSlough_dmr, loading_DryCreekSpanishFork_dmr, 
+        loading_HobbleCreek_dmr, loading_LindonDrain_dmr, loading_MillRace_dmr,
+        loading_PowellSloughMajor_dmr, loading_TimpSSD_dmr)
+
+loading_AllWatersheds_dmr$WS_Name <- 
+  factor(loading_AllWatersheds_dmr$WS_Name, 
+         levels = c("Timp SSD", "Lindon Drain", "Powell Slough Major",  
+                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
+                    "Benjamin Slough"))
+loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%  
+  group_by(NPDES.Name, WS_Name) %>%
+  summarise(load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
+            load.TKN.tonyr = sum(load.TKN.tonmo, na.rm = TRUE))  
+
 
 loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
   ungroup() %>%
@@ -3409,9 +3450,10 @@ loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
   select(WS_Name, OrganizationIdentifier, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, 
          load.TP.tonyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
 
-
-loading_AllWatersheds_annual_combined <- 
-  rbind(loading_AllWatersheds_annual, loading_AllWatersheds_dmr2_annual)  
+# write.csv(loading_AllWatersheds_dmr_annual, 
+#           file = "./Data/Processed/loading_AllWatersheds_dmr_annual.csv",
+#        row.names = FALSE)
+  
 ```
 
 
@@ -3467,28 +3509,12 @@ loading_Total_annual <- loading_AllWatersheds_annual %>%
             load.TOC.tonyr = sum(load.TOC.tonyr, na.rm = TRUE), 
             load.DOC.tonyr = sum(load.DOC.tonyr, na.rm = TRUE))
   
-loading_AllWatersheds_dmr <- 
-  rbind(loading_BenjaminSlough_dmr, loading_DryCreekSpanishFork_dmr, 
-        loading_HobbleCreek_dmr, loading_LindonDrain_dmr, loading_MillRace_dmr,
-        loading_PowellSloughMajor_dmr, loading_TimpSSD_dmr)
+loading_AllWatersheds_annual_combined <- 
+  rbind(loading_AllWatersheds_annual, loading_AllWatersheds_dmr2_annual)
 
-loading_AllWatersheds_dmr$WS_Name <- 
-  factor(loading_AllWatersheds_dmr$WS_Name, 
-         levels = c("Timp SSD", "Lindon Drain", "Powell Slough Major",  
-                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
-                    "Benjamin Slough"))
-loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%  
-  group_by(NPDES.Name, WS_Name) %>%
-  summarise(load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
-            load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
-            load.TKN.tonyr = sum(load.TKN.tonmo, na.rm = TRUE))  
+# write.csv(loading_AllWatersheds_annual, file = "./Data/Processed/loading_AllWatersheds_annual.csv",
+#        row.names = FALSE)
 
-
-write.csv(loading_AllWatersheds_annual, file = "./Data/Processed/loading_AllWatersheds_annual.csv",
-       row.names = FALSE)
-write.csv(loading_AllWatersheds_dmr_annual, 
-          file = "./Data/Processed/loading_AllWatersheds_dmr_annual.csv",
-       row.names = FALSE)
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
