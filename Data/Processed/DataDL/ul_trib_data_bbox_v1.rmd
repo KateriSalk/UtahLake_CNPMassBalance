@@ -42,8 +42,7 @@ map
 ### Read other WQP components
 *NOTE:*  
 WQP data are queried as four separate components: 1) site metadata, 2) result values (narrow result), 3) activity metadata (activity), and 4) detection/quantitation limits. 
-Site metadata, activity metadata, and detection/quantitation limits are all merged to narrow result to generate a single dataset. Multiple det/quant limits are often available 
-for a single water quality result. These are cast to a wide format before merging to narrow result to maintain all available det/quant limits.
+Site metadata, activity metadata, and detection/quantitation limits are all merged to narrow result to generate a single dataset. Multiple det/quant limits are often available for a single water quality result. These are cast to a wide format before merging to narrow result to maintain all available det/quant limits.
 
 ```{r, read-wqp-data}
 ul_nr=wqTools::readWQP(type='narrowresult', bBox=ul_bbox, siteType=c("Stream","Wetland"), sampleMedia="Water", print=F)
@@ -165,27 +164,32 @@ dim(site_date_starttime)
 dim(unique(site_date_starttime[,c("MonitoringLocationIdentifier","ActivityStartDate")]))
 ```
 
-### Merge unified time stamps back to data (by site & date)
 ```{r, merge-time}
 ul_data=merge(ul_data, site_date_starttime, all.x=T)
 dim(ul_data)
 ```
 
+
 ### Subset to relevant columns:
+
 ```{r, subset-cols}
 cols_keep=c(
-	"ActivityStartDate","ActivityStartTime.Time","OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
-	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",  
+	 "ActivityStartDate","ActivityStartTime.Time","OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
+	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",
 	### These are the columns that have been added through the code above  
 	"SampleDepthUnit","SampleDepthValue","RelativeDepth","datetime","minute","hour",  
 	"CharacteristicName","ResultSampleFractionText","ResultMeasureValue","ResultMeasure.MeasureUnitCode",  
 	"MethodSpecificationName","MeasureQualifierCode","ResultDetectionConditionText",  
 	"ResultStatusIdentifier","ResultValueTypeName","ActivityMediaName",  
-	"EstimatedQuantitationLimit","LowerQuantitationLimit","LowerReportingLimit","MethodDetectionLevel",  
+	"EstimatedQuantitationLimit","LowerQuantitationLimit","LowerReportingLimit","MethodDetectionLevel","MethodDetectionLevelUnit",  
 	"UpperQuantitationLimit","EstimatedQuantitationLimitUnit",  
-	"LowerQuantitationLimitUnit","LowerReportingLimitUnit","MethodDetectionLevelUnit","UpperQuantitationLimitUnit"  
+	"LowerQuantitationLimitUnit","LowerReportingLimitUnit","UpperQuantitationLimitUnit",   
+	
+	###Additional methods-related columns
+	"ResultAnalyticalMethod.MethodIdentifier", "ResultAnalyticalMethod.MethodIdentifierContext","ResultAnalyticalMethod.MethodName", "LaboratoryName","MethodDescriptionText","SampleCollectionMethod.MethodName"
 	)
 ```
+
 
 ### Extracting unique result value for each site, date, depth, parameter, & fraction
 ```{r, extract-unique}
@@ -193,6 +197,7 @@ dim(ul_data)
 ul_data=unique(ul_data[,cols_keep])
 dim(ul_data)
 ```
+
 
 ### Check for multiple result values by site, date, depth, parameter, & fraction
 ```{r, check-unique}

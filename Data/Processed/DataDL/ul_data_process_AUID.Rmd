@@ -176,15 +176,18 @@ dim(ul_data)
 ```{r, subset-cols}
 cols_keep=c(
 	 "ActivityStartDate","ActivityStartTime.Time","OrganizationIdentifier","OrganizationFormalName","MonitoringLocationIdentifier","MonitoringLocationName","MonitoringLocationTypeName",  
-	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",  
+	"LatitudeMeasure","LongitudeMeasure","HorizontalCoordinateReferenceSystemDatumName",
 	### These are the columns that have been added through the code above  
 	"SampleDepthUnit","SampleDepthValue","RelativeDepth","datetime","minute","hour",  
 	"CharacteristicName","ResultSampleFractionText","ResultMeasureValue","ResultMeasure.MeasureUnitCode",  
 	"MethodSpecificationName","MeasureQualifierCode","ResultDetectionConditionText",  
 	"ResultStatusIdentifier","ResultValueTypeName","ActivityMediaName",  
-	"EstimatedQuantitationLimit","LowerQuantitationLimit","LowerReportingLimit","MethodDetectionLevel",  
+	"EstimatedQuantitationLimit","LowerQuantitationLimit","LowerReportingLimit","MethodDetectionLevel","MethodDetectionLevelUnit",  
 	"UpperQuantitationLimit","EstimatedQuantitationLimitUnit",  
-	"LowerQuantitationLimitUnit","LowerReportingLimitUnit","MethodDetectionLevelUnit","UpperQuantitationLimitUnit"  
+	"LowerQuantitationLimitUnit","LowerReportingLimitUnit","UpperQuantitationLimitUnit",   
+	
+	###Additional methods-related columns
+	"ResultAnalyticalMethod.MethodIdentifier", "ResultAnalyticalMethod.MethodIdentifierContext","ResultAnalyticalMethod.MethodName", "LaboratoryName","MethodDescriptionText","SampleCollectionMethod.MethodName"
 	)
 ```
 
