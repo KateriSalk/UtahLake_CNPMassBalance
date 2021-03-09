@@ -14,6 +14,7 @@ library(wqTools)
 library(sf)
 library(leaflet)
 library(dplyr)
+library(ggplot2)
 ```
 
 ```{r setup, include=FALSE}
@@ -24,17 +25,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ##Watershed Boundary
 
 ```{r}
-wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
+comp4489  <- read_sf("./Data/GIS/comp4489_wgs84.shp")
 ```
 
 # Import Monitoring Locations
 ##WQP Monitoring locations
 ./Data/Processed/
 ```{r}
-Data.WQP_Trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed.csv")
+Data.WQP_Trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
 TribSites <- Data.WQP_Trib %>% distinct(MonitoringLocationIdentifier, MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,LongitudeMeasure)
-
+write.csv(TribSites,file = "./Data/Processed/WQPTribSites.csv")
 TribSites_as_sf <- st_as_sf(TribSites, coords = c("LongitudeMeasure", "LatitudeMeasure"), crs = 4326, dim = "XY") #CRS = WGS84
+
 
 ```
 
@@ -98,14 +101,16 @@ findSites()
 ul_bbox <- st_bbox(wshds)
 wsdMap <- baseMap() %>% 
   addMapResetButton() %>% 
+  addMeasure(position = "topright", primaryLengthUnit = "feet", primaryAreaUnit = "acres") %>% 
   addTiles() %>% 
   addPolygons(data=wshds, weight = 1.5, color = "gray", opacity =1, label = ~paste(WS_Name, "--Monitored:", Monitored_,"--WSType",Type),group = "Subwatersheds") %>%
+  addPolygons(data=comp4489, weight = 1.5, color = "blue", opacity =1,group = "Comp. Elevation") %>% 
   addCircleMarkers(data = FacSites, lng = ~LongitudeMeasure, lat = ~LatitudeMeasure, color = "", label = ~paste(MonitoringLocationIdentifier), group = "WQP-Facility") %>%
   addCircleMarkers(data = DmrFac, lng = ~dec_long, lat = ~dec_lat, color = "red", label = ~paste(CWPName), group = "DMR-Facility") %>%
   addCircleMarkers(data = TribSites, lng = ~LongitudeMeasure, lat = ~LatitudeMeasure, label = ~paste(MonitoringLocationIdentifier), group = "WQP-Trib") %>%
   fitBounds(ul_bbox[[1]],ul_bbox[[2]],ul_bbox[[3]],ul_bbox[[4]]) %>% 
 addLayersControl(position ="topright",
-			baseGroups = c("World topo","USGS topo", "Hydrography", "Satellite"),overlayGroups = c("Subwatersheds","DMR-Facility", "WQP-Facility","WQP-Trib"),
+			baseGroups = c("World topo","USGS topo", "Hydrography", "Satellite"),overlayGroups = c("Subwatersheds","DMR-Facility", "WQP-Facility","WQP-Trib", "Comp. Elevation"),
 			options = leaflet::layersControlOptions(collapsed = TRUE, autoZIndex=FALSE)) 
 wsdMap
 ```
