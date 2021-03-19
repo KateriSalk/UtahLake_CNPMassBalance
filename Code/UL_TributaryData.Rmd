@@ -36,11 +36,13 @@ Data were loaded from spreadsheets obtained by Utah DWQ:
 
 ```{r}
 # tributary data
-trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
+trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
+trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
 # facility data
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 # watershed spatial data
-wshds <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
+wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
+wshds2 <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 # sampling activity logs
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
 # groundwater data
@@ -64,16 +66,18 @@ Watersheds were divided into monitored and unmonitored and arranged in clockwise
 
 ```{r}
 wshds_monitored <- wshds %>%
-  filter(Monitored_ == "YES")
+  filter(Monitored_ == "YES") %>%
+  # Dry Creek - Saratoga appears twice. Remove the instance with very very small area. 
+  filter(OBJECTID_1 != 74)
 
 wshds_monitored$WS_Name <- 
   factor(wshds_monitored$WS_Name, 
-         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
-                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
-                    "Lindon Drain", "Powell Slough Major", "Provo River", 
-                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
-                    "Spanish Fork River", "4000 South Drain Spanish Fork",
-                    "Benjamin Slough", "Currant Creek"))
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
 levels(wshds_monitored$WS_Name)
 
 ```
@@ -108,7 +112,7 @@ trib_wq <- trib %>%
              "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
              "Total Kjeldahl nitrogen")) %>%
   filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P")) %>%
-  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+  select(ActivityStartDate:ResultSampleFractionText,
          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
          ResultStatusIdentifier) %>%
@@ -124,13 +128,13 @@ trib_flow <- trib %>%
   filter(CharacteristicName %in% c("Flow", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels() %>%
   #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
-  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+  select(ActivityStartDate:ResultSampleFractionText,
          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
          ResultStatusIdentifier) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText,
          -MonitoringLocationTypeName, -CharacteristicName) %>%
-  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+  group_by(ActivityStartDate, MonitoringLocationIdentifier, OrganizationIdentifier,
            OrganizationFormalName, MonitoringLocationName, LatitudeMeasure,
            LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
@@ -562,21 +566,21 @@ trib_fac_sites_downstream_sf <- st_as_sf(trib_fac_sites_downstream, coords = c("
 
 trib_fac_sites_downstream_sf$WS_Name <- 
   factor(trib_fac_sites_downstream_sf$WS_Name, 
-         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
-                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
-                    "Lindon Drain", "Powell Slough Major", "Provo River", 
-                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
-                    "Spanish Fork River", "4000 South Drain Spanish Fork",
-                    "Benjamin Slough", "Currant Creek"))
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
                                                                                                                       
 trib_fac_sites_intersect_downstream$WS_Name <- 
   factor(trib_fac_sites_intersect_downstream$WS_Name, 
-         levels = c("Lake Mountain - Israel Canyon", "Dry Creek - Saratoga", 
-                    "Lehi Spring Creek", "American Fork River", "Timp SSD", 
-                    "Lindon Drain", "Powell Slough Major", "Provo River", 
-                    "Mill Race", "Hobble Creek", "Dry Creek - Spanish Fork",
-                    "Spanish Fork River", "4000 South Drain Spanish Fork",
-                    "Benjamin Slough", "Currant Creek"))          
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
 
 # Create two datasets: one starting in 2010, one starting in 2015. The later period of record is the main dataset. 
 
@@ -792,12 +796,15 @@ ggplot(wshds) +
 #   tm_polygons("wsa_sqkm")  +
 #   tm_facets(by = "WS_Name")
 
+# jitter points so they don't appear on top of each other
+trib_fac_sites_downstream_sf_jitter <- st_jitter(trib_fac_sites_downstream_sf)
+
 map.grid <- purrr::map(wshds_monitored$WS_Name,
            function(x) {
              ggplot(data = filter(wshds_monitored, WS_Name == x)) +
                geom_sf() +
-               geom_sf(data = filter(trib_fac_sites_downstream_sf, WS_Name == x),
-                       aes(color = OrganizationIdentifier)) +
+               geom_sf(data = filter(trib_fac_sites_downstream_sf_jitter, WS_Name == x),
+                       aes(color = OrganizationIdentifier), alpha = 0.7) +
                geom_sf(data = filter(dmr_sites_sf, WS_Name == x), color = "black") +
                scale_color_viridis_d(option = "magma", end = 0.8, begin = 0.2, direction = -1) +
                scale_x_continuous() +
@@ -805,20 +812,22 @@ map.grid <- purrr::map(wshds_monitored$WS_Name,
                      axis.text = element_blank(), axis.ticks = element_blank()) +
                labs(title = x)
            })
-plot_grid(map.grid[[15]], map.grid[[5]], map.grid[[4]], map.grid[[6]], map.grid[[7]],
-          map.grid[[8]], map.grid[[1]], map.grid[[9]], map.grid[[10]], map.grid[[12]],
-          map.grid[[11]], map.grid[[13]], map.grid[[3]], map.grid[[2]], map.grid[[14]],
-          nrow = 3)
+plot_grid(map.grid[[15]], map.grid[[5]], map.grid[[4]], map.grid[[6]], 
+          map.grid[[7]], map.grid[[8]], map.grid[[1]], map.grid[[9]], 
+          map.grid[[10]], map.grid[[16]], map.grid[[12]], map.grid[[11]], 
+          map.grid[[13]], map.grid[[3]], map.grid[[2]], map.grid[[14]],
+          nrow = 4)
+ggsave("./Code/Output/map_watershedfacet.jpg", height = 8, width = 8, units = "in")
 
 ggplot(wshds) +
   geom_sf(aes(fill = Monitored_)) +
   geom_sf(data = trib_fac_sites_downstream_sf, aes(color = OrganizationIdentifier)) +
-  #geom_point(aes(x = 39.94447, y = -111.7749)) +
+  geom_sf(data = dmr_sites_sf) +
   labs(fill = "Monitored", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   scale_fill_manual(values = c("darkgray", "lightgray")) +
   theme(legend.position = "top")
-
+ggsave("./Code/Output/map_watershed.jpg", height = 6.5, width = 6.5, units = "in")
 
 ```
 
@@ -827,10 +836,10 @@ ggplot(wshds) +
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = TN, shape = SiteType,
+       aes(x = ActivityStartDate, y = TN, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -840,10 +849,10 @@ ggplot(trib_fac_sites_intersect_downstream_early,
   
 # TDN
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = TDN, shape = SiteType,
+       aes(x = ActivityStartDate, y = TDN, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "TDN (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -853,10 +862,10 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 # TP
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = TP, shape = SiteType,
+       aes(x = ActivityStartDate, y = TP,
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "TP (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -866,10 +875,10 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 # TDP
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = TDP, shape = SiteType,
+       aes(x = ActivityStartDate, y = TDP, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "TDP (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -879,10 +888,10 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 # TOC
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = TOC, shape = SiteType,
+       aes(x = ActivityStartDate, y = TOC, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "TOC (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -892,10 +901,10 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 # DOC
 ggplot(trib_fac_sites_intersect_downstream_early, 
-       aes(x = ActivityStartDate, y = DOC, shape = SiteType,
+       aes(x = ActivityStartDate, y = DOC, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "DOC (mg/L)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
@@ -904,6 +913,7 @@ ggplot(trib_fac_sites_intersect_downstream_early,
   guides(fill = guide_legend(ncol = 2))
 
 ```
+
 
 ### Flow time series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -1053,7 +1063,7 @@ give.n <- function(x){
 }
 ```
 
-#### Lake Mountain - Israel Canyon
+#### Tickville Wash
 
 There is only one inflow monitored in Lake Mountain - Israel Canyon. Estimates are based on this site.
 
@@ -3827,11 +3837,575 @@ ggplot(p_et_monthly, aes(x = as.factor(Month), y = et.mm)) +
 
 ### Nutrient concentrations across watersheds
 
-#### Lake Mountain - Israel Canyon
+#### Watersheds w/ UDWQ and WFWQC, no WWTP
+
+TN
+
+```{r}
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Lehi Spring Creek") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Lehi.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "American Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/TNconc_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  ylim(0, 2) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+
+TP
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lehi Spring Creek") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Lehi.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "American Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")+
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/TPconc_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+Flow
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Lehi Spring Creek") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Lehi.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "American Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/Flow_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+
+#### Watersheds w/ UDWQ and WFWQC, plus WWTP
+
+REVISIT
+TN
+
+```{r}
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Timp SSD") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_TimpSSD.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Powell Slough Major") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/TNconc_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  ylim(0, 2) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+
+TP
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lehi Spring Creek") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Lehi.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "American Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")+
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/TPconc_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 0.02, lty = 2) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+Flow
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Lehi Spring Creek") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Lehi.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "American Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_American.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Lindon Drain") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Lindon.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Provo River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Provo.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Hobble Creek") +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 2))
+ggsave("./Code/Output/Flow_Hobble.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Spanish Fork River") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Spanish.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_4000.jpg", height = 4, width = 5, units = "in")
+
+```
+
+#### Tickville Wash
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -3843,7 +4417,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TDN <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -3855,7 +4429,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TP <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -3867,7 +4441,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TDP <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -3879,7 +4453,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TOC <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -3890,7 +4464,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
   theme(legend.position = "none")
 
 DOC <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -4622,6 +5196,95 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
+#### Spring Creek - Springville
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+TN <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(), axis.text.x = element_blank())
+
+TDN <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(), axis.text.x = element_blank())
+
+TP <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(), axis.text.x = element_blank())
+
+TDP <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(), axis.text.x = element_blank())
+
+TOC <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none")
+
+DOC <-
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "none")
+
+legend <- get_legend(TN + guides(fill = guide_legend(nrow = 1)) + 
+                     theme(legend.position = "top"))
+
+CNP <-
+plot_grid(TN, TDN, TP, TDP, TOC, DOC, 
+          nrow = 3, align = "hv")
+
+plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+
+```
+
 #### Hobble Creek
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -4633,7 +5296,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank()) +
@@ -4647,7 +5310,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank()) +
@@ -4661,7 +5324,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank()) +
@@ -4675,7 +5338,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank()) +
@@ -4689,7 +5352,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
   guides(fill = guide_legend(ncol = 2))
@@ -4702,7 +5365,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#62197d", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
   guides(fill = guide_legend(ncol = 2))
