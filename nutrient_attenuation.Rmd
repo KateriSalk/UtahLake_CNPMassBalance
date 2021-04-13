@@ -1,0 +1,70 @@
+---
+title: "Utah Lake POTW nutrient attenuation (Powell Slough & Mill Race)"
+author: Jake Vander Laan
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+# Libraries
+```{r, libs}
+library(wqTools)
+library(leaflet)
+```
+
+# Data impport & pre-process
+```{r}
+trib_data=read.csv(file="Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
+sites=unique(trib_data[,c("MonitoringLocationIdentifier", "OrganizationIdentifier", "MonitoringLocationName", "MonitoringLocationTypeName", "LatitudeMeasure", "LongitudeMeasure")])
+```
+
+
+# Site map
+```{r, site-map}
+baseMap() %>% 
+	addCircleMarkers(data=sites, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
+		color = "blue", opacity=0.8,
+		popup = paste0(
+			"Location ID: ", sites$MonitoringLocationIdentifier,
+			"<br> Name: ", sites$MonitoringLocationName,
+			"<br> Org: ", sites$OrganizationIdentifier,
+			"<br> Type: ", sites$MonitoringLocationTypeName
+		)
+	)
+
+```
+
+
+# Analysis
+
+## Powell Slough
+```{r}
+
+
+```
+
+
+## Mill Race
+### Site list & map
+```{r}
+mr_site_list=c("UTAHDWQ_WQX-4996570","UTAHDWQ_WQX-4996550","UTAHDWQ_WQX-4996555","UTAHDWQ_WQX-4996566","UTAHDWQ_WQX-4996630","UTAHDWQ_WQX-4996540") #Upstream to downstream order
+mr_sites=subset(sites, MonitoringLocationIdentifier %in% mr_site_list)
+
+baseMap() %>% 
+	addCircleMarkers(data=mr_sites, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
+		color = "blue", opacity=0.8,
+		label=~MonitoringLocationIdentifier, labelOptions = labelOptions(noHide = T),
+		popup = paste0(
+			"Location ID: ", mr_sites$MonitoringLocationIdentifier,
+			"<br> Name: ", mr_sites$MonitoringLocationName,
+			"<br> Org: ", mr_sites$OrganizationIdentifier,
+			"<br> Type: ", mr_sites$MonitoringLocationTypeName
+		)
+	) %>% 
+	fitBounds(min(mr_sites$LongitudeMeasure), min(mr_sites$LatitudeMeasure), max(mr_sites$LongitudeMeasure), max(mr_sites$LatitudeMeasure))
+	
+
+
+
+
+```
+
