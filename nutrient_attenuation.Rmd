@@ -1,54 +1,79 @@
 ---
 title: "Utah Lake POTW nutrient attenuation (Powell Slough & Mill Race)"
-author: Jake Vander Laan
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+author: "Jake Vander Laan"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true  
+    toc_float: true
+    fig_width: 1
 ---
 
 # Libraries
 ```{r, libs}
 library(wqTools)
 library(leaflet)
+library(plotly)
 ```
 
 # Data impport & pre-process
+## Data import
 ```{r}
 trib_data=read.csv(file="Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
-sites=unique(trib_data[,c("MonitoringLocationIdentifier", "OrganizationIdentifier", "MonitoringLocationName", "MonitoringLocationTypeName", "LatitudeMeasure", "LongitudeMeasure")])
+trib_data=subset(trib_data, CharacteristicName %in% c("Phosphate-phosphorus","Nitrogen","Flow"))
+sites_all=unique(trib_data[,c("MonitoringLocationIdentifier", "OrganizationIdentifier", "MonitoringLocationName", "MonitoringLocationTypeName", "LatitudeMeasure", "LongitudeMeasure")])
+```
+
+## Subset data to target sites
+```{r}
+mr_site_list=c("UTAHDWQ_WQX-4996570","UTAHDWQ_WQX-4996550","UTAHDWQ_WQX-4996555","UTAHDWQ_WQX-4996566","UTAHDWQ_WQX-4996630","UTAHDWQ_WQX-4996540") #Upstream to downstream order
+ps_site_list=c("UTAHDWQ_WQX-4995260","UTAHDWQ_WQX-4995251","UTAHDWQ_WQX-4995252","UTAHDWQ_WQX-4995255","UTAHDWQ_WQX-4995256","UTAHDWQ_WQX-4995258","UTAHDWQ_WQX-4995210","UTAHDWQ_WQX-4995230") #Upstream to downstream order
+trib_data=subset(trib_data, MonitoringLocationIdentifier %in% mr_site_list | MonitoringLocationIdentifier %in% ps_site_list)
 ```
 
 
-# Site map
-```{r, site-map}
-baseMap() %>% 
-	addCircleMarkers(data=sites, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
-		color = "blue", opacity=0.8,
-		popup = paste0(
-			"Location ID: ", sites$MonitoringLocationIdentifier,
-			"<br> Name: ", sites$MonitoringLocationName,
-			"<br> Org: ", sites$OrganizationIdentifier,
-			"<br> Type: ", sites$MonitoringLocationTypeName
-		)
-	)
-
+## Parameter names & units check
+```{r}
+trib_data=within(trib_data, {
+	param_name=NA
+	param_name[CharacteristicName=="Phosphate-phosphorus" & ResultSampleFractionText=="Total"]="Total phosphorus"
+	param_name[CharacteristicName=="Phosphate-phosphorus" & ResultSampleFractionText=="Dissolved"]="Dissolved phosphorus"
+	param_name[CharacteristicName=="Nitrogen" & ResultSampleFractionText=="Total"]="Total nitrogen"
+	param_name[CharacteristicName=="Nitrogen" & ResultSampleFractionText=="Dissolved"]="Dissolved nitrogen"
+	param_name[CharacteristicName=="Flow"]="Flow"
+	mlid=gsub("UTAHDWQ_WQX-","", MonitoringLocationIdentifier)
+})
+with(trib_data, {table(param_name, ResultMeasure.MeasureUnitCode)})
+trib_data=subset(trib_data, ResultMeasure.MeasureUnitCode %in% c("ft3/sec","mg/l"))
+with(trib_data, {table(param_name, ResultMeasure.MeasureUnitCode)})
+trib_data$ResultMeasureValue=readr::parse_number(trib_data$ResultMeasureValue) #Note - 1 flow value was marked as <1, this is converted to 1 here
 ```
 
+## Fill non-detects
+All non-detects in the dataset are for phosphorus. The typical LRL for these records is 0.02 mg/L. Setting all phosphorus non-detects to half LRL 0.01 mg/L.
+```{r, non-dets}
+with(subset(trib_data, ResultDetectionConditionText=="Not Detected"), {
+	table(CharacteristicName, LowerReportingLimit)
+})
+
+trib_data=within(trib_data, {
+	ResultMeasureValue[ResultDetectionConditionText=="Not Detected" & CharacteristicName=="Phosphate-phosphorus"]=0.01
+})
+
+table(is.na(trib_data$ResultMeasureValue))
+
+mr_data=subset(trib_data, MonitoringLocationIdentifier %in% mr_site_list)
+ps_data=subset(trib_data, MonitoringLocationIdentifier %in% ps_site_list)
+
+
+```
 
 # Analysis
 
-## Powell Slough
-```{r}
-
-
-```
-
-
 ## Mill Race
-### Site list & map
-```{r}
-mr_site_list=c("UTAHDWQ_WQX-4996570","UTAHDWQ_WQX-4996550","UTAHDWQ_WQX-4996555","UTAHDWQ_WQX-4996566","UTAHDWQ_WQX-4996630","UTAHDWQ_WQX-4996540") #Upstream to downstream order
-mr_sites=subset(sites, MonitoringLocationIdentifier %in% mr_site_list)
-
+### Map
+```{r, mr-map, out.width = "100%", echo=F}
+mr_sites=subset(sites_all, MonitoringLocationIdentifier %in% mr_site_list)
 baseMap() %>% 
 	addCircleMarkers(data=mr_sites, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
 		color = "blue", opacity=0.8,
@@ -60,11 +85,162 @@ baseMap() %>%
 			"<br> Type: ", mr_sites$MonitoringLocationTypeName
 		)
 	) %>% 
-	fitBounds(min(mr_sites$LongitudeMeasure), min(mr_sites$LatitudeMeasure), max(mr_sites$LongitudeMeasure), max(mr_sites$LatitudeMeasure))
-	
+	fitBounds(min(mr_sites$LongitudeMeasure)*0.9999, min(mr_sites$LatitudeMeasure)*0.9999, max(mr_sites$LongitudeMeasure)*1.0001, max(mr_sites$LatitudeMeasure)*1.0001)
+```
 
+### Plot nutrient concentrations
 
-
+#### Phosphorus
+```{r, mr-p, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(mr_data, CharacteristicName=="Phosphate-phosphorus")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Phosphorus (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
 
 ```
+
+#### Nitrogen
+```{r, mr-n, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(mr_data, CharacteristicName=="Nitrogen")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Nitrogen (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
+#### Flow
+```{r, mr-flow, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(mr_data, CharacteristicName=="Flow")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue) %>% 
+	layout(
+		#showlegend=T,
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Flow (cfs)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
+
+
+
+## Powell Slough
+
+### Map
+```{r, ps-map, out.width = "100%", echo=F}
+ps_sites=subset(sites_all, MonitoringLocationIdentifier %in% ps_site_list)
+baseMap() %>% 
+	addCircleMarkers(data=ps_sites, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
+		color = "blue", opacity=0.8,
+		label=~MonitoringLocationIdentifier, labelOptions = labelOptions(noHide = T),
+		popup = paste0(
+			"Location ID: ", ps_sites$MonitoringLocationIdentifier,
+			"<br> Name: ", ps_sites$MonitoringLocationName,
+			"<br> Org: ", ps_sites$OrganizationIdentifier,
+			"<br> Type: ", ps_sites$MonitoringLocationTypeName
+		)
+	) %>% 
+	fitBounds(min(ps_sites$LongitudeMeasure)*0.9999, min(ps_sites$LatitudeMeasure)*0.9999, max(ps_sites$LongitudeMeasure)*1.0001, max(ps_sites$LatitudeMeasure)*1.0001)
+```
+
+### Phosphorus
+```{r, ps-p, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(ps_data, CharacteristicName=="Phosphate-phosphorus")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
+		yaxis=list(title="Phosphorus (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
+
+### Nitrogen
+```{r, ps-n, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(ps_data, CharacteristicName=="Nitrogen")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
+		yaxis=list(title="Nitrogen (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
+### Flow
+```{r, ps-flow, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(ps_data, CharacteristicName=="Flow")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue) %>% 
+	layout(
+		#showlegend=T,
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
+		yaxis=list(title="Flow (cfs)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
+
 
