@@ -16,7 +16,7 @@ library(leaflet)
 library(plotly)
 ```
 
-# Data impport & pre-process
+# Data import & pre-process
 ## Data import
 ```{r}
 trib_data=read.csv(file="Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
