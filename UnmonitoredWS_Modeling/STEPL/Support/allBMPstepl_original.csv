@@ -1,0 +1,101 @@
+Landuse,BMP & Efficiency,N,P,BOD,Sediment,E. coli,,
+Cropland,,,,,,,,
+Cropland,0 No BMP,0,0,0,0,0,,
+Cropland,Bioreactor,0.453,ND,ND,ND,ND,,
+Cropland,Buffer - Forest (100ft wide),0.478,0.465,ND,0.586,ND,,
+Cropland,Buffer - Grass (35ft wide),0.338,0.435,ND,0.533,ND,,
+Cropland,Combined BMPs-Calculated,0,0,0,0,0,,
+Cropland,Conservation Tillage 1 (30-59% Residue),0.15,0.356,ND,0.403,ND,,
+Cropland,Conservation Tillage 2 (equal or more than 60% Residue),0.25,0.687,ND,0.77,ND,,
+Cropland,Contour Farming,0.279,0.398,ND,0.341,ND,,
+Cropland,Controlled Drainage,0.388,0.35,ND,ND,ND,,
+Cropland,Cover Crop 1 (Group A Commodity) (High Till only for Sediment),0.008,ND,ND,ND,ND,,
+Cropland,Cover Crop 2 (Group A Traditional Normal Planting Time) (High Till only for TP and Sediment),0.196,0.07,ND,0.1,ND,,
+Cropland,Cover Crop 3 (Group A Traditional Early Planting Time) (High Till only for TP and Sediment),0.204,0.15,ND,0.2,ND,,
+Cropland,Land Retirement,0.898,0.808,ND,0.95,ND,,
+Cropland,Nutrient Management 1 (Determined Rate),0.154,0.45,ND,ND,ND,,
+Cropland,Nutrient Management 2 (Determined Rate Plus Additional Considerations),0.247,0.56,ND,ND,ND,,
+Cropland,Streambank Stabilization and Fencing,0.75,0.75,ND,0.75,ND,,
+Cropland,Terrace,0.253,0.308,ND,0.4,ND,,
+Cropland,Two-Stage Ditch,0.12,0.28,ND,ND,ND,,
+Pastureland,,,,,,,,
+Pastureland,0 No BMP,0,0,0,0,0,,
+Pastureland,30m Buffer with Optimal Grazing,0.364,0.653,ND,ND,ND,,
+Pastureland,Alternative Water Supply,0.133,0.115,ND,0.187,ND,,
+Pastureland,Combined BMPs-Calculated,0,0,0,0,0,,
+Pastureland,Critical Area Planting,0.175,0.2,ND,0.42,ND,,
+Pastureland,Forest Buffer (minimum 35 feet wide),0.452,0.4,ND,0.533,ND,,
+Pastureland,Grass Buffer (minimum 35 feet wide),0.868,0.766,ND,0.648,ND,,
+Pastureland,Grazing Land Management (rotational grazing with fenced areas),0.43,0.263,ND,ND,ND,,
+Pastureland,Heavy Use Area Protection,0.183,0.193,ND,0.333,ND,,
+Pastureland,Litter Storage and Management,0.14,0.14,ND,0,ND,,
+Pastureland,Livestock Exclusion Fencing,0.203,0.304,ND,0.62,ND,,
+Pastureland,Multiple Practices,0.246,0.205,ND,0.221,ND,,
+Pastureland,Pasture and Hayland Planting (also called Forage Planting),0.181,0.15,ND,ND,ND,,
+Pastureland,Prescribed Grazing,0.408,0.227,ND,0.333,ND,,
+Pastureland,Streambank Protection w/o Fencing,0.15,0.22,ND,0.575,ND,,
+Pastureland,Streambank Stabilization and Fencing,0.75,0.75,ND,0.75,ND,,
+Pastureland,Use Exclusion,0.39,0.04,ND,0.589,ND,,
+Pastureland,Winter Feeding Facility,0.35,0.4,ND,0.4,ND,,
+Forest,,,,,,,,
+Forest,0 No BMP,0,0,0,0,0,,
+Forest,Combined BMPs-Calculated,0,0,0,0,0,,
+Forest,Road dry seeding,ND,ND,ND,0.41,ND,,
+Forest,Road grass and legume seeding,ND,ND,ND,0.71,ND,,
+Forest,Road hydro mulch,ND,ND,ND,0.41,ND,,
+Forest,Road straw mulch,ND,ND,ND,0.41,ND,,
+Forest,Road tree planting,ND,ND,ND,0.5,ND,,
+Forest,Site preparation/hydro mulch/seed/fertilizer,ND,ND,ND,0.71,ND,,
+Forest,Site preparation/hydro mulch/seed/fertilizer/transplants,ND,ND,ND,0.69,ND,,
+Forest,Site preparation/steep slope seeder/transplant,ND,ND,ND,0.81,ND,,
+Forest,Site preparation/straw/crimp seed/fertilizer/transplant,ND,ND,ND,0.95,ND,,
+Forest,Site preparation/straw/crimp/net,ND,ND,ND,0.93,ND,,
+Forest,Site preparation/straw/net/seed/fertilizer/transplant,ND,ND,ND,0.83,ND,,
+Forest,Site preparation/straw/polymer/seed/fertilizer/transplant,ND,ND,ND,0.86,ND,,
+User_Defined,,,,,,,,
+User_Defined,0 No BMP,0,0,0,0,0,,
+User_Defined,Combined BMPs-Calculated,0,0,0,0,0,,
+Feedlots,,,,,,,,
+Feedlots,0 No BMP,0,0,0,0,0,,
+Feedlots,Diversion,0.45,0.7,ND,ND,ND,,
+Feedlots,Filter strip,ND,0.85,ND,ND,ND,,
+Feedlots,Runoff Mgmt System,ND,0.825,ND,ND,ND,,
+Feedlots,Solids Separation Basin,0.35,0.31,ND,ND,ND,,
+Feedlots,Solids Separation Basin w/Infilt Bed,ND,0.8,0.85,ND,ND,,
+Feedlots,Terrace,0.55,0.85,ND,ND,ND,,
+Feedlots,Waste Mgmt System,0.8,0.9,ND,ND,ND,,
+Feedlots,Waste Storage Facility,0.65,0.6,ND,ND,ND,,
+Urban,,,,,,,Design Storage Depth (ft),Flow Volume Reduction Applied
+Urban,0 No BMP,0,0,0,0,0,,
+Urban,Alum Treatment,0.6,0.9,0.6,0.95,ND,,No
+Urban,Bioretention facility,0.63,0.8,ND,ND,ND,,No
+Urban,Combined BMPs-Calculated,0,0,0,0,0,,
+Urban,Concrete Grid Pavement,0.9,0.9,ND,0.9,ND,,No
+Urban,Dry Detention,0.3,0.26,0.27,0.575,ND,,No
+Urban,Extended Wet Detention,0.55,0.685,0.72,0.86,ND,,No
+Urban,Filter Strip-Agricultural,0.5325,0.6125,ND,0.65,ND,,No
+Urban,Grass Swales,0.1,0.25,0.3,0.65,ND,,No
+Urban,Infiltration Basin,0.6,0.65,ND,0.75,ND,3,Yes
+Urban,Infiltration Devices,ND,0.83,0.83,0.94,ND,3,Yes
+Urban,Infiltration Trench,0.55,0.6,ND,0.75,ND,3,Yes
+Urban,LID*/Cistern,0,0,0,0,0,100,Yes
+Urban,LID*/Cistern+Rain Barrel,0,0,0,0,0,160,Yes
+Urban,LID*/Rain Barrel,0,0,0,0,0,60,Yes
+Urban,LID/Bioretention,0.43,0.81,ND,ND,ND,3,Yes
+Urban,LID/Dry Well,0.5,0.5,0.7,0.9,ND,3,Yes
+Urban,LID/Filter/Buffer Strip,0.3,0.3,0.4,0.6,ND,,No
+Urban,LID/Infiltration Swale,0.5,0.65,ND,0.9,ND,2,Yes
+Urban,LID/Infiltration Trench,0.5,0.5,0.7,0.9,ND,2,Yes
+Urban,LID/Vegetated Swale,0.075,0.175,ND,0.475,ND,,No
+Urban,LID/Wet Swale,0.4,0.2,ND,0.8,ND,,No
+Urban,Oil/Grit Separator,0.05,0.05,ND,0.15,ND,,No
+Urban,Porous Pavement,0.85,0.65,ND,0.9,ND,2,Yes
+Urban,Sand Filter/Infiltration Basin,0.35,0.5,ND,0.8,ND,3,Yes
+Urban,Sand Filters,ND,0.375,0.4,0.825,ND,,No
+Urban,Settling Basin,ND,0.515,0.56,0.815,ND,,No
+Urban,Vegetated Filter Strips,0.4,0.4525,0.505,0.73,ND,,No
+Urban,Weekly Street Sweeping,ND,0.06,0.06,0.16,ND,,No
+Urban,Wet Pond,0.35,0.45,ND,0.6,ND,,No
+Urban,Wetland Detention,0.2,0.44,0.63,0.775,ND,,No
+Urban,WQ Inlet w/Sand Filter,0.35,ND,ND,0.8,ND,,No
+Urban,WQ Inlets,0.2,0.09,0.13,0.37,ND,,No
