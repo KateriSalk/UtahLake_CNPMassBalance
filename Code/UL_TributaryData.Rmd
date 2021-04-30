@@ -37,12 +37,10 @@ Data were loaded from spreadsheets obtained by Utah DWQ:
 ```{r}
 # tributary data
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
-trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
 # facility data
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 # watershed spatial data
 wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
-wshds2 <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 # sampling activity logs
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
 # groundwater data
@@ -616,6 +614,12 @@ trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
 # There is one TP value from WFWQC of 2 ug/L, which is below the detection limit of 10 ug/L. Set to 1/2 detection limit. 
 trib_fac_sites_intersect_downstream$TP[trib_fac_sites_intersect_downstream$TP == 2] <- 5
 
+```
+
+### Examine detection and reporting limits
+```{r}
+detection <- trib_fac_sites_intersect_downstream %>%
+  left_join(trib)
 ```
 
 
@@ -2868,9 +2872,14 @@ loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
 
 # Lehi Spring Creek
 # combine data from DWQ and WFWQC data from two sites
+# TP and TDP concentrations are below reporting limit for WFWQC --> use only DWQ samples
 loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Lehi Spring Creek") %>%
+  mutate(load.TP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TP.kgd),
+         load.TDP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TDP.kgd)) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -2901,9 +2910,12 @@ loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
 
 # American Fork River
 # combine data from DWQ and WFWQC data from two sites
+# P and N concentrations are below reporting limit for WFWQC --> use only DWQ samples
+
 loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "American Fork River") %>%
+  filter(OrganizationIdentifier != "WFWQC_UT") %>%
   group_by(WS_Name,  Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -3230,9 +3242,12 @@ loading_PowellSloughMajor <- loading_PowellSloughMajor_north %>%
 #loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
 
 # Provo River
+# P and N concentrations are below reporting limit for WFWQC --> use only DWQ samples
+
 loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Provo River") %>%
+  filter(OrganizationIdentifier != "WFWQC_UT") %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -3409,10 +3424,15 @@ loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
 
 # Hobble Creek
 # combine data from DWQ and WFWQC data from three sites - all are equivalent
-
+# TP and TDP concentrations are below reporting limit for WFWQC --> use only DWQ samples
+ 
 loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Hobble Creek") %>%
+  mutate(load.TP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TP.kgd),
+         load.TDP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TDP.kgd)) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -3478,6 +3498,7 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
 
 # Spanish Fork
 # Need to compare loads from WFWQC and DWQ. Generate each separately
+# TN  concentrations are below reporting limit for WFWQC --> use only DWQ samples
 
 loading_SpanishFork_DWQ <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
@@ -3515,6 +3536,8 @@ loading_SpanishFork_WFWQC <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(OrganizationIdentifier == "WFWQC_UT") %>%
   filter(WS_Name == "Spanish Fork River") %>%
+  mutate(load.TN.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TN.kgd)) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -4241,8 +4264,8 @@ TN
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Lehi Spring Creek") +
@@ -4253,8 +4276,8 @@ ggsave("./Code/Output/TNconc_Lehi.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "American Fork River") +
@@ -4265,8 +4288,8 @@ ggsave("./Code/Output/TNconc_American.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Lindon Drain") +
@@ -4277,8 +4300,8 @@ ggsave("./Code/Output/TNconc_Lindon.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Provo River") +
@@ -4289,8 +4312,8 @@ ggsave("./Code/Output/TNconc_Provo.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   scale_y_log10() +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
@@ -4303,8 +4326,8 @@ ggsave("./Code/Output/TNconc_Hobble.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-   geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   ylim(0, 2000) +
@@ -4316,8 +4339,8 @@ ggsave("./Code/Output/TNconc_Spanish.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "4000 South Drain Spanish Fork") +
@@ -4335,8 +4358,8 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Lehi Spring Creek") +
@@ -4348,8 +4371,8 @@ ggsave("./Code/Output/TPconc_Lehi.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "American Fork River") +
@@ -4361,8 +4384,8 @@ ggsave("./Code/Output/TPconc_American.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Lindon Drain") +
@@ -4375,8 +4398,8 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Provo River") +
@@ -4389,8 +4412,8 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   scale_y_log10() +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
@@ -4404,8 +4427,8 @@ ggsave("./Code/Output/TPconc_Hobble.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Spanish Fork River") +
@@ -4417,8 +4440,8 @@ ggsave("./Code/Output/TPconc_Spanish.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "4000 South Drain Spanish Fork") +
@@ -4530,8 +4553,8 @@ TN
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Timp SSD") +
@@ -4543,8 +4566,8 @@ ggsave("./Code/Output/TNconc_TimpSSD.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Powell Slough Major") +
@@ -4556,8 +4579,8 @@ ggsave("./Code/Output/TNconc_Powell.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Mill Race") +
@@ -4569,8 +4592,8 @@ ggsave("./Code/Output/TNconc_MillRace.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Spring Creek - Springville") +
@@ -4581,8 +4604,8 @@ ggsave("./Code/Output/TNconc_Spring.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-   geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Spanish Fork") +
@@ -4594,8 +4617,8 @@ ggsave("./Code/Output/TNconc_DrySpanish.jpg", height = 4, width = 5, units = "in
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-   geom_hline(yintercept = 185, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 318, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Benjamin Slough") +
@@ -4613,8 +4636,8 @@ TP
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Timp SSD") +
@@ -4626,8 +4649,8 @@ ggsave("./Code/Output/TPconc_TimpSSD.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Powell Slough Major") +
@@ -4639,8 +4662,8 @@ ggsave("./Code/Output/TPconc_Powell.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Mill Race") +
@@ -4652,8 +4675,8 @@ ggsave("./Code/Output/TPconc_MillRace.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Spring Creek - Springville") +
@@ -4664,8 +4687,8 @@ ggsave("./Code/Output/TPconc_Spring.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Spanish Fork") +
@@ -4677,8 +4700,8 @@ ggsave("./Code/Output/TPconc_DrySpanish.jpg", height = 4, width = 5, units = "in
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 5, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 10, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Benjamin Slough") +
