@@ -1,0 +1,88 @@
+---
+title: "UtahLake_WatershedLoading"
+author: "Kateri Salk"
+date: "5/3/2021"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(viridis)
+library(wqTools)
+library(sf)
+library(cowplot)
+
+theme_set(theme_classic())
+options(scipen = 4)
+```
+
+```{r}
+unmonitored_loading <- read.csv("./UnmonitoredWS_Modeling/MapMyWatershed/Compiled_Model_Results/water_quality_load_summary.csv")
+unmonitored_hydrology <- read.csv("./UnmonitoredWS_Modeling/MapMyWatershed/Compiled_Model_Results/hydrology.csv")
+
+monitored_loading <- read.csv("./Data/Processed/loading_AllWatersheds_annual.csv")
+
+# watershed spatial data
+wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
+```
+
+```{r}
+
+unmonitored_loading$Total.Nitrogen <- as.numeric(gsub(",", "", unmonitored_loading$Total.Nitrogen))
+unmonitored_loading$Total.Phosphorus <- as.numeric(gsub(",", "", unmonitored_loading$Total.Phosphorus))
+unmonitored_loading$WS_Name <- as.factor(unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name <- gsub("_", " ", unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name <- gsub("   ", " - ", unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name[unmonitored_loading$WS_Name == "Lake Mountain -  Gravel Pit"] <- "Lake Mountain  - Gravel Pit"
+
+unmonitored_loading_processed <- unmonitored_loading %>%
+  filter(Sources == "Total Loads (kg)") %>%
+  mutate(load.TN.tonyr = Total.Nitrogen/1000, 
+         load.TP.tonyr = Total.Phosphorus/1000, 
+         Flow.cfs = NA, 
+         load.TDN.tonyr = NA, 
+         load.TDP.tonyr = NA, 
+         load.TOC.tonyr = NA,
+         load.DOC.tonyr = NA) %>%
+  select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, 
+         load.TP.tonyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
+  
+
+unmonitored_hydrology_processed <- unmonitored_hydrology %>%
+  mutate(Month = match(Month, month.abb)) %>%
+  drop_na(Month) %>%
+  mutate(Flow.cm = Stream.Flow..cm. + Surface.Runoff..cm. + Subsurface.Flow..cm. + Point.Src.Flow..cm.) %>%
+  select(WS_Name, Month, Flow.cm)
+
+```
+
+```{r}
+loading <- rbind(monitored_loading, unmonitored_loading_processed)
+```
+
+
+```{r}
+wshds_loading <- wshds %>%
+  left_join(., loading)
+```
+
+```{r}
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TN.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black"))
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TP.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black"))
+```
+
