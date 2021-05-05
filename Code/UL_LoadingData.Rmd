@@ -55,12 +55,27 @@ unmonitored_loading_processed <- unmonitored_loading %>%
   select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, 
          load.TP.tonyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
   
+unmonitored_hydrology$WS_Name <- as.factor(unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name <- gsub("_", " ", unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name <- gsub("   ", " - ", unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name[unmonitored_hydrology$WS_Name == "Lake Mountain -  Gravel Pit"] <- "Lake Mountain  - Gravel Pit"
+
+wshds_area <- wshds %>%
+  select(WS_Name, wsa_sqkm)
 
 unmonitored_hydrology_processed <- unmonitored_hydrology %>%
   mutate(Month = match(Month, month.abb)) %>%
   drop_na(Month) %>%
-  mutate(Flow.cm = Stream.Flow..cm. + Surface.Runoff..cm. + Subsurface.Flow..cm. + Point.Src.Flow..cm.) %>%
+  mutate(Flow.cm = Stream.Flow..cm. + Surface.Runoff..cm. + Point.Src.Flow..cm.) %>%
   select(WS_Name, Month, Flow.cm)
+
+unmonitored_hydrology_processed_annual <- unmonitored_hydrology_processed %>%
+  group_by(WS_Name) %>%
+  summarise(Flow.cm = sum(Flow.cm)) %>%
+  left_join(., wshds_area) %>%
+  mutate(Flow.acftyr = Flow.cm * wsa_sqkm * 247.105/30.48)
+
+
 
 ```
 
@@ -68,6 +83,20 @@ unmonitored_hydrology_processed <- unmonitored_hydrology %>%
 loading <- rbind(monitored_loading, unmonitored_loading_processed)
 ```
 
+```{r}
+flow_unmonitored <- unmonitored_hydrology_processed_annual %>%
+  select(WS_Name, Flow.acftyr)
+flow_monitored <- monitored_loading %>%
+  select(WS_Name, Flow.acftyr)
+flow <- rbind(flow_unmonitored, flow_monitored)
+
+flow_total <- flow %>%
+  summarise(Flow.acft.yr = sum(Flow.acftyr))
+
+#compare to Su and Von Stackelberg: 
+147729+209013  
+
+```
 
 ```{r}
 wshds_loading <- wshds %>%
@@ -83,6 +112,9 @@ ggplot(wshds_loading) +
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.TP.tonyr, color = Monitored_)) +
   scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
-  scale_color_manual(values = c("lightgray", "black"))
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TP load", color = "Monitored") +
+  theme(legend.position = "top")
+ggsave(file = "./Code/Output/TPloadmap.jpg", width = 5, height = 6)
 ```
 

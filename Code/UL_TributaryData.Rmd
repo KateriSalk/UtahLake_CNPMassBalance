@@ -2818,6 +2818,9 @@ loading_TickvilleWash <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2850,6 +2853,9 @@ loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2888,6 +2894,9 @@ loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2924,6 +2933,9 @@ loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2958,6 +2970,9 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2992,6 +3007,9 @@ loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3024,6 +3042,9 @@ loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3060,7 +3081,6 @@ loading_LindonDrain_WFWQC$load.TDP.tonmo <- temp$y
 
 # Powell Slough 
 # North Outfall
-#INTERPOLATE MISSING MONTHS
 loading_PowellSloughMajor_north <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Powell Slough Major") %>%
@@ -3073,6 +3093,9 @@ loading_PowellSloughMajor_north <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3094,7 +3117,7 @@ loading_PowellSloughMajor_north <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # interpolate missing months
-# REVISIT TDN, TOC, and DOC
+
 temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TN.kgd, n = 12))
 loading_PowellSloughMajor_north$load.TN.kgd <- temp$y
 temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TP.kgd, n = 12))
@@ -3107,6 +3130,20 @@ temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TP.tonmo, n = 12)
 loading_PowellSloughMajor_north$load.TP.tonmo <- temp$y
 temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TDP.tonmo, n = 12))
 loading_PowellSloughMajor_north$load.TDP.tonmo <- temp$y
+
+loading_PowellSloughMajor_north$load.TDN.kgd[is.na(loading_PowellSloughMajor_north$load.TDN.kgd)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TDN.kgd[4], loading_PowellSloughMajor_north$load.TDN.kgd[12]))
+loading_PowellSloughMajor_north$load.TOC.kgd[is.na(loading_PowellSloughMajor_north$load.TOC.kgd)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TOC.kgd[4], loading_PowellSloughMajor_north$load.TOC.kgd[12]))
+loading_PowellSloughMajor_north$load.DOC.tonmo[is.na(loading_PowellSloughMajor_north$load.DOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.DOC.tonmo[4], loading_PowellSloughMajor_north$load.DOC.tonmo[12]))
+loading_PowellSloughMajor_north$load.TDN.tonmo[is.na(loading_PowellSloughMajor_north$load.TDN.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TDN.tonmo[4], loading_PowellSloughMajor_north$load.TDN.tonmo[12]))
+loading_PowellSloughMajor_north$load.TOC.tonmo[is.na(loading_PowellSloughMajor_north$load.TOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TOC.tonmo[4], loading_PowellSloughMajor_north$load.TOC.tonmo[12]))
+loading_PowellSloughMajor_north$load.DOC.tonmo[is.na(loading_PowellSloughMajor_north$load.DOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.DOC.tonmo[4], loading_PowellSloughMajor_north$load.DOC.tonmo[12]))
+
 
 # South Outfall
 loading_PowellSloughMajor_south <- trib_fac_sites_intersect_downstream %>%
@@ -3121,6 +3158,9 @@ loading_PowellSloughMajor_south <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3152,6 +3192,7 @@ loading_PowellSloughMajor <- loading_PowellSloughMajor_north %>%
             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = sum(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
@@ -3256,6 +3297,9 @@ loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3288,6 +3332,9 @@ loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3319,6 +3366,7 @@ loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
@@ -3329,8 +3377,8 @@ loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
          OrganizationIdentifier = "WFWQC_UT") %>%
   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
+         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TN.kgd, n = 12))
 loading_MillRace_WFWQCloads$load.TN.kgd <- temp$y
@@ -3356,6 +3404,7 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = sum(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
@@ -3366,8 +3415,8 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
          OrganizationIdentifier = "UTAHDWQ_WQX") %>%
   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
+         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 #combine loading from different organizations
 # REVISIT - had to average rather than using all measurements
@@ -3381,6 +3430,7 @@ loading_MillRace <- loading_MillRace_WFWQCloads %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
@@ -3402,6 +3452,9 @@ loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3441,6 +3494,9 @@ loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3462,7 +3518,6 @@ loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Dry Creek - Spanish Fork
-# REVISIT - need to interpolate for January
 loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Dry Creek - Spanish Fork") %>%
@@ -3476,6 +3531,9 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3496,6 +3554,30 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+loading_DryCreekSpanishFork_January <- 
+  data.frame(WS_Name = "Dry Creek - Spanish Fork", Month = 1, 
+             Flow.cfs = mean(c(loading_DryCreekSpanishFork$Flow.cfs[1], loading_DryCreekSpanishFork$Flow.cfs[11])),
+             load.TN.kgd = mean(c(loading_DryCreekSpanishFork$load.TN.kgd[1], loading_DryCreekSpanishFork$load.TN.kgd[11])),
+             load.TDN.kgd = mean(c(loading_DryCreekSpanishFork$load.TDN.kgd[1], loading_DryCreekSpanishFork$load.TDN.kgd[11])),
+             load.TP.kgd = mean(c(loading_DryCreekSpanishFork$load.TP.kgd[1], loading_DryCreekSpanishFork$load.TP.kgd[11])),
+             load.TDP.kgd = mean(c(loading_DryCreekSpanishFork$load.TDP.kgd[2], loading_DryCreekSpanishFork$load.TDP.kgd[11])),
+             load.TOC.kgd = mean(c(loading_DryCreekSpanishFork$load.TOC.kgd[1], loading_DryCreekSpanishFork$load.TOC.kgd[11])),
+             load.DOC.kgd = mean(c(loading_DryCreekSpanishFork$load.DOC.kgd[1], loading_DryCreekSpanishFork$load.DOC.kgd[11])),
+             Flow.acftmo = mean(c(loading_DryCreekSpanishFork$Flow.acftmo[1], loading_DryCreekSpanishFork$Flow.acftmo[11])),
+             load.TN.tonmo = mean(c(loading_DryCreekSpanishFork$load.TN.tonmo[1], loading_DryCreekSpanishFork$load.TN.tonmo[11])),
+             load.TDN.tonmo = mean(c(loading_DryCreekSpanishFork$load.TDN.tonmo[1], loading_DryCreekSpanishFork$load.TDN.tonmo[11])),
+             load.TP.tonmo = mean(c(loading_DryCreekSpanishFork$load.TP.tonmo[1], loading_DryCreekSpanishFork$load.TP.tonmo[11])),
+             load.TDP.tonmo = mean(c(loading_DryCreekSpanishFork$load.TDP.tonmo[2], loading_DryCreekSpanishFork$load.TDP.tonmo[11])),
+             load.TOC.tonmo = mean(c(loading_DryCreekSpanishFork$load.TOC.tonmo[1], loading_DryCreekSpanishFork$load.TOC.tonmo[11])),
+             load.DOC.tonmo = mean(c(loading_DryCreekSpanishFork$load.DOC.tonmo[1], loading_DryCreekSpanishFork$load.DOC.tonmo[11])))
+
+loading_DryCreekSpanishFork <- rbind(loading_DryCreekSpanishFork_January, loading_DryCreekSpanishFork)
+
+loading_DryCreekSpanishFork$load.TDP.kgd[is.na(loading_DryCreekSpanishFork$load.TDP.kgd)] <-
+  mean(c(loading_DryCreekSpanishFork$load.TDP.kgd[3], loading_DryCreekSpanishFork$load.TDP.kgd[12]))
+loading_DryCreekSpanishFork$load.TDP.tonmo[is.na(loading_DryCreekSpanishFork$load.TDP.tonmo)] <-
+  mean(c(loading_DryCreekSpanishFork$load.TDP.tonmo[3], loading_DryCreekSpanishFork$load.TDP.tonmo[12]))
+
 # Spanish Fork
 # Need to compare loads from WFWQC and DWQ. Generate each separately
 # TN  concentrations are below reporting limit for WFWQC --> use only DWQ samples
@@ -3512,6 +3594,9 @@ loading_SpanishFork_DWQ <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3546,6 +3631,9 @@ loading_SpanishFork_WFWQC <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3581,6 +3669,9 @@ loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3634,6 +3725,9 @@ loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3670,6 +3764,9 @@ loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3859,14 +3956,14 @@ loading_AllWatersheds_annual <- loading_AllWatersheds %>%
             load.TN.tonyr = sum(load.TN.tonmo, na.rm = TRUE), 
             load.TDN.tonyr = sum(load.TDN.tonmo, na.rm = TRUE), 
             load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            Flow.acftyr = sum(Flow.acftmo, na.rm = TRUE),
             load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
             load.TOC.tonyr = sum(load.TOC.tonmo, na.rm = TRUE), 
             load.DOC.tonyr = sum(load.DOC.tonmo, na.rm = TRUE))
 
 loading_Total_annual <- loading_AllWatersheds_annual %>%
-  filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
   ungroup() %>%
-  summarise(Flow.cfs = sum(Flow.cfs), 
+  summarise(Flow.acftyr = sum(Flow.acftyr, na.rm = TRUE), 
             load.TN.tonyr = sum(load.TN.tonyr, na.rm = TRUE), 
             load.TDN.tonyr = sum(load.TDN.tonyr, na.rm = TRUE), 
             load.TP.tonyr = sum(load.TP.tonyr, na.rm = TRUE), 
