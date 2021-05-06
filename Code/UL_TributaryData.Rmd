@@ -3974,6 +3974,9 @@ loading_Total_annual <- loading_AllWatersheds_annual %>%
 loading_AllWatersheds_annual_combined <- 
   rbind(loading_AllWatersheds_annual, loading_AllWatersheds_dmr2_annual)
 
+
+# write.csv(loading_AllWatersheds, file = "./Data/Processed/loading_AllWatersheds.csv",
+#        row.names = FALSE)
 # write.csv(loading_AllWatersheds_annual, file = "./Data/Processed/loading_AllWatersheds_annual.csv",
 #        row.names = FALSE)
 
