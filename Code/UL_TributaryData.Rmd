@@ -668,6 +668,40 @@ colnames(gw_wq_flow)[12:25] <- c("NO23.d", "PO4", "CO3.d", "Flow.galmin",
                                  "NO3.d", "DIN+DON", "DOC", "TDN", "NH3.d", 
                                  "NO23.t", "TP", "TDP", "NH3.t", "CO3.t")
 
+summary(gw_wq_flow)
+# ResultStatusIdentifier     NO23.d             PO4              CO3.d   
+#  Length:92              Min.   :  0.020   Min.   :0.00400   Min.   :0   
+#  Class :character       1st Qu.:  1.155   1st Qu.:0.01075   1st Qu.:0   
+#  Mode  :character       Median :  2.220   Median :0.02050   Median :0   
+#                         Mean   : 10.528   Mean   :0.02252   Mean   :0   
+#                         3rd Qu.:  7.540   3rd Qu.:0.03000   3rd Qu.:0   
+#                         Max.   :268.000   Max.   :0.09500   Max.   :0   
+#                         NA's   :25        NA's   :12        NA's   :88  
+#   Flow.galmin          NO3.d           DIN+DON            DOC        
+#  Min.   :   0.21   Min.   :0.0850   Min.   :0.0900   Min.   :0.2800  
+#  1st Qu.: 136.00   1st Qu.:0.4713   1st Qu.:0.2950   1st Qu.:0.2850  
+#  Median :1020.00   Median :0.5780   Median :0.6300   Median :0.2900  
+#  Mean   : 981.13   Mean   :0.6977   Mean   :0.6529   Mean   :0.3067  
+#  3rd Qu.:1745.00   3rd Qu.:0.7740   3rd Qu.:0.8000   3rd Qu.:0.3200  
+#  Max.   :2300.00   Max.   :1.6700   Max.   :1.6600   Max.   :0.3500  
+#  NA's   :81        NA's   :86       NA's   :85       NA's   :89      
+#       TDN             NH3.d          NO23.t               TP        
+#  Min.   : 17.45   Min.   :0.09   Min.   :  0.1000   Min.   : 0.048  
+#  1st Qu.: 17.60   1st Qu.:0.09   1st Qu.:  0.5633   1st Qu.: 0.048  
+#  Median : 25.60   Median :0.09   Median :  1.3515   Median : 0.050  
+#  Mean   : 82.81   Mean   :0.09   Mean   : 46.0040   Mean   :15.137  
+#  3rd Qu.: 37.40   3rd Qu.:0.09   3rd Qu.: 36.5250   3rd Qu.:15.139  
+#  Max.   :316.00   Max.   :0.09   Max.   :267.0000   Max.   :60.400  
+#  NA's   :87       NA's   :91     NA's   :84         NA's   :88      
+#       TDP              NH3.t         CO3.t   
+#  Min.   :0.01200   Min.   :421   Min.   :0   
+#  1st Qu.:0.01250   1st Qu.:421   1st Qu.:0   
+#  Median :0.01300   Median :421   Median :0   
+#  Mean   :0.01733   Mean   :421   Mean   :0   
+#  3rd Qu.:0.02000   3rd Qu.:421   3rd Qu.:0   
+#  Max.   :0.02700   Max.   :421   Max.   :0   
+#  NA's   :89        NA's   :91    NA's   :89  
+
 gw_sites <- gw_wq_flow %>%
   ungroup() %>%
   select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure) %>%
@@ -676,16 +710,56 @@ gw_sites <- gw_wq_flow %>%
 gw_sites_sf <- st_as_sf(gw_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
                               crs = 4326, dim = "XY") #CRS = WGS84
 
-
+# EFDC/WASP output (ULEFDCFlowBoundaries_WY2006-2018) uses four zones in Utah Lake. Assign sites to one of these zones.
 gw_wq_intersect <- gw_sites_sf %>%
   st_intersection(wshds) %>%
-  left_join(., gw_wq_flow) 
+  left_join(., gw_wq_flow) %>%
+  mutate(zone = case_when(WS_Name %in% 
+                            c("Vineyard Drain 3", "Lehi Drain 1", "Lehi Spring Creek",
+                              "Lehi Drain 2", "American Fork 2", "Skipper Bay 2", 
+                              "Provo Airport", "Dry Creek - Saratoga", "American Fork 1", 
+                              "Lindon Drain", "Provo River", "Tickville Wash") ~ "North", 
+                          WS_Name %in% c("Benjamin Slough", "Spanish Fork River") ~ "South", 
+                          WS_Name %in% c("Currant Creek", "Goshen Valley") ~ "Goshen Bay", 
+                          WS_Name %in% c("Big Dry Creek", "Spring Creek - Springville") ~ "Provo Bay"), 
+# TP, TDP, and PO4 measurements are always distinct (agencies may report one or the other). 
+# Combine into one column.
+# NO23.d is the only widely available N species. Use that to represent N.
+                  TP = case_when(!is.na(PO4) ~ PO4, 
+                                 !is.na(TDP) ~ TDP, 
+                                 TRUE ~ TP)) %>%
+  # one TP value of 60.4 (unrealistic). remove.
+  filter(TP < 60) %>%
+  # one NO23.d value of 268 (unrealistic). remove.
+  filter(NO23.d < 250)
 
+# Groundwater Sources	        Constant Flow (m3/sec)
+# Groundwater-Northern Valley	0.997
+# Groundwater-Southern Valley	0.19
+# Groundwater-Goshen Bay	    0.141
+# Groundwater-Provo Bay	      0.185
 
-# TP and PO4 measurements are always distinct (agencies may report one or the other). Combine into one column.
-# 
+gw_wq_summary <- gw_wq_intersect %>%
+  as.data.frame() %>%
+  group_by(zone) %>%
+  summarise(TP = mean(TP), 
+            NO23.d = mean(NO23.d)) %>%
+  mutate(Flow.m3s = case_when(zone == "North" ~ 0.997, 
+                              zone == "South" ~ 0.19, 
+                              zone == "Goshen Bay" ~ 0.141, 
+                              zone == "Provo Bay" ~ 0.185), 
+         Flow.acftyr = Flow.m3s * 31536000 / 1233.48,
+         load.TP.tonyr = TP * Flow.m3s * 31536000 / 1000000, 
+         load.TN.tonyr = NO23.d * Flow.m3s * 31536000 / 1000000) 
+# write.csv(gw_wq_summary, file = "./Data/Processed/loading_groundwater_annual.csv", 
+#           row.names = FALSE)
 
-#gw_wq_intersect <- gw_wq_intersect %>%
+ggplot(gw_wq_intersect, aes(x = zone, y = TP)) +
+  geom_boxplot()
+
+ggplot(gw_wq_intersect, aes(x = zone, y = NO23.d)) +
+  geom_boxplot()
+
   
 
 ```
