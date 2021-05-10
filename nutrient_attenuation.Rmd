@@ -20,7 +20,7 @@ library(plotly)
 ## Data import
 ```{r}
 trib_data=read.csv(file="Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
-trib_data=subset(trib_data, CharacteristicName %in% c("Phosphate-phosphorus","Nitrogen","Flow"))
+trib_data=subset(trib_data, CharacteristicName %in% c("Phosphate-phosphorus","Nitrogen","Flow","Total dissolved solids"))
 sites_all=unique(trib_data[,c("MonitoringLocationIdentifier", "OrganizationIdentifier", "MonitoringLocationName", "MonitoringLocationTypeName", "LatitudeMeasure", "LongitudeMeasure")])
 ```
 
@@ -41,6 +41,7 @@ trib_data=within(trib_data, {
 	param_name[CharacteristicName=="Nitrogen" & ResultSampleFractionText=="Total"]="Total nitrogen"
 	param_name[CharacteristicName=="Nitrogen" & ResultSampleFractionText=="Dissolved"]="Dissolved nitrogen"
 	param_name[CharacteristicName=="Flow"]="Flow"
+	param_name[CharacteristicName=="Total dissolved solids"]="Total dissolved solids"
 	mlid=gsub("UTAHDWQ_WQX-","", MonitoringLocationIdentifier)
 })
 with(trib_data, {table(param_name, ResultMeasure.MeasureUnitCode)})
@@ -60,7 +61,7 @@ trib_data=within(trib_data, {
 	ResultMeasureValue[ResultDetectionConditionText=="Not Detected" & CharacteristicName=="Phosphate-phosphorus"]=0.01
 })
 
-table(is.na(trib_data$ResultMeasureValue))
+table(is.na(trib_data$ResultMeasureValue)) # Should be all FALSE
 
 mr_data=subset(trib_data, MonitoringLocationIdentifier %in% mr_site_list)
 ps_data=subset(trib_data, MonitoringLocationIdentifier %in% ps_site_list)
@@ -88,9 +89,40 @@ baseMap() %>%
 	fitBounds(min(mr_sites$LongitudeMeasure)*0.9999, min(mr_sites$LatitudeMeasure)*0.9999, max(mr_sites$LongitudeMeasure)*1.0001, max(mr_sites$LatitudeMeasure)*1.0001)
 ```
 
-### Plot nutrient concentrations
 
-#### Phosphorus
+### Phosphorus
+
+```{r, mr-p3, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(mr_data, param_name=="Total phosphorus" & mlid %in% c("4996570","4996550","4996555","4996566","4996630","4996540"))
+plot_ly(plot_data) %>%
+	add_trace(x=~as.Date(ActivityStartDate), y=~ResultMeasureValue, name=~mlid, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = ""),
+		yaxis=list(title="Total phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
 ```{r, mr-p, out.width = "100%", message=F, warning=F, echo=F}
 plot_ly(data=subset(mr_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
@@ -98,7 +130,19 @@ plot_ly(data=subset(mr_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 		legend = list(x = 0, y = 1),
 		boxmode = "group",
 		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
-		yaxis=list(title="Phosphorus (mg/L)")
+		yaxis=list(title="Phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))		
 	) %>% 
 	config(displaylogo = FALSE,
 		modeBarButtonsToRemove = c(
@@ -109,10 +153,78 @@ plot_ly(data=subset(mr_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 			'select2d'
 		)
 	)
-
 ```
 
-#### Nitrogen
+
+```{r, mr-p2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(mr_data, param_name=="Total phosphorus" & mlid %in% c("4996570","4996550","4996555","4996566","4996630","4996540"))
+levels(plot_data$mlid)=c("4996570","4996550","4996555","4996566","4996630","4996540")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		#legend = list(x = 0, y = 1),
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Total phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))		
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
+
+
+### Nitrogen
+
+```{r, mr-n3, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(mr_data, param_name=="Total nitrogen" & mlid %in% c("4996570","4996550","4996555","4996566","4996630","4996540"))
+plot_ly(plot_data) %>%
+	add_trace(x=~as.Date(ActivityStartDate), y=~ResultMeasureValue, name=~mlid, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = ""),
+		yaxis=list(title="Total nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
 ```{r, mr-n, out.width = "100%", message=F, warning=F, echo=F}
 plot_ly(data=subset(mr_data, CharacteristicName=="Nitrogen")) %>%
 	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
@@ -120,7 +232,51 @@ plot_ly(data=subset(mr_data, CharacteristicName=="Nitrogen")) %>%
 		legend = list(x = 0, y = 1),
 		boxmode = "group",
 		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
-		yaxis=list(title="Nitrogen (mg/L)")
+		yaxis=list(title="Nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+```{r, mr-n2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(mr_data, param_name=="Total nitrogen" & mlid %in% c("4996570","4996550","4996555","4996566","4996630","4996540"))
+levels(plot_data$mlid)=c("4996570","4996550","4996555","4996566","4996630","4996540")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Total nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
 	) %>% 
 	config(displaylogo = FALSE,
 		modeBarButtonsToRemove = c(
@@ -133,7 +289,8 @@ plot_ly(data=subset(mr_data, CharacteristicName=="Nitrogen")) %>%
 	)
 ```
 
-#### Flow
+
+### Flow
 ```{r, mr-flow, out.width = "100%", message=F, warning=F, echo=F}
 plot_ly(data=subset(mr_data, CharacteristicName=="Flow")) %>%
 	add_boxplot(x=~mlid, y=~ResultMeasureValue) %>% 
@@ -156,6 +313,27 @@ plot_ly(data=subset(mr_data, CharacteristicName=="Flow")) %>%
 
 ```
 
+### TDS
+```{r, mr-TDS, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(mr_data, CharacteristicName=="Total dissolved solids")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4996570","4996550","4996555","4996566","4996630","4996540")),
+		yaxis=list(title="Total dissolved solids (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
 
 
 ## Powell Slough
@@ -178,6 +356,37 @@ baseMap() %>%
 ```
 
 ### Phosphorus
+```{r, ps-p3, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, param_name=="Total phosphorus" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+plot_ly(plot_data) %>%
+	add_trace(x=~as.Date(ActivityStartDate), y=~ResultMeasureValue, name=~mlid, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = ""),
+		yaxis=list(title="Total phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
 ```{r, ps-p, out.width = "100%", message=F, warning=F, echo=F}
 plot_ly(data=subset(ps_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
@@ -185,7 +394,19 @@ plot_ly(data=subset(ps_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 		legend = list(x = 0, y = 1),
 		boxmode = "group",
 		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
-		yaxis=list(title="Phosphorus (mg/L)")
+		yaxis=list(title="Phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))
 	) %>% 
 	config(displaylogo = FALSE,
 		modeBarButtonsToRemove = c(
@@ -199,7 +420,74 @@ plot_ly(data=subset(ps_data, CharacteristicName=="Phosphate-phosphorus")) %>%
 
 ```
 
+```{r, ps-p2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, param_name=="Total phosphorus" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+levels(plot_data$mlid)=c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
+		yaxis=list(title="Total phosphorus (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total phosphorus (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
+
+
+
 ### Nitrogen
+```{r, ps-n3, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, param_name=="Total nitrogen" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+plot_ly(plot_data) %>%
+	add_trace(x=~as.Date(ActivityStartDate), y=~ResultMeasureValue, name=~mlid, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = ""),
+		yaxis=list(title="Total nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
 ```{r, ps-n, out.width = "100%", message=F, warning=F, echo=F}
 plot_ly(data=subset(ps_data, CharacteristicName=="Nitrogen")) %>%
 	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
@@ -207,7 +495,19 @@ plot_ly(data=subset(ps_data, CharacteristicName=="Nitrogen")) %>%
 		legend = list(x = 0, y = 1),
 		boxmode = "group",
 		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
-		yaxis=list(title="Nitrogen (mg/L)")
+		yaxis=list(title="Nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
 	) %>% 
 	config(displaylogo = FALSE,
 		modeBarButtonsToRemove = c(
@@ -219,6 +519,42 @@ plot_ly(data=subset(ps_data, CharacteristicName=="Nitrogen")) %>%
 		)
 	)
 ```
+
+```{r, ps-n2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, param_name=="Total nitrogen" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+levels(plot_data$mlid)=c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995210","4995230")),
+		yaxis=list(title="Total nitrogen (mg/L)"),
+		updatemenus = list(list(
+			buttons= list(
+				list(label = 'linear',
+					method = 'update',
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'linear')))
+				),
+				list(label = 'log',
+					method = 'update', 
+					args = list(list(visible = c(T)), list(yaxis = list(title = 'Total nitrogen (mg/L)', type = 'log')))
+				)
+			)
+		))
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
+
+
 
 ### Flow
 ```{r, ps-flow, out.width = "100%", message=F, warning=F, echo=F}
@@ -242,5 +578,69 @@ plot_ly(data=subset(ps_data, CharacteristicName=="Flow")) %>%
 	)
 
 ```
+```{r, ps-flow2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, CharacteristicName=="Flow" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+levels(plot_data$mlid)=c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995210","4995230")),
+		yaxis=list(title="Flow (cfs)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
 
+```
+
+### TDS
+```{r, ps-TDS, out.width = "100%", message=F, warning=F, echo=F}
+plot_ly(data=subset(ps_data, CharacteristicName=="Total dissolved solids")) %>%
+	add_boxplot(x=~mlid, y=~ResultMeasureValue, name=~param_name) %>% 
+	layout(
+		legend = list(x = 0, y = 1),
+		boxmode = "group",
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")),
+		yaxis=list(title="Total dissolved solids (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+```
+
+```{r, ps-tds2, out.width = "100%", message=F, warning=F, echo=F}
+plot_data=subset(ps_data, CharacteristicName=="Total dissolved solids" & mlid %in% c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230"))
+levels(plot_data$mlid)=c("4995260","4995251","4995252","4995255","4995256","4995258","4995210","4995230")
+plot_data=plot_data[order(factor(plot_data$mlid, levels = levels(plot_data$mlid))),]
+plot_ly(plot_data) %>%
+	add_trace(x=~mlid, y=~ResultMeasureValue, name=~ActivityStartDate, type = "scatter", mode = "markers+lines") %>% 
+	layout(
+		xaxis = list(title = "Upstream ---> downstream", categoryorder = "array", categoryarray = c("4995260","4995210","4995230")),
+		yaxis=list(title="Total dissolved solids (mg/L)")
+	) %>% 
+	config(displaylogo = FALSE,
+		modeBarButtonsToRemove = c(
+			'sendDataToCloud',
+			'hoverClosestCartesian',
+			'hoverCompareCartesian',
+			'lasso2d',
+			'select2d'
+		)
+	)
+
+```
 
