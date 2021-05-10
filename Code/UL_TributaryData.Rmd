@@ -616,15 +616,26 @@ trib_fac_sites_intersect_downstream$TP[trib_fac_sites_intersect_downstream$TP ==
 
 ```
 
-### Examine detection and reporting limits
+### Jordan River Outflow
+REVISIT
 ```{r}
-detection <- trib_fac_sites_intersect_downstream %>%
-  left_join(trib)
+
+jordan <- trib_fac_sites_intersect %>%
+  filter(MonitoringLocationIdentifier == "UTAHDWQ_WQX-4994790") %>%
+  filter(Year >= 2015) %>%
+    mutate(load.TN.kgd = TN * Flow.cfs * 28.3168 * 86400 / 1000000, 
+         load.TDN.kgd = TDN * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TP.kgd = TP * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TDP.kgd = TDP * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TOC.kgd = TOC * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.DOC.kgd = DOC * Flow.cfs * 28.3168 * 86400 / 1000000)
+
+
 ```
 
 
 ### Groundwater (spring and well) data
-REVISIT
+
 ```{r, include = FALSE}
 gw$ActivityStartDate <- as.Date(gw$ActivityStartDate)
 
@@ -766,8 +777,6 @@ ggplot(gw_wq_intersect, aes(x = zone, y = NO23.d)) +
 
 ### Precipitation and Evapotranspiration data
 
-TO DO: Use area vs. elevation relationship to establish average monthly lake area, with variability quantified.
-
 REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
 ```{r, include= FALSE}
 colnames(p_et) <- c("Date", "precip.mm", "et.mm")
@@ -780,6 +789,18 @@ p_et_monthly <- p_et %>%
             et.mm = sum(et.mm)) %>%
   mutate(Year = year(Date), 
          Month = month(Date))
+
+p_et_summary <- p_et_monthly %>%
+  group_by(Month) %>%
+  summarise(precip.mm = mean(precip.mm), 
+            et.mm = mean(et.mm)) %>%
+  #multiply by lake area (95,000 acres)
+  mutate(precip.acftmo = precip.mm * 95000 / 304.8, 
+         et.acftmo = et.mm * 95000 / 304.8)
+# write.csv(p_et_summary, file = "./Data/Processed/hydrology_precip_et_monthly.csv",
+#           row.names = FALSE)
+
+
 
 ```
 
