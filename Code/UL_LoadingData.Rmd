@@ -1,0 +1,313 @@
+---
+title: "UtahLake_WatershedLoading"
+author: "Kateri Salk"
+date: "5/3/2021"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(viridis)
+library(wqTools)
+library(sf)
+library(cowplot)
+library(ggrepel)
+
+theme_set(theme_classic())
+options(scipen = 4)
+```
+
+## Load Datasets
+```{r}
+unmonitored_loading <- read.csv("./UnmonitoredWS_Modeling/MapMyWatershed/Compiled_Model_Results/water_quality_load_summary.csv")
+unmonitored_hydrology <- read.csv("./UnmonitoredWS_Modeling/MapMyWatershed/Compiled_Model_Results/hydrology.csv")
+
+monitored_loading_annual <- read.csv("./Data/Processed/loading_AllWatersheds_annual.csv")
+monitored_loading_monthly <- read.csv("./Data/Processed/loading_AllWatersheds.csv")
+
+# watershed spatial data
+wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
+```
+
+## Processing 
+
+### Unmonitored Watershed Data
+```{r}
+
+unmonitored_loading$Total.Nitrogen <- as.numeric(gsub(",", "", unmonitored_loading$Total.Nitrogen))
+unmonitored_loading$Total.Phosphorus <- as.numeric(gsub(",", "", unmonitored_loading$Total.Phosphorus))
+unmonitored_loading$WS_Name <- as.factor(unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name <- gsub("_", " ", unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name <- gsub("   ", " - ", unmonitored_loading$WS_Name)
+unmonitored_loading$WS_Name[unmonitored_loading$WS_Name == "Lake Mountain -  Gravel Pit"] <- "Lake Mountain  - Gravel Pit"
+
+unmonitored_loading_annual <- unmonitored_loading %>%
+  filter(Sources == "Total Loads (kg)") %>%
+  mutate(load.TN.tonyr = Total.Nitrogen/1000, 
+         load.TP.tonyr = Total.Phosphorus/1000, 
+         Flow.cfs = NA, 
+         Flow.acftyr = NA,
+         load.TDN.tonyr = NA, 
+         load.TDP.tonyr = NA, 
+         load.TOC.tonyr = NA,
+         load.DOC.tonyr = NA) %>%
+  select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr,
+         Flow.acftyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
+  
+unmonitored_hydrology$WS_Name <- as.factor(unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name <- gsub("_", " ", unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name <- gsub("   ", " - ", unmonitored_hydrology$WS_Name)
+unmonitored_hydrology$WS_Name[unmonitored_hydrology$WS_Name == "Lake Mountain -  Gravel Pit"] <- "Lake Mountain  - Gravel Pit"
+
+wshds_area <- wshds %>%
+  select(WS_Name, wsa_sqkm)
+
+unmonitored_hydrology_monthly <- unmonitored_hydrology %>%
+  mutate(Month = match(Month, month.abb)) %>%
+  drop_na(Month) %>%
+  left_join(., wshds_area) %>%
+  mutate(Flow.cm = Stream.Flow..cm. + Surface.Runoff..cm. + Point.Src.Flow..cm., 
+         Flow.acftmo = Flow.cm * wsa_sqkm * 247.105/30.48) %>%
+  select(WS_Name, Month, Flow.cm, Flow.acftmo)
+
+unmonitored_hydrology_annual <- unmonitored_hydrology_monthly %>%
+  group_by(WS_Name) %>%
+  summarise(Flow.acftyr = sum(Flow.acftmo)) 
+
+
+```
+
+### Reorder watershed names
+```{r}
+monitored_loading_monthly$WS_Name <- 
+  factor(monitored_loading_monthly$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+
+unmonitored_hydrology_monthly$WS_Name <- 
+  factor(unmonitored_hydrology_monthly$WS_Name, 
+         levels = c("Goshen Valley", "Lake Mountain - Clyde Knoll", "Lake Mountain - White Knoll", 
+                    "Lake Mountain - Pfeiffer Canyon", "Lake Mountain - Chaparral Canyon", 
+                    "Lake Mountain - Miners Canyon", "Lake Mountain  - Gravel Pit", 
+                    "Lake Mountain - Little Cover", "Pelican Point", "Lake Mountain - Limekiln Canyon", 
+                    "Lake Mountain - Losee Canyon", "Lake Mountain - Israel Canyon", 
+                    "Lehi Drain 1", "Lehi Drain 2", "Lehi Drain 3", "Lehi Drain 4", 
+                    "Lehi Drain 5", "Lehi Drain 6", "American Fork 1", "American Fork 2", 
+                    "Lindon Wetlands", "Lindon Marina", "Vineyard Drain 7", "Vineyard Drain 6", 
+                    "Vineyard Drain 5", "Vineyard Drain 4", "Vineyard Drain 3", "Vineyard Drain 2", 
+                    "Vineyard Drain 1", "Powell Slough Minor", "Skipper Bay 2", "Skipper Bay 1", 
+                    "Provo River Delta Project", "Provo Airport", "Big Dry Creek", "Provo Bay 8",
+                    "Provo Bay 7", "Provo Bay 6", "Provo Bay 5", "Provo Bay 4", "Provo Bay 3",
+                    "Provo Bay 2", "Provo Bay 1", "Spanish Fork - 1", "Spanish Fork 2",
+                    "West Mountain 1", "West Mountain 6", "West Mountain 2", "West Mountain 7",
+                    "West Mountain 3", "West Mountain 10", "West Mountain 4", "West Mountain 8",
+                    "West Mountain 9", "West Mountain 5"))
+
+   
+```
+
+### Add factor for whether a monitored watershed has a WWTP
+```{r}
+monitored_loading_monthly <- monitored_loading_monthly %>%
+  mutate(WS_Type = case_when(
+    WS_Name %in% c("Timp SSD", "Powell Slough Major", "Mill Race", 
+                   "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
+                   "Benjamin Slough") ~ "WWTP", 
+    TRUE ~ "No WWTP"))
+```
+
+
+### Combine monitored and unmonitored annual loading
+```{r}
+loading_annual <- monitored_loading_annual %>%
+  rbind(., unmonitored_loading_annual) %>%
+  left_join(., unmonitored_hydrology_annual, by = "WS_Name") %>%
+  mutate(Flow.acftyr = case_when(is.na(Flow.acftyr.x) ~ Flow.acftyr.y, 
+                                 TRUE ~ Flow.acftyr.x)) %>%
+  select(-Flow.acftyr.x, -Flow.acftyr.y)
+
+```
+
+### Join spatial and loading data
+```{r}
+wshds_loading <- wshds %>%
+  left_join(., loading_annual)
+```
+
+## Calculations
+### total tributary inflow
+REVISIT
+```{r}
+flow_unmonitored <- unmonitored_hydrology_processed_annual %>%
+  select(WS_Name, Flow.acftyr)
+flow_monitored <- monitored_loading %>%
+  select(WS_Name, Flow.acftyr)
+flow <- rbind(flow_unmonitored, flow_monitored)
+
+flow_total <- flow %>%
+  summarise(Flow.acft.yr = sum(Flow.acftyr))
+
+#compare to Su and Von Stackelberg: 
+147729+209013  
+
+```
+
+## Visualization
+### Loading maps
+```{r}
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TN.tonyr, color = Monitored_)) +
+  #geom_sf_text(data = subset(wshds_loading, Monitored_ == "YES"), aes(label = WS_Name)) +
+  #  ggrepel::geom_label_repel(
+  #   data = subset(wshds_loading, Monitored_ == "YES"),
+  #   aes(label = WS_Name, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = 0
+  # ) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TN load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TDN.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TDN load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TP.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TP load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+#ggsave(file = "./Code/Output/TPloadmap.jpg", width = 5, height = 6)
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TDP.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TDP load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.TOC.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "TOC load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = load.DOC.tonyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "DOC load (metric ton/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+ggplot(wshds_loading) +
+  geom_sf(aes(fill = Flow.acftyr, color = Monitored_)) +
+  scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
+  scale_color_manual(values = c("lightgray", "black")) +
+  labs(fill = "Inflow (ac*ft/yr)", color = "Monitored") +
+  theme(legend.position = "top")
+
+```
+
+### Monthly time series
+```{r}
+ggplot(loading_AllWatersheds, aes(x = Month, y = load.TN.tonmo, color = OrganizationIdentifier)) +
+  geom_point(alpha = 0.7, size = 2) +
+  facet_wrap(vars(WS_Name), ncol = 3) +
+  scale_y_log10() +
+  scale_x_continuous(n.breaks = 12) +
+  labs(y = "TN load (ton/mo)", color = "Organization") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.TN.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "TN load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.TDN.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "TDN load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.TP.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "TP load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.TDP.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "TDP load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.TOC.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "TOC load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = load.DOC.tonmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "DOC load (metric ton/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(monitored_loading_monthly, aes(x = Month, y = Flow.acftmo, color = WS_Type)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
+  labs(y = "Inflow (ac*ft/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+
+ggplot(unmonitored_hydrology_monthly, aes(x = Month, y = Flow.acftmo)) +
+  geom_line() +
+  scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  facet_wrap(vars(WS_Name), ncol = 6) +
+  labs(y = "Inflow (ac*ft/mo)", color = "") +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  theme(legend.position = "top")
+  
+```
+

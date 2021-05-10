@@ -37,12 +37,10 @@ Data were loaded from spreadsheets obtained by Utah DWQ:
 ```{r}
 # tributary data
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
-trib2 <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
 # facility data
 fac <- read.csv("./Data/Processed/ul_Facilitydata_wqp_processed.csv")
 # watershed spatial data
 wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
-wshds2 <- read_sf("./Data/GIS/ulSubWshdsWGS84.shp")
 # sampling activity logs
 activitylog <- read.csv("./Data/Processed/UL_Trib_SampleActivities_exported 12-17-20.csv")
 # groundwater data
@@ -319,6 +317,9 @@ USGS_flow_processed <- USGS_flow %>%
   select(WS_Name, Date, X_00060_00003)
 
 colnames(USGS_flow_processed) <- c("WS_Name", "ActivityStartDate", "Flow.USGS.cfs")
+
+
+
 ```
 
 ### Create spatial datasets for tributary and facility datasets
@@ -588,11 +589,53 @@ trib_fac_sites_intersect_downstream_early <- trib_fac_sites_intersect_downstream
 
 trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
   filter(Year >= 2015)
+
+# convert concentrations to ug/L, not mg/L
+# Note: 'Total Kjeldahl nitrogen_Total' was not multiplied by 1000 due to spaces in the name. Variable not being used but will need to be corrected if things change. 
+trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
+  mutate(NH3.d = NH3.d * 1000,
+         NH3.t = NH3.t * 1000,
+         NO23.d = NO23.d * 1000, 
+         NO23.t = NO23.t *1000, 
+         TDN = TDN * 1000, 
+         TN = TN * 1000, 
+         DOC = DOC * 1000,
+         TOC = TOC * 1000, 
+         TDP = TDP * 1000, 
+         TP = TP * 1000, 
+         CO3.t = CO3.t * 1000, 
+         TKN.t = TKN.t * 1000, 
+         TKN.d = TKN.d * 1000, 
+         NO3.t = NO3.t * 1000, 
+         NO2.t = NO2.t * 1000, 
+         PO4 = PO4 * 1000, 
+         TKN.t2 = TKN.t2 * 1000)
+
+# There is one TP value from WFWQC of 2 ug/L, which is below the detection limit of 10 ug/L. Set to 1/2 detection limit. 
+trib_fac_sites_intersect_downstream$TP[trib_fac_sites_intersect_downstream$TP == 2] <- 5
+
+```
+
+### Jordan River Outflow
+REVISIT
+```{r}
+
+jordan <- trib_fac_sites_intersect %>%
+  filter(MonitoringLocationIdentifier == "UTAHDWQ_WQX-4994790") %>%
+  filter(Year >= 2015) %>%
+    mutate(load.TN.kgd = TN * Flow.cfs * 28.3168 * 86400 / 1000000, 
+         load.TDN.kgd = TDN * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TP.kgd = TP * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TDP.kgd = TDP * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TOC.kgd = TOC * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.DOC.kgd = DOC * Flow.cfs * 28.3168 * 86400 / 1000000)
+
+
 ```
 
 
 ### Groundwater (spring and well) data
-REVISIT
+
 ```{r, include = FALSE}
 gw$ActivityStartDate <- as.Date(gw$ActivityStartDate)
 
@@ -636,6 +679,40 @@ colnames(gw_wq_flow)[12:25] <- c("NO23.d", "PO4", "CO3.d", "Flow.galmin",
                                  "NO3.d", "DIN+DON", "DOC", "TDN", "NH3.d", 
                                  "NO23.t", "TP", "TDP", "NH3.t", "CO3.t")
 
+summary(gw_wq_flow)
+# ResultStatusIdentifier     NO23.d             PO4              CO3.d   
+#  Length:92              Min.   :  0.020   Min.   :0.00400   Min.   :0   
+#  Class :character       1st Qu.:  1.155   1st Qu.:0.01075   1st Qu.:0   
+#  Mode  :character       Median :  2.220   Median :0.02050   Median :0   
+#                         Mean   : 10.528   Mean   :0.02252   Mean   :0   
+#                         3rd Qu.:  7.540   3rd Qu.:0.03000   3rd Qu.:0   
+#                         Max.   :268.000   Max.   :0.09500   Max.   :0   
+#                         NA's   :25        NA's   :12        NA's   :88  
+#   Flow.galmin          NO3.d           DIN+DON            DOC        
+#  Min.   :   0.21   Min.   :0.0850   Min.   :0.0900   Min.   :0.2800  
+#  1st Qu.: 136.00   1st Qu.:0.4713   1st Qu.:0.2950   1st Qu.:0.2850  
+#  Median :1020.00   Median :0.5780   Median :0.6300   Median :0.2900  
+#  Mean   : 981.13   Mean   :0.6977   Mean   :0.6529   Mean   :0.3067  
+#  3rd Qu.:1745.00   3rd Qu.:0.7740   3rd Qu.:0.8000   3rd Qu.:0.3200  
+#  Max.   :2300.00   Max.   :1.6700   Max.   :1.6600   Max.   :0.3500  
+#  NA's   :81        NA's   :86       NA's   :85       NA's   :89      
+#       TDN             NH3.d          NO23.t               TP        
+#  Min.   : 17.45   Min.   :0.09   Min.   :  0.1000   Min.   : 0.048  
+#  1st Qu.: 17.60   1st Qu.:0.09   1st Qu.:  0.5633   1st Qu.: 0.048  
+#  Median : 25.60   Median :0.09   Median :  1.3515   Median : 0.050  
+#  Mean   : 82.81   Mean   :0.09   Mean   : 46.0040   Mean   :15.137  
+#  3rd Qu.: 37.40   3rd Qu.:0.09   3rd Qu.: 36.5250   3rd Qu.:15.139  
+#  Max.   :316.00   Max.   :0.09   Max.   :267.0000   Max.   :60.400  
+#  NA's   :87       NA's   :91     NA's   :84         NA's   :88      
+#       TDP              NH3.t         CO3.t   
+#  Min.   :0.01200   Min.   :421   Min.   :0   
+#  1st Qu.:0.01250   1st Qu.:421   1st Qu.:0   
+#  Median :0.01300   Median :421   Median :0   
+#  Mean   :0.01733   Mean   :421   Mean   :0   
+#  3rd Qu.:0.02000   3rd Qu.:421   3rd Qu.:0   
+#  Max.   :0.02700   Max.   :421   Max.   :0   
+#  NA's   :89        NA's   :91    NA's   :89  
+
 gw_sites <- gw_wq_flow %>%
   ungroup() %>%
   select(MonitoringLocationIdentifier, OrganizationIdentifier:LongitudeMeasure) %>%
@@ -644,23 +721,61 @@ gw_sites <- gw_wq_flow %>%
 gw_sites_sf <- st_as_sf(gw_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
                               crs = 4326, dim = "XY") #CRS = WGS84
 
-
+# EFDC/WASP output (ULEFDCFlowBoundaries_WY2006-2018) uses four zones in Utah Lake. Assign sites to one of these zones.
 gw_wq_intersect <- gw_sites_sf %>%
   st_intersection(wshds) %>%
-  left_join(., gw_wq_flow) 
+  left_join(., gw_wq_flow) %>%
+  mutate(zone = case_when(WS_Name %in% 
+                            c("Vineyard Drain 3", "Lehi Drain 1", "Lehi Spring Creek",
+                              "Lehi Drain 2", "American Fork 2", "Skipper Bay 2", 
+                              "Provo Airport", "Dry Creek - Saratoga", "American Fork 1", 
+                              "Lindon Drain", "Provo River", "Tickville Wash") ~ "North", 
+                          WS_Name %in% c("Benjamin Slough", "Spanish Fork River") ~ "South", 
+                          WS_Name %in% c("Currant Creek", "Goshen Valley") ~ "Goshen Bay", 
+                          WS_Name %in% c("Big Dry Creek", "Spring Creek - Springville") ~ "Provo Bay"), 
+# TP, TDP, and PO4 measurements are always distinct (agencies may report one or the other). 
+# Combine into one column.
+# NO23.d is the only widely available N species. Use that to represent N.
+                  TP = case_when(!is.na(PO4) ~ PO4, 
+                                 !is.na(TDP) ~ TDP, 
+                                 TRUE ~ TP)) %>%
+  # one TP value of 60.4 (unrealistic). remove.
+  filter(TP < 60) %>%
+  # one NO23.d value of 268 (unrealistic). remove.
+  filter(NO23.d < 250)
 
+# Groundwater Sources	        Constant Flow (m3/sec)
+# Groundwater-Northern Valley	0.997
+# Groundwater-Southern Valley	0.19
+# Groundwater-Goshen Bay	    0.141
+# Groundwater-Provo Bay	      0.185
 
-# TP and PO4 measurements are always distinct (agencies may report one or the other). Combine into one column.
-# 
+gw_wq_summary <- gw_wq_intersect %>%
+  as.data.frame() %>%
+  group_by(zone) %>%
+  summarise(TP = mean(TP), 
+            NO23.d = mean(NO23.d)) %>%
+  mutate(Flow.m3s = case_when(zone == "North" ~ 0.997, 
+                              zone == "South" ~ 0.19, 
+                              zone == "Goshen Bay" ~ 0.141, 
+                              zone == "Provo Bay" ~ 0.185), 
+         Flow.acftyr = Flow.m3s * 31536000 / 1233.48,
+         load.TP.tonyr = TP * Flow.m3s * 31536000 / 1000000, 
+         load.TN.tonyr = NO23.d * Flow.m3s * 31536000 / 1000000) 
+# write.csv(gw_wq_summary, file = "./Data/Processed/loading_groundwater_annual.csv", 
+#           row.names = FALSE)
 
-#gw_wq_intersect <- gw_wq_intersect %>%
+ggplot(gw_wq_intersect, aes(x = zone, y = TP)) +
+  geom_boxplot()
+
+ggplot(gw_wq_intersect, aes(x = zone, y = NO23.d)) +
+  geom_boxplot()
+
   
 
 ```
 
 ### Precipitation and Evapotranspiration data
-
-TO DO: Use area vs. elevation relationship to establish average monthly lake area, with variability quantified.
 
 REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
 ```{r, include= FALSE}
@@ -674,6 +789,18 @@ p_et_monthly <- p_et %>%
             et.mm = sum(et.mm)) %>%
   mutate(Year = year(Date), 
          Month = month(Date))
+
+p_et_summary <- p_et_monthly %>%
+  group_by(Month) %>%
+  summarise(precip.mm = mean(precip.mm), 
+            et.mm = mean(et.mm)) %>%
+  #multiply by lake area (95,000 acres)
+  mutate(precip.acftmo = precip.mm * 95000 / 304.8, 
+         et.acftmo = et.mm * 95000 / 304.8)
+# write.csv(p_et_summary, file = "./Data/Processed/hydrology_precip_et_monthly.csv",
+#           row.names = FALSE)
+
+
 
 ```
 
@@ -2778,7 +2905,7 @@ Monitoring locations
 loading_TickvilleWash <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Tickville Wash") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2786,6 +2913,9 @@ loading_TickvilleWash <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2810,7 +2940,7 @@ loading_TickvilleWash <- trib_fac_sites_intersect_downstream %>%
 loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Dry Creek - Saratoga") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2818,6 +2948,9 @@ loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2839,10 +2972,16 @@ loading_DryCreekSaratoga <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Lehi Spring Creek
+# combine data from DWQ and WFWQC data from two sites
+# TP and TDP concentrations are below reporting limit for WFWQC --> use only DWQ samples
 loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Lehi Spring Creek") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  mutate(load.TP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TP.kgd),
+         load.TDP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TDP.kgd)) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2850,6 +2989,9 @@ loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2871,10 +3013,14 @@ loading_LehiSpringCreek <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # American Fork River
+# combine data from DWQ and WFWQC data from two sites
+# P and N concentrations are below reporting limit for WFWQC --> use only DWQ samples
+
 loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "American Fork River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  filter(OrganizationIdentifier != "WFWQC_UT") %>%
+  group_by(WS_Name,  Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2882,6 +3028,9 @@ loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2903,11 +3052,12 @@ loading_AmericanForkRiver <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Timp SSD
+# combine data from DWQ and WFWQC data from two sites
 loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Timp SSD") %>%
   filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4995041") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2915,6 +3065,9 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2936,10 +3089,12 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Lindon Drain
-loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
+# Need to compare loads from WFWQC and DWQ. Generate each separately
+loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Lindon Drain") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2947,6 +3102,9 @@ loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2966,12 +3124,63 @@ loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
+
+loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Lindon Drain") %>%
+  filter(OrganizationIdentifier == "WFWQC_UT") %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+# interpolate missing months
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TN.kgd, n = 12))
+loading_LindonDrain_WFWQC$load.TN.kgd <- temp$y
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TP.kgd, n = 12))
+loading_LindonDrain_WFWQC$load.TP.kgd <- temp$y
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TDP.kgd, n = 12))
+loading_LindonDrain_WFWQC$load.TDP.kgd <- temp$y
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TN.tonmo, n = 12))
+loading_LindonDrain_WFWQC$load.TN.tonmo <- temp$y
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TP.tonmo, n = 12))
+loading_LindonDrain_WFWQC$load.TP.tonmo <- temp$y
+temp <- data.frame(approx(loading_LindonDrain_WFWQC$load.TDP.tonmo, n = 12))
+loading_LindonDrain_WFWQC$load.TDP.tonmo <- temp$y
+
 
 # Powell Slough 
-loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
+# North Outfall
+loading_PowellSloughMajor_north <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Powell Slough Major") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995210", "WFWQC_UT-4995210")) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -2979,6 +3188,9 @@ loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -2999,9 +3211,74 @@ loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
-# calculate load from N and S outfalls with WFWQC data from N outfall (DWQ site only at S outfall)
-loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210")) %>%
+# interpolate missing months
+
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TN.kgd, n = 12))
+loading_PowellSloughMajor_north$load.TN.kgd <- temp$y
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TP.kgd, n = 12))
+loading_PowellSloughMajor_north$load.TP.kgd <- temp$y
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TDP.kgd, n = 12))
+loading_PowellSloughMajor_north$load.TDP.kgd <- temp$y
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TN.tonmo, n = 12))
+loading_PowellSloughMajor_north$load.TN.tonmo <- temp$y
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TP.tonmo, n = 12))
+loading_PowellSloughMajor_north$load.TP.tonmo <- temp$y
+temp <- data.frame(approx(loading_PowellSloughMajor_north$load.TDP.tonmo, n = 12))
+loading_PowellSloughMajor_north$load.TDP.tonmo <- temp$y
+
+loading_PowellSloughMajor_north$load.TDN.kgd[is.na(loading_PowellSloughMajor_north$load.TDN.kgd)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TDN.kgd[4], loading_PowellSloughMajor_north$load.TDN.kgd[12]))
+loading_PowellSloughMajor_north$load.TOC.kgd[is.na(loading_PowellSloughMajor_north$load.TOC.kgd)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TOC.kgd[4], loading_PowellSloughMajor_north$load.TOC.kgd[12]))
+loading_PowellSloughMajor_north$load.DOC.tonmo[is.na(loading_PowellSloughMajor_north$load.DOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.DOC.tonmo[4], loading_PowellSloughMajor_north$load.DOC.tonmo[12]))
+loading_PowellSloughMajor_north$load.TDN.tonmo[is.na(loading_PowellSloughMajor_north$load.TDN.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TDN.tonmo[4], loading_PowellSloughMajor_north$load.TDN.tonmo[12]))
+loading_PowellSloughMajor_north$load.TOC.tonmo[is.na(loading_PowellSloughMajor_north$load.TOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.TOC.tonmo[4], loading_PowellSloughMajor_north$load.TOC.tonmo[12]))
+loading_PowellSloughMajor_north$load.DOC.tonmo[is.na(loading_PowellSloughMajor_north$load.DOC.tonmo)] <-
+  mean(c(loading_PowellSloughMajor_north$load.DOC.tonmo[4], loading_PowellSloughMajor_north$load.DOC.tonmo[12]))
+
+
+# South Outfall
+loading_PowellSloughMajor_south <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Powell Slough Major") %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+# Add together north and south outfalls
+loading_PowellSloughMajor <- loading_PowellSloughMajor_north %>%
+  rbind(., loading_PowellSloughMajor_south) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
@@ -3010,51 +3287,104 @@ loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = sum(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
             load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4995210 + UTAHDWQ_WQX-4995230", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE))
+
+# loading_PowellSloughMajor_initial <- trib_fac_sites_intersect_downstream %>%
+#   ungroup() %>%
+#   filter(WS_Name == "Powell Slough Major") %>%
+#   group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+#   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+#             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+#             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+#             load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+#             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+#             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+#             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+#             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
+#             load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+#             load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TP.kgd * 28/1000),
+#             load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+#             load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+#             load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+#   distinct() 
+
+# calculate load from N and S outfalls with WFWQC data from N outfall (DWQ site only at S outfall)
+# loading_PowellSloughMajor_WFWQCloads <- loading_PowellSloughMajor_initial %>%
+#   filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210")) %>%
+#   group_by(WS_Name, Month) %>%
+#   summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+#             load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+#             load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+#             load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+#             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+#             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+#             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+#             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+#             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+#             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+#             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+#             load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+#             load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+#   mutate(MonitoringLocationIdentifier = "WFWQC_UT-4995210 + UTAHDWQ_WQX-4995230", 
+#          OrganizationIdentifier = "WFWQC_UT") %>%
+#   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+#          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+#          load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+#          load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 # calculate load from N and S outfalls with DWQ data 
-loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "UTAHDWQ_WQX-4995210")) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4995210 + UTAHDWQ_WQX-4995230", 
-         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+# loading_PowellSloughMajor_UTAHDWQloads <- loading_PowellSloughMajor_initial %>%
+#   filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4995230", "UTAHDWQ_WQX-4995210")) %>%
+#   group_by(WS_Name, Month) %>%
+#   summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+#             load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+#             load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+#             load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+#             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+#             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+#             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+#             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+#             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+#             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+#             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+#             load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+#             load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
+#   mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4995210 + UTAHDWQ_WQX-4995230", 
+#          OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+#   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+#          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+#          load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
+#          load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 #combine loading from different organizations
-loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
+#loading_PowellSloughMajor <- rbind(loading_PowellSloughMajor_UTAHDWQloads, loading_PowellSloughMajor_WFWQCloads)
 
 # Provo River
+# P and N concentrations are below reporting limit for WFWQC --> use only DWQ samples
+
 loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Provo River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  filter(OrganizationIdentifier != "WFWQC_UT") %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3062,6 +3392,9 @@ loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3094,6 +3427,9 @@ loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3125,6 +3461,7 @@ loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
@@ -3135,8 +3472,21 @@ loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
          OrganizationIdentifier = "WFWQC_UT") %>%
   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
+         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TN.kgd, n = 12))
+loading_MillRace_WFWQCloads$load.TN.kgd <- temp$y
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TP.kgd, n = 12))
+loading_MillRace_WFWQCloads$load.TP.kgd <- temp$y
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TDP.kgd, n = 12))
+loading_MillRace_WFWQCloads$load.TDP.kgd <- temp$y
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TN.tonmo, n = 12))
+loading_MillRace_WFWQCloads$load.TN.tonmo <- temp$y
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TP.tonmo, n = 12))
+loading_MillRace_WFWQCloads$load.TP.tonmo <- temp$y
+temp <- data.frame(approx(loading_MillRace_WFWQCloads$load.TDP.tonmo, n = 12))
+loading_MillRace_WFWQCloads$load.TDP.tonmo <- temp$y
 
 # calculate sum of 6540 and 6566
 loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
@@ -3149,6 +3499,7 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
             load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = sum(Flow.acftmo, na.rm = TRUE),
             load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
             load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
@@ -3159,17 +3510,36 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
          OrganizationIdentifier = "UTAHDWQ_WQX") %>%
   select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
          Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
+         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 #combine loading from different organizations
-loading_MillRace<- rbind(loading_MillRace_UTAHDWQloads, loading_MillRace_WFWQCloads)
+# REVISIT - had to average rather than using all measurements
+loading_MillRace <- loading_MillRace_WFWQCloads %>%
+  rbind(., loading_MillRace_UTAHDWQloads) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE))
+
 
 # Spring Creek - Springville
+# combine data from DWQ and WFWQC data from two sites
 loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Spring Creek - Springville") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3177,6 +3547,9 @@ loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3198,42 +3571,16 @@ loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Hobble Creek
-loading_HobbleCreek_initial <- trib_fac_sites_intersect_downstream %>%
+# combine data from DWQ and WFWQC data from three sites - all are equivalent
+# TP and TDP concentrations are below reporting limit for WFWQC --> use only DWQ samples
+ 
+loading_HobbleCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Hobble Creek") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
-  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
-            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
-            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-  distinct() 
-
-
-# calculate load from 6100/6096 with WFWQC data 
-# take average of 6100 and 6096 (equivalent sites)
-loading_HobbleCreek_WFWQCloads <- loading_HobbleCreek_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996096", "WFWQC_UT-4996100")) %>%
+  mutate(load.TP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TP.kgd),
+         load.TDP.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TDP.kgd)) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -3242,25 +3589,28 @@ loading_HobbleCreek_WFWQCloads <- loading_HobbleCreek_initial %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "WFWQC_UT-4996096 + WFWQC_UT-4996100", 
-         OrganizationIdentifier = "WFWQC_UT") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, load.TN.tonmo, load.TDN.tonmo, load.TP.tonmo,
-         load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-# calculate load from 6100 with DWQ data 
-loading_HobbleCreek_UTAHDWQloads <- loading_HobbleCreek_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996100"))
-
-#combine loading from different organizations
-loading_HobbleCreek <- rbind(loading_HobbleCreek_UTAHDWQloads, loading_HobbleCreek_WFWQCloads)
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
 
 # Dry Creek - Spanish Fork
 loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
@@ -3268,7 +3618,7 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
   filter(WS_Name == "Dry Creek - Spanish Fork") %>%
   filter(MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996042" &
            MonitoringLocationIdentifier != "UTAHDWQ_WQX-4996044") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3276,6 +3626,9 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3295,12 +3648,40 @@ loading_DryCreekSpanishFork <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
+
+loading_DryCreekSpanishFork_January <- 
+  data.frame(WS_Name = "Dry Creek - Spanish Fork", Month = 1, 
+             Flow.cfs = mean(c(loading_DryCreekSpanishFork$Flow.cfs[1], loading_DryCreekSpanishFork$Flow.cfs[11])),
+             load.TN.kgd = mean(c(loading_DryCreekSpanishFork$load.TN.kgd[1], loading_DryCreekSpanishFork$load.TN.kgd[11])),
+             load.TDN.kgd = mean(c(loading_DryCreekSpanishFork$load.TDN.kgd[1], loading_DryCreekSpanishFork$load.TDN.kgd[11])),
+             load.TP.kgd = mean(c(loading_DryCreekSpanishFork$load.TP.kgd[1], loading_DryCreekSpanishFork$load.TP.kgd[11])),
+             load.TDP.kgd = mean(c(loading_DryCreekSpanishFork$load.TDP.kgd[2], loading_DryCreekSpanishFork$load.TDP.kgd[11])),
+             load.TOC.kgd = mean(c(loading_DryCreekSpanishFork$load.TOC.kgd[1], loading_DryCreekSpanishFork$load.TOC.kgd[11])),
+             load.DOC.kgd = mean(c(loading_DryCreekSpanishFork$load.DOC.kgd[1], loading_DryCreekSpanishFork$load.DOC.kgd[11])),
+             Flow.acftmo = mean(c(loading_DryCreekSpanishFork$Flow.acftmo[1], loading_DryCreekSpanishFork$Flow.acftmo[11])),
+             load.TN.tonmo = mean(c(loading_DryCreekSpanishFork$load.TN.tonmo[1], loading_DryCreekSpanishFork$load.TN.tonmo[11])),
+             load.TDN.tonmo = mean(c(loading_DryCreekSpanishFork$load.TDN.tonmo[1], loading_DryCreekSpanishFork$load.TDN.tonmo[11])),
+             load.TP.tonmo = mean(c(loading_DryCreekSpanishFork$load.TP.tonmo[1], loading_DryCreekSpanishFork$load.TP.tonmo[11])),
+             load.TDP.tonmo = mean(c(loading_DryCreekSpanishFork$load.TDP.tonmo[2], loading_DryCreekSpanishFork$load.TDP.tonmo[11])),
+             load.TOC.tonmo = mean(c(loading_DryCreekSpanishFork$load.TOC.tonmo[1], loading_DryCreekSpanishFork$load.TOC.tonmo[11])),
+             load.DOC.tonmo = mean(c(loading_DryCreekSpanishFork$load.DOC.tonmo[1], loading_DryCreekSpanishFork$load.DOC.tonmo[11])))
+
+loading_DryCreekSpanishFork <- rbind(loading_DryCreekSpanishFork_January, loading_DryCreekSpanishFork)
+
+loading_DryCreekSpanishFork$load.TDP.kgd[is.na(loading_DryCreekSpanishFork$load.TDP.kgd)] <-
+  mean(c(loading_DryCreekSpanishFork$load.TDP.kgd[3], loading_DryCreekSpanishFork$load.TDP.kgd[12]))
+loading_DryCreekSpanishFork$load.TDP.tonmo[is.na(loading_DryCreekSpanishFork$load.TDP.tonmo)] <-
+  mean(c(loading_DryCreekSpanishFork$load.TDP.tonmo[3], loading_DryCreekSpanishFork$load.TDP.tonmo[12]))
 
 # Spanish Fork
-loading_SpanishFork <- trib_fac_sites_intersect_downstream %>%
+# Need to compare loads from WFWQC and DWQ. Generate each separately
+# TN  concentrations are below reporting limit for WFWQC --> use only DWQ samples
+
+loading_SpanishFork_DWQ <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
+  filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
   filter(WS_Name == "Spanish Fork River") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name,  Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3308,6 +3689,9 @@ loading_SpanishFork <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3328,11 +3712,51 @@ loading_SpanishFork <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+loading_SpanishFork_WFWQC <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(OrganizationIdentifier == "WFWQC_UT") %>%
+  filter(WS_Name == "Spanish Fork River") %>%
+  mutate(load.TN.kgd = case_when(OrganizationIdentifier == "WFWQC_UT" ~ NA_real_,
+                                 TRUE ~ load.TN.kgd)) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+
 # 4000 South Drain Spanish Fork
+# combine data from DWQ and WFWQC data from two sites
+
 loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "4000 South Drain Spanish Fork") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name,  Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3340,6 +3764,9 @@ loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3360,12 +3787,32 @@ loading_4000SouthDrain <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
+#interpolate for missing months
+temp <- data.frame(approx(loading_4000SouthDrain$load.TN.kgd, n = 12))
+loading_4000SouthDrain$load.TN.kgd <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.TDN.kgd, n = 12))
+loading_4000SouthDrain$load.TDN.kgd <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.TOC.kgd, n = 12))
+loading_4000SouthDrain$load.TOC.kgd <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.DOC.kgd, n = 12))
+loading_4000SouthDrain$load.DOC.kgd <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.TN.tonmo, n = 12))
+loading_4000SouthDrain$load.TN.tonmo <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.TDN.tonmo, n = 12))
+loading_4000SouthDrain$load.TDN.tonmo <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.TOC.tonmo, n = 12))
+loading_4000SouthDrain$load.TOC.tonmo <- temp$y
+temp <- data.frame(approx(loading_4000SouthDrain$load.DOC.tonmo, n = 12))
+loading_4000SouthDrain$load.DOC.tonmo <- temp$y
+
 
 # Benjamin Slough
+# combine data from DWQ and WFWQC data from two sites
+
 loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Benjamin Slough") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3373,6 +3820,9 @@ loading_BenjaminSlough <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3401,7 +3851,7 @@ trib_fac_sites_intersect_downstream$MonitoringLocationIdentifier[trib_fac_sites_
 loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Currant Creek") %>%
-  group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
+  group_by(WS_Name,  Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3409,6 +3859,9 @@ loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
@@ -3565,47 +4018,47 @@ loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
 loading_AllWatersheds <- rbind(
   loading_TickvilleWash, loading_DryCreekSaratoga, 
   loading_LehiSpringCreek, loading_AmericanForkRiver, loading_TimpSSD, 
-  loading_LindonDrain, loading_PowellSloughMajor, loading_ProvoRiver, 
-  loading_MillRace, loading_HobbleCreek, loading_DryCreekSpanishFork, 
-  loading_SpanishFork, loading_4000SouthDrain, loading_BenjaminSlough, 
+  loading_LindonDrain_DWQ, loading_PowellSloughMajor, loading_ProvoRiver, 
+  loading_MillRace, loading_SpringCreek, loading_HobbleCreek, loading_DryCreekSpanishFork, 
+  loading_SpanishFork_DWQ, loading_4000SouthDrain, loading_BenjaminSlough, 
   loading_CurrantCreek)
 
 # calculate difference between UTAHDWQ and WFWQC load estimates
-loading_AllWatersheds_differences <- loading_AllWatersheds %>%
-  filter(WS_Name %in% c("Lehi Spring Creek", "American Fork River", "Timp SSD",
-                        "Lindon Drain", "Powell Slough Major", "Provo River", 
-                        "Mill Race", "Spring Creek - Springville", "Hobble Creek", 
-                        "Dry Creek - Spanish Fork", "Spanish Fork River", 
-                        "4000 South Drain Spanish Fork", "Benjamin Slough")) %>%
-  select(-(load.TN.kgd:load.DOC.kgd)) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(load.TN.difference = load.TN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
-            load.TDN.difference = load.TDN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.TDN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
-            load.TP.difference = load.TP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.TP.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
-            load.TDP.difference = load.TDP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
-            load.TOC.difference = load.TOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.TOC.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
-            load.DOC.difference = load.DOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
-              load.DOC.tonmo[OrganizationIdentifier == "WFWQC_UT"])
+# loading_AllWatersheds_differences <- loading_AllWatersheds %>%
+#   filter(WS_Name %in% c("Lehi Spring Creek", "American Fork River", "Timp SSD",
+#                         "Lindon Drain", "Powell Slough Major", "Provo River", 
+#                         "Mill Race", "Spring Creek - Springville", "Hobble Creek", 
+#                         "Dry Creek - Spanish Fork", "Spanish Fork River", 
+#                         "4000 South Drain Spanish Fork", "Benjamin Slough")) %>%
+#   select(-(load.TN.kgd:load.DOC.kgd)) %>%
+#   group_by(WS_Name, Month) %>%
+#   summarise(load.TN.difference = load.TN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+#             load.TDN.difference = load.TDN.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.TDN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+#             load.TP.difference = load.TP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.TP.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+#             load.TDP.difference = load.TDP.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.TN.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+#             load.TOC.difference = load.TOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.TOC.tonmo[OrganizationIdentifier == "WFWQC_UT"], 
+#             load.DOC.difference = load.DOC.tonmo[OrganizationIdentifier == "UTAHDWQ_WQX"] - 
+#               load.DOC.tonmo[OrganizationIdentifier == "WFWQC_UT"])
 
 loading_AllWatersheds_annual <- loading_AllWatersheds %>%
-  group_by(WS_Name, OrganizationIdentifier) %>%
+  group_by(WS_Name) %>%
   summarise(Flow.cfs = sum(Flow.cfs), 
             load.TN.tonyr = sum(load.TN.tonmo, na.rm = TRUE), 
             load.TDN.tonyr = sum(load.TDN.tonmo, na.rm = TRUE), 
             load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            Flow.acftyr = sum(Flow.acftmo, na.rm = TRUE),
             load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
             load.TOC.tonyr = sum(load.TOC.tonmo, na.rm = TRUE), 
             load.DOC.tonyr = sum(load.DOC.tonmo, na.rm = TRUE))
 
 loading_Total_annual <- loading_AllWatersheds_annual %>%
-  filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
   ungroup() %>%
-  summarise(Flow.cfs = sum(Flow.cfs), 
+  summarise(Flow.acftyr = sum(Flow.acftyr, na.rm = TRUE), 
             load.TN.tonyr = sum(load.TN.tonyr, na.rm = TRUE), 
             load.TDN.tonyr = sum(load.TDN.tonyr, na.rm = TRUE), 
             load.TP.tonyr = sum(load.TP.tonyr, na.rm = TRUE), 
@@ -3616,6 +4069,9 @@ loading_Total_annual <- loading_AllWatersheds_annual %>%
 loading_AllWatersheds_annual_combined <- 
   rbind(loading_AllWatersheds_annual, loading_AllWatersheds_dmr2_annual)
 
+
+# write.csv(loading_AllWatersheds, file = "./Data/Processed/loading_AllWatersheds.csv",
+#        row.names = FALSE)
 # write.csv(loading_AllWatersheds_annual, file = "./Data/Processed/loading_AllWatersheds_annual.csv",
 #        row.names = FALSE)
 
@@ -4003,11 +4459,11 @@ TN
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Lehi Spring Creek") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Lehi Spring Creek") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Lehi.jpg", height = 4, width = 5, units = "in")
@@ -4015,11 +4471,11 @@ ggsave("./Code/Output/TNconc_Lehi.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "American Fork River") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "American Fork River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_American.jpg", height = 4, width = 5, units = "in")
@@ -4027,11 +4483,11 @@ ggsave("./Code/Output/TNconc_American.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Lindon Drain") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Lindon Drain") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Lindon.jpg", height = 4, width = 5, units = "in")
@@ -4039,11 +4495,11 @@ ggsave("./Code/Output/TNconc_Lindon.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Provo River") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Provo River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Provo.jpg", height = 4, width = 5, units = "in")
@@ -4051,12 +4507,12 @@ ggsave("./Code/Output/TNconc_Provo.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   scale_y_log10() +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Hobble Creek") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Hobble Creek") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4065,12 +4521,12 @@ ggsave("./Code/Output/TNconc_Hobble.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  ylim(0, 2) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  ylim(0, 2000) +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Spanish Fork River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Spanish.jpg", height = 4, width = 5, units = "in")
@@ -4078,11 +4534,11 @@ ggsave("./Code/Output/TNconc_Spanish.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "4000 South Drain Spanish Fork") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_4000.jpg", height = 4, width = 5, units = "in")
@@ -4097,10 +4553,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lehi Spring Creek") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Lehi Spring Creek") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
@@ -4109,10 +4566,11 @@ ggsave("./Code/Output/TPconc_Lehi.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "American Fork River") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "American Fork River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
@@ -4121,10 +4579,11 @@ ggsave("./Code/Output/TPconc_American.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Lindon Drain") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Lindon Drain") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
@@ -4134,10 +4593,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Provo River") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Provo River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
@@ -4147,11 +4607,12 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   scale_y_log10() +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Hobble Creek") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Hobble Creek") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")+
@@ -4161,10 +4622,11 @@ ggsave("./Code/Output/TPconc_Hobble.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Spanish Fork River") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Spanish Fork River") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "top")
@@ -4173,10 +4635,11 @@ ggsave("./Code/Output/TPconc_Spanish.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "4000 South Drain Spanish Fork") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "4000 South Drain Spanish Fork") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TPconc_4000.jpg", height = 4, width = 5, units = "in")
@@ -4278,7 +4741,6 @@ ggsave("./Code/Output/Flow_4000.jpg", height = 4, width = 5, units = "in")
 
 #### Watersheds w/ UDWQ and WFWQC, plus WWTP
 
-REVISIT
 TN
 
 ```{r}
@@ -4286,11 +4748,11 @@ TN
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Timp SSD") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Timp SSD") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4299,11 +4761,11 @@ ggsave("./Code/Output/TNconc_TimpSSD.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Powell Slough Major") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Powell Slough Major") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4312,11 +4774,11 @@ ggsave("./Code/Output/TNconc_Powell.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Mill Race") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Mill Race") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4325,11 +4787,11 @@ ggsave("./Code/Output/TNconc_MillRace.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Spring Creek - Springville") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Spring Creek - Springville") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Spring.jpg", height = 4, width = 5, units = "in")
@@ -4337,11 +4799,11 @@ ggsave("./Code/Output/TNconc_Spring.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Dry Creek - Spanish Fork") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Spanish Fork") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4350,12 +4812,11 @@ ggsave("./Code/Output/TNconc_DrySpanish.jpg", height = 4, width = 5, units = "in
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
        aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.2, lty = 2, color = "#f27162") +
-  geom_hline(yintercept = 0.7, lty = 2, color = "#62197d") +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 700, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  ylim(0, 2) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site", title = "Benjamin Slough") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Benjamin Slough") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TNconc_Benjamin.jpg", height = 4, width = 5, units = "in")
@@ -4370,10 +4831,11 @@ TP
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Timp SSD") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Timp SSD") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4382,10 +4844,11 @@ ggsave("./Code/Output/TPconc_TimpSSD.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Powell Slough Major") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Powell Slough Major") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4394,10 +4857,11 @@ ggsave("./Code/Output/TPconc_Powell.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Mill Race") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Mill Race") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4406,10 +4870,11 @@ ggsave("./Code/Output/TPconc_MillRace.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Spring Creek - Springville") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Spring Creek - Springville") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TPconc_Spring.jpg", height = 4, width = 5, units = "in")
@@ -4417,10 +4882,11 @@ ggsave("./Code/Output/TPconc_Spring.jpg", height = 4, width = 5, units = "in")
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Dry Creek - Spanish Fork") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Spanish Fork") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(nrow = 2))
@@ -4429,11 +4895,11 @@ ggsave("./Code/Output/TPconc_DrySpanish.jpg", height = 4, width = 5, units = "in
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
        aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  geom_hline(yintercept = 0.02, lty = 2) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  geom_hline(yintercept = 21, lty = 2, color = "#62197d") +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  ylim(0, 2) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site", title = "Benjamin Slough") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Benjamin Slough") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
 ggsave("./Code/Output/TPconc_Benjamin.jpg", height = 4, width = 5, units = "in")
