@@ -628,7 +628,91 @@ jordan <- trib_fac_sites_intersect %>%
          load.TP.kgd = TP * Flow.cfs * 28.3168 * 86400 / 1000000,
          load.TDP.kgd = TDP * Flow.cfs * 28.3168 * 86400 / 1000000,
          load.TOC.kgd = TOC * Flow.cfs * 28.3168 * 86400 / 1000000,
-         load.DOC.kgd = DOC * Flow.cfs * 28.3168 * 86400 / 1000000)
+         load.DOC.kgd = DOC * Flow.cfs * 28.3168 * 86400 / 1000000) 
+
+jordan$load.TN.kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TDN.kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TP.kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TDP.kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TOC.kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.DOC.kgd[jordan$Flow.cfs == 0] <- 0
+
+
+loading_jordan <- jordan %>%
+  ungroup() %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct() 
+
+temp <- data.frame(approx(loading_jordan$load.TN.kgd, n = 12))
+loading_jordan$load.TN.kgd <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TDN.kgd, n = 12))
+loading_jordan$load.TDN.kgd <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TP.kgd, n = 12))
+loading_jordan$load.TP.kgd <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TDP.kgd, n = 12))
+loading_jordan$load.TDP.kgd <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TOC.kgd, n = 12))
+loading_jordan$load.TOC.kgd <- temp$y
+temp <- data.frame(approx(loading_jordan$load.DOC.kgd, n = 12))
+loading_jordan$load.DOC.kgd <- temp$y
+
+temp <- data.frame(approx(loading_jordan$load.TN.tonmo, n = 12))
+loading_jordan$load.TN.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TDN.tonmo, n = 12))
+loading_jordan$load.TDN.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TP.tonmo, n = 12))
+loading_jordan$load.TP.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TDP.tonmo, n = 12))
+loading_jordan$load.TDP.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$load.TOC.tonmo, n = 12))
+loading_jordan$load.TOC.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$load.DOC.tonmo, n = 12))
+loading_jordan$load.DOC.tonmo <- temp$y
+temp <- data.frame(approx(loading_jordan$Flow.acftmo, n = 12))
+loading_jordan$Flow.acftmo <- temp$y
+
+loading_jordan_annual <- loading_jordan %>%
+  group_by(WS_Name) %>%
+  summarise(Flow.cfs = sum(Flow.cfs), 
+            load.TN.tonyr = sum(load.TN.tonmo, na.rm = TRUE), 
+            load.TDN.tonyr = sum(load.TDN.tonmo, na.rm = TRUE), 
+            load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
+            Flow.acftyr = sum(Flow.acftmo, na.rm = TRUE),
+            load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
+            load.TOC.tonyr = sum(load.TOC.tonmo, na.rm = TRUE), 
+            load.DOC.tonyr = sum(load.DOC.tonmo, na.rm = TRUE))
+
+
+# write.csv(loading_jordan_annual, file = "./Data/Processed/loading_Jordan_annual.csv",
+#        row.names = FALSE)
 
 
 ```
