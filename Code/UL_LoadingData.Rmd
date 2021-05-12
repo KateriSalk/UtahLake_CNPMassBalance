@@ -34,6 +34,7 @@ monitored_loading_annual <- read.csv("./Data/Processed/loading_AllWatersheds_ann
 monitored_loading_monthly <- read.csv("./Data/Processed/loading_AllWatersheds.csv")
 
 jordan_loading_annual <- read.csv("./Data/Processed/loading_Jordan_annual.csv")
+jordan_loading_monthly <- read.csv("./Data/Processed/loading_Jordan_monthly.csv")
 gw_loading_annual <- read.csv("./Data/Processed/loading_groundwater_annual.csv")
 precipevap_hydrology_monthly <- read.csv("./Data/Processed/hydrology_precip_et_monthly.csv")
 
@@ -403,6 +404,15 @@ ggplot(unmonitored_hydrology_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+
+ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
+  geom_line() +
+  # scale_y_log10() +
+  scale_x_continuous(breaks = sequence(1:12)) +
+  labs(y = "Outflow (ac*ft/mo)") +
+  theme(legend.position = "top")
+#ggsave(file = "./Code/Output/jordan_outflow_monthly.jpg", width = 4, height = 3)
+
   
 ```
 
@@ -416,6 +426,7 @@ ggplot(flow_total, aes(x = Source, y = Flow.acftyr, fill = Source)) +
   labs(x = "", y = expression("Hydrologic Inflow or Outflow (ac*ft"^3*"/yr)")) +
   scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "none")
+#ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 5, height = 4)
   
 ```
 
