@@ -889,39 +889,44 @@ ggplot(gw_wq_intersect, aes(x = zone, y = NO23.d)) +
 
 ### Precipitation and Evapotranspiration data
 
-REVISIT: P and ET only available 2005-2018 from EFDC output. We can only use four years of data if we restrict to 2015 onward. Should we use all years?
 
-REVISIT
 ```{r, include= FALSE}
 
 ul_level$Date <- as.Date(ul_level$Date, origin = "1899-12-30")
+colnames(ul_level) <- c("Date", "Stage.m", "Volume.m3", "SurfaceArea.m2")
 
 ul_level_processed <- ul_level %>%
   mutate(Year = year(Date), 
          Month = month(Date), 
-         SurfaceArea.ac = as.numeric('Surface.Area.(m2)')/4046.86) %>%
+         SurfaceArea.ac = SurfaceArea.m2/4046.86) %>%
   select(Date, Year, Month, SurfaceArea.ac) %>%
-  filter(Year >= 2015)
+  filter(Year >= 2015) %>%
+  group_by(Year, Month) %>%
+  summarise(SurfaceArea.ac = mean(SurfaceArea.ac))
 
 colnames(p_et) <- c("Date", "precip.mm", "et.mm")
 
 p_et$Date <- as.Date(p_et$Date, origin = "1899-12-30")
 
-p_et_monthly <- p_et %>%
+p_et <- p_et %>%
   group_by(Date = floor_date(Date, unit = "1 month")) %>%
   summarise(precip.mm = sum(precip.mm), 
             et.mm = sum(et.mm)) %>%
   mutate(Year = year(Date), 
-         Month = month(Date))
+         Month = month(Date)) %>%
+  filter(Year >=2015)
 
-p_et_summary <- p_et_monthly %>%
+p_et_summary <- p_et %>%
+  left_join(., ul_level_processed) %>%
+  mutate(precip.acftmo = precip.mm * SurfaceArea.ac / 304.8, 
+         et.acftmo = et.mm * SurfaceArea.ac / 304.8) 
+
+
+p_et_monthly <- p_et_summary %>%
   group_by(Month) %>%
-  summarise(precip.mm = mean(precip.mm), 
-            et.mm = mean(et.mm)) %>%
-  #multiply by lake area (95,000 acres)
-  mutate(precip.acftmo = precip.mm * 95000 / 304.8, 
-         et.acftmo = et.mm * 95000 / 304.8)
-# write.csv(p_et_summary, file = "./Data/Processed/hydrology_precip_et_monthly.csv",
+  summarise(precip.acftmo = mean(precip.acftmo), 
+            et.acftmo = mean(et.acftmo)) 
+# write.csv(p_et_monthly, file = "./Data/Processed/hydrology_precip_et_monthly.csv",
 #           row.names = FALSE)
 
 
@@ -2329,6 +2334,45 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+# ggsave("./Code/Output/MillRace_monthly_allnutrients.jpg", 
+#        width = 8, height = 6)
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
+       aes(x = MonitoringLocationIdentifier, y = load.TN.kgd, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Site", y = "TN load (kg/d)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(ncol = 2))
+# ggsave("./Code/Output/MillRace_TN.jpg",
+#        width = 7.5, height = 4)
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
+       aes(x = MonitoringLocationIdentifier, y = load.TP.kgd, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Site", y = "TP load (kg/d)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(ncol = 2))
+# ggsave("./Code/Output/MillRace_TP.jpg",
+#        width = 7.5, height = 4)
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
+       aes(x = MonitoringLocationIdentifier, y = load.TDP.kgd, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Site", y = "TDP load (kg/d)", fill = "Site") +
+  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(ncol = 2))
+# ggsave("./Code/Output/MillRace_TDP.jpg",
+#        width = 7.5, height = 4)
+
 ```
 
 4996536 represents the sum total of loading from the watershed. 4996540 and 4996566 should be added together to represent total flow.
@@ -3555,6 +3599,8 @@ loading_ProvoRiver <- trib_fac_sites_intersect_downstream %>%
 loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Mill Race") %>%
+  # leave out WFWQC_UT-4996536. Only 3 samples available.
+  filter(MonitoringLocationIdentifier != "WFWQC_UT-4996536") %>%
   group_by(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
@@ -3586,13 +3632,39 @@ loading_MillRace_initial <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
-# separate WFWQC measurements. These represent the total load (both individually), whereas the DWQ data is two sites that need to be combined.
-loading_MillRace_WFWQCloads <- loading_MillRace_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("WFWQC_UT-4996536", "WFWQC_UT-4996540"))
+# separate 4996540. This site represents a portion of the total load, which will be added to 4996566.
 
-# calculate sum of 6540 and 6566. These represent the total load.
-loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
-  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566")) %>%
+loading_MillRace_4996540 <- loading_MillRace_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996540", "WFWQC_UT-4996540")) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE)) %>%
+  mutate(MonitoringLocationIdentifier = "4996540", 
+         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
+  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
+         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
+         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
+         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
+
+# calculate load from 4996566
+loading_MillRace_4996566 <- loading_MillRace_initial %>%
+  filter(MonitoringLocationIdentifier %in% c("UTAHDWQ_WQX-4996566"))
+
+# calculate sum of 4996540 and 4996566 These represent the total load.
+loading_MillRace <- loading_MillRace_4996540 %>%
+  rbind(loading_MillRace_4996566) %>%
   group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
@@ -3607,34 +3679,8 @@ loading_MillRace_UTAHDWQloads <- loading_MillRace_initial %>%
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
             load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) %>%
-  mutate(MonitoringLocationIdentifier = "UTAHDWQ_WQX-4996540 + UTAHDWQ_WQX-4996566", 
-         OrganizationIdentifier = "UTAHDWQ_WQX") %>%
-  select(WS_Name, OrganizationIdentifier, MonitoringLocationIdentifier, Month, 
-         Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd, load.TDP.kgd, 
-         load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo, load.TDN.tonmo, 
-         load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
-
-#combine loading from different organizations
-loading_MillRace <- loading_MillRace_WFWQCloads %>%
-  rbind(., loading_MillRace_UTAHDWQloads) %>%
-  group_by(WS_Name, Month) %>%
-  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
-            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
-            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
-            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
-            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
-            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
-            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
-            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE))
-
-
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE)) 
+ 
 # Spring Creek - Springville
 # combine data from DWQ and WFWQC data from two sites
 loading_SpringCreek <- trib_fac_sites_intersect_downstream %>%
@@ -4086,9 +4132,9 @@ loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
 loading_AllWatersheds <- rbind(
   loading_TickvilleWash, loading_DryCreekSaratoga, 
   loading_LehiSpringCreek, loading_AmericanForkRiver, loading_TimpSSD, 
-  loading_LindonDrain_DWQ, loading_PowellSloughMajor, loading_ProvoRiver, 
+  loading_LindonDrain, loading_PowellSloughMajor, loading_ProvoRiver, 
   loading_MillRace, loading_SpringCreek, loading_HobbleCreek, loading_DryCreekSpanishFork, 
-  loading_SpanishFork_DWQ, loading_4000SouthDrain, loading_BenjaminSlough, 
+  loading_SpanishFork, loading_4000SouthDrain, loading_BenjaminSlough, 
   loading_CurrantCreek)
 
 # calculate difference between UTAHDWQ and WFWQC load estimates
@@ -4487,30 +4533,19 @@ ggplot(trib_fac_sites_intersect_downstream,
 
 ### Precipitation and evaporation
 
-TO DO: Change y axis to volumes after determining monthly lake area
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, width = 5, height = 4}
-ggplot(p_et_monthly, aes(x = Date, y = precip.mm)) +
-  geom_point() +
-  geom_line() +
-  labs(y = "Monthly precipitation (mm)")
 
-ggplot(p_et_monthly, aes(x = Date, y = et.mm)) +
-  geom_point() +
-  geom_line() +
-  labs(y = "Monthly evaporation (mm)")
 
-ggplot(p_et_monthly, aes(x = as.factor(Month), y = precip.mm)) +
+ggplot(p_et_summary, aes(x = as.factor(Month), y = precip.acftmo)) +
   geom_boxplot() +
-  geom_jitter(aes(color = as.factor(Year)), width = 0.15, alpha = 0.8) +
-  labs(y = "Monthly precipitation (mm)") +
-  scale_color_viridis_d(option = "magma", end = 0.8)
+  labs(y = "Monthly precipitation (ac*ft/mo)", x = "Month") 
+#ggsave("./Code/Output/precipitation_monthly.jpg", width = 4, height = 3)
 
-ggplot(p_et_monthly, aes(x = as.factor(Month), y = et.mm)) +
+ggplot(p_et_summary, aes(x = as.factor(Month), y = et.acftmo)) +
   geom_boxplot() +
-  geom_jitter(aes(color = as.factor(Year)), width = 0.15, alpha = 0.8) +
-  labs(y = "Monthly evaporation (mm)") +
-  scale_color_viridis_d(option = "magma", end = 0.8)
+  labs(y = "Monthly evaporation (ac*ft/mo)", x = "Month") 
+#ggsave("./Code/Output/evaporation_monthly.jpg", width = 4, height = 3)
 
 ```
 

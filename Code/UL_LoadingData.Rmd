@@ -32,6 +32,8 @@ unmonitored_hydrology <- read.csv("./UnmonitoredWS_Modeling/MapMyWatershed/Compi
 
 monitored_loading_annual <- read.csv("./Data/Processed/loading_AllWatersheds_annual.csv")
 monitored_loading_monthly <- read.csv("./Data/Processed/loading_AllWatersheds.csv")
+dmr_loading_monthly <- read.csv("./Data/Processed/loading_AllWatersheds_dmr.csv")
+dmr_loading_annual <- read.csv("./Data/Processed/loading_AllWatersheds_dmr_annual.csv")
 
 jordan_loading_annual <- read.csv("./Data/Processed/loading_Jordan_annual.csv")
 jordan_loading_monthly <- read.csv("./Data/Processed/loading_Jordan_monthly.csv")
