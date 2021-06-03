@@ -121,12 +121,13 @@ unmonitored_hydrology_monthly$WS_Name <-
                     "Vineyard Drain 1", "Powell Slough Minor", "Skipper Bay 2", "Skipper Bay 1", 
                     "Provo River Delta Project", "Provo Airport", "Big Dry Creek", "Provo Bay 8",
                     "Provo Bay 7", "Provo Bay 6", "Provo Bay 5", "Provo Bay 4", "Provo Bay 3",
-                    "Provo Bay 2", "Provo Bay 1", "Spanish Fork - 1", "Spanish Fork 2",
+                    "Provo Bay 2", "Provo Bay 1", "Spanish Fork - 1", "Spranish Fork 2",
                     "West Mountain 1", "West Mountain 6", "West Mountain 2", "West Mountain 7",
                     "West Mountain 3", "West Mountain 10", "West Mountain 4", "West Mountain 8",
                     "West Mountain 9", "West Mountain 5"))
 
-   
+
+
 ```
 
 ### Monitored Watershed Data
@@ -141,6 +142,30 @@ monitored_loading_monthly <- monitored_loading_monthly %>%
 monitored_loading_monthly_total <- monitored_loading_monthly %>%
   group_by(Month) %>%
   summarise(Flow.acftmo = sum(Flow.acftmo))
+
+# For Timp SSD, Powell Slough, and Mill Race, use DMR data for loading estimates when available.
+# Decided on by the SP 5/20/21
+monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
+  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
+monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
+  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
+monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
+  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
+
+monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
+  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
+monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
+  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
+monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
+  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
+
+monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
+  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
+monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
+  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
+monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
+  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
+
 ```
 
 
@@ -173,7 +198,7 @@ flow <- rbind(flow_unmonitored, flow_monitored)
 
 flow_tribs <- flow %>%
   summarise(Flow.acftyr = sum(Flow.acftyr)) %>%
-  mutate(Source = "Streams & Runoff")
+  mutate(Source = "Tributaries")
 
 flow_gw <- gw_loading_annual %>%
   summarise(Flow.acftyr = sum(Flow.acftyr)) %>%
@@ -197,13 +222,17 @@ flow_total <- flow_total %>%
   mutate(Flow.percent = case_when(Flow.acftyr > 0 ~ Flow.acftyr/sum(Flow.acftyr[which(Flow.acftyr>0)])*100, 
                                   Flow.acftyr < 0 ~ Flow.acftyr/sum(Flow.acftyr[which(Flow.acftyr<0)])*100)) 
 flow_total$Flow.percent <- round(flow_total$Flow.percent, digits = 2)
-           
+
+flow_balance <- data.frame(Flow.acftyr = sum(flow_total$Flow.acftyr), 
+                           Source = "Balance", 
+                           Flow.percent = sum(flow_total$Flow.acftyr)/
+                             sum(flow_total$Flow.acftyr[flow_total$Flow.acftyr > 0])*100)
+flow_total <- rbind(flow_total, flow_balance)
 flow_total$Source <- factor(flow_total$Source, 
-         levels = c("Streams & Runoff", "Precipitation", "Groundwater",
-                    "Jordan River", "Evaporation"))
-  
-#compare to Su and Von Stackelberg: 
-147729+209013  
+         levels = c("Tributaries", "Precipitation", "Groundwater",
+                    "Jordan River", "Evaporation", "Balance"))
+flow_total$Flow.percent <- paste(flow_total$Flow.percent, "%")  
+flow_total$Flow.percent[flow_total$Source == "Balance"] <- "" 
 
 ```
 
@@ -257,6 +286,7 @@ ggplot(wshds_loading) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TN load (metric ton/yr)", color = "Monitored") +
   theme(legend.position = "top")
+#ggsave(file = "./Code/Output/map_TNload.jpg", width = 5, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.TDN.tonyr, color = Monitored_)) +
@@ -271,7 +301,7 @@ ggplot(wshds_loading) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TP load (metric ton/yr)", color = "Monitored") +
   theme(legend.position = "top")
-#ggsave(file = "./Code/Output/TPloadmap.jpg", width = 5, height = 6)
+#ggsave(file = "./Code/Output/map_TPload.jpg", width = 5, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.TDP.tonyr, color = Monitored_)) +
@@ -286,6 +316,7 @@ ggplot(wshds_loading) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TOC load (metric ton/yr)", color = "Monitored") +
   theme(legend.position = "top")
+#ggsave(file = "./Code/Output/map_TOCload.jpg", width = 5, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.DOC.tonyr, color = Monitored_)) +
@@ -300,6 +331,7 @@ ggplot(wshds_loading) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "Inflow (ac*ft/yr)", color = "Monitored") +
   theme(legend.position = "top")
+#ggsave(file = "./Code/Output/map_hydrology.jpg", width = 5, height = 6)
 
 ```
 
@@ -316,7 +348,7 @@ ggplot(loading_AllWatersheds, aes(x = Month, y = load.TN.tonmo, color = Organiza
 
 ggplot(monitored_loading_monthly, aes(x = Month, y = load.TN.tonmo, color = WS_Type)) +
   geom_line() +
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_x_continuous(breaks = sequence(1:12)) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   labs(y = "TN load (metric ton/mo)", color = "") +
@@ -334,7 +366,7 @@ ggplot(monitored_loading_monthly, aes(x = Month, y = load.TDN.tonmo, color = WS_
 
 ggplot(monitored_loading_monthly, aes(x = Month, y = load.TP.tonmo, color = WS_Type)) +
   geom_line() +
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_x_continuous(breaks = sequence(1:12)) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   labs(y = "TP load (metric ton/mo)", color = "") +
@@ -372,10 +404,12 @@ ggplot(monitored_loading_monthly, aes(x = Month, y = Flow.acftmo, color = WS_Typ
   geom_line() +
   scale_y_log10() +
   scale_x_continuous(breaks = sequence(1:12)) +
-  facet_wrap(vars(WS_Name), ncol = 4) +
+  facet_wrap(vars(WS_Name), ncol = 4, labeller = label_wrap_gen()) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+# ggsave("./Code/Output/hydrology_monitored_monthly.jpg", 
+#        height = 6, width = 7)
 
 ggplot(monitored_loading_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   geom_line() +
@@ -386,16 +420,17 @@ ggplot(monitored_loading_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+# ggsave("./Code/Output/hydrology_monitored_total_monthly.jpg", 
+#        height = 4, width = 5)
 
-monitored_loading_monthly_total
 ggplot(unmonitored_hydrology_monthly, aes(x = Month, y = Flow.acftmo)) +
   geom_line() +
   scale_y_log10() +
   scale_x_continuous(breaks = sequence(1:12)) +
-  facet_wrap(vars(WS_Name), ncol = 6) +
-  labs(y = "Inflow (ac*ft/mo)", color = "") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
+  facet_wrap(vars(WS_Name), ncol = 6, labeller = label_wrap_gen()) +
+  labs(y = "Inflow (ac*ft/mo)")
+# ggsave("./Code/Output/hydrology_unmonitored_monthly.jpg", 
+#        height = 9, width = 9)
 
 ggplot(unmonitored_hydrology_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   geom_line() +
@@ -406,6 +441,8 @@ ggplot(unmonitored_hydrology_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+# ggsave("./Code/Output/hydrology_unmonitored_total_monthly.jpg", 
+#        height = 4, width = 5)
 
 ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
   geom_line() +
@@ -423,12 +460,13 @@ ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
 # hydrology
 ggplot(flow_total, aes(x = Source, y = Flow.acftyr, fill = Source)) +
   geom_bar(stat = "identity") +
-  geom_text(aes(label = paste0(Flow.percent, "%")), 
+  geom_text(aes(label = Flow.percent), 
             vjust = ifelse(flow_total$Flow.acftyr < 0, 1.2, -0.2)) +
   labs(x = "", y = expression("Hydrologic Inflow or Outflow (ac*ft"^3*"/yr)")) +
-  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69",
+                               "#8a2880", "#62197d", "gray")) +
   theme(legend.position = "none")
-#ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 5, height = 4)
+ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 6, height = 4)
   
 ```
 

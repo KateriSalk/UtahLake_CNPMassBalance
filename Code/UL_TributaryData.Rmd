@@ -628,6 +628,13 @@ trib_fac_sites_intersect_downstream_MillRace <- trib_fac_sites_intersect_downstr
 #           file = "./Data/Processed/MillRace_WQandFlow.csv", 
 #           row.names = FALSE)
 
+# Theron Miller requested flow data. Subset that data to send to him. 
+trib_fac_sites_intersect_downstream_flow <- trib_fac_sites_intersect_downstream %>%
+  select(MonitoringLocationIdentifier:ResultStatusIdentifier, orig.units:Flow.cfs, WS_Name)
+# write.csv(trib_fac_sites_intersect_downstream_flow,
+#           file = "./Data/Processed/UL_TributaryFlow_downstreamsites.csv",
+#           row.names = FALSE)
+
 ```
 
 ### Jordan River Outflow
@@ -990,6 +997,7 @@ dmr_flow <- dmr_flow %>%
                                  Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 3.06889,
                                  Month %in% c(2) ~ Flow.MGD * 28 * 3.06889)) %>%
   arrange(NPES_Name, Month)
+#write.csv(dmr_flow, file = "./Data/Processed/DMR_flow.csv", row.names = FALSE)
 
 dmr_flow_annual <- dmr_flow %>%
   group_by(NPES_Name) %>%
