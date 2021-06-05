@@ -65,9 +65,10 @@ unmonitored_loading_annual <- unmonitored_loading %>%
          load.TDN.tonyr = NA, 
          load.TDP.tonyr = NA, 
          load.TOC.tonyr = NA,
-         load.DOC.tonyr = NA) %>%
+         load.DOC.tonyr = NA,
+         WS_Type = "Unmonitored") %>%
   select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr,
-         Flow.acftyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
+         Flow.acftyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr, WS_Type)
   
 unmonitored_hydrology$WS_Name <- as.factor(unmonitored_hydrology$WS_Name)
 unmonitored_hydrology$WS_Name <- gsub("_", " ", unmonitored_hydrology$WS_Name)
@@ -100,6 +101,15 @@ unmonitored_hydrology_annual <- unmonitored_hydrology_monthly %>%
 ```{r}
 monitored_loading_monthly$WS_Name <- 
   factor(monitored_loading_monthly$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+
+monitored_loading_annual$WS_Name <- 
+  factor(monitored_loading_annual$WS_Name, 
          levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
                     "American Fork River", "Timp SSD", "Lindon Drain", 
                     "Powell Slough Major", "Provo River", "Mill Race", 
@@ -166,17 +176,81 @@ monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Mill
 monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
   dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
 
+monitored_loading_annual <- monitored_loading_annual %>%
+  mutate(WS_Type = case_when(
+    WS_Name %in% c("Timp SSD", "Powell Slough Major", "Mill Race", 
+                   "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
+                   "Benjamin Slough") ~ "WWTP", 
+    TRUE ~ "No WWTP"))
+
 ```
 
 
-### Combine monitored and unmonitored annual loading
+### Combine annual loading
 ```{r}
 loading_annual <- monitored_loading_annual %>%
   rbind(., unmonitored_loading_annual) %>%
   left_join(., unmonitored_hydrology_annual, by = "WS_Name") %>%
   mutate(Flow.acftyr = case_when(is.na(Flow.acftyr.x) ~ Flow.acftyr.y, 
                                  TRUE ~ Flow.acftyr.x)) %>%
-  select(-Flow.acftyr.x, -Flow.acftyr.y)
+  select(-Flow.acftyr.x, -Flow.acftyr.y) %>%
+  select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr, Flow.acftyr,
+         load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr, WS_Type)
+
+
+jordan_loading_annual <- jordan_loading_annual %>%
+  mutate(WS_Type = "Jordan River") %>%
+  mutate_if(is.numeric, funs(. * -1))
+
+gw_loading_zones <- gw_loading_annual
+gw_loading_annual <- gw_loading_zones %>%
+  summarise(Flow.acftyr = sum(Flow.acftyr), 
+            load.TP.tonyr = sum(load.TP.tonyr), 
+            load.TN.tonyr = sum(load.TN.tonyr)) %>%
+  mutate(WS_Name = "Groundwater", 
+         Flow.cfs = NA, 
+         load.TDN.tonyr = NA, 
+         load.TDP.tonyr = NA, 
+         load.TOC.tonyr = NA, 
+         load.DOC.tonyr = NA,
+         WS_Type = "Groundwater") %>%
+  select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr, Flow.acftyr,
+         load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr, WS_Type)
+
+atm_loading_annual <- data.frame(WS_Name = "Atmosphere", 
+                                 Flow.cfs = NA, 
+                                 load.TN.tonyr = 170, 
+                                 load.TDN.tonyr  = 74.8, 
+                                 load.TP.tonyr = 5, 
+                                 Flow.acftyr = NA,
+                                 load.TDP.tonyr = 2.5, 
+                                 load.TOC.tonyr = NA, 
+                                 load.DOC.tonyr = NA, 
+                                 WS_Type = "Atmosphere")
+  
+loading_annual <- loading_annual %>%
+  rbind(., jordan_loading_annual, gw_loading_annual, atm_loading_annual)
+
+loading_annual$WS_Type <- 
+  factor(loading_annual$WS_Type, 
+         levels = c("WWTP", "No WWTP", "Unmonitored", "Atmosphere", "Groundwater", "Jordan River"))
+
+loading_annual_summary <- loading_annual %>%
+  group_by(WS_Type) %>%
+  summarise(load.TN.tonyr = sum(load.TN.tonyr), 
+            load.TP.tonyr = sum(load.TP.tonyr)) %>%
+  mutate(TN.percent = case_when(
+    load.TN.tonyr > 0 ~ load.TN.tonyr/sum(load.TN.tonyr[which(load.TN.tonyr>0)])*100, 
+    load.TN.tonyr < 0 ~ load.TN.tonyr/sum(load.TN.tonyr[which(load.TN.tonyr>0)])*100), 
+    TP.percent = case_when(
+    load.TP.tonyr > 0 ~ load.TP.tonyr/sum(load.TP.tonyr[which(load.TP.tonyr>0)])*100, 
+    load.TP.tonyr < 0 ~ load.TP.tonyr/sum(load.TP.tonyr[which(load.TP.tonyr>0)])*100)) 
+
+loading_annual_summary$TN.percent <- round(loading_annual_summary$TN.percent, digits = 1)
+loading_annual_summary$TP.percent <- round(loading_annual_summary$TP.percent, digits = 1)
+
+loading_annual_summary$TN.percent <- paste(loading_annual_summary$TN.percent, "%")  
+loading_annual_summary$TP.percent <- paste(loading_annual_summary$TP.percent, "%")  
 
 ```
 
@@ -466,8 +540,57 @@ ggplot(flow_total, aes(x = Source, y = Flow.acftyr, fill = Source)) +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69",
                                "#8a2880", "#62197d", "gray")) +
   theme(legend.position = "none")
-ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 6, height = 4)
-  
+#ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 6, height = 4)
+
+# nutrients, monitored watersheds
+ggplot(monitored_loading_annual, aes(x = WS_Name, y = load.TN.tonyr, fill = WS_Type)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  labs(x = "", y = "TN load (metric tons/yr)", fill = "") +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/load_TN_monitored_total_annual.jpg", width = 6, height = 5)
+
+ggplot(monitored_loading_annual, aes(x = WS_Name, y = load.TP.tonyr, fill = WS_Type)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  labs(x = "", y = "TP load (metric tons/yr)", fill = "") +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/load_TP_monitored_total_annual.jpg", width = 6, height = 5)
+
+ggplot(monitored_loading_annual, aes(x = WS_Name, y = load.TOC.tonyr, fill = WS_Type)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+  labs(x = "", y = "TOC load (metric tons/yr)", fill = "") +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/load_TOC_monitored_total_annual.jpg", width = 6, height = 5)
+
+# nutrients, all sources
+ggplot(loading_annual_summary, aes(x = WS_Type, y = load.TN.tonyr, fill = WS_Type)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#b5367a", "#db4a69", "#f27162", "#fc9d6f", "#fecc90", "#3b1165")) +
+  geom_text(aes(label = TN.percent), 
+            vjust = ifelse(loading_annual_summary$load.TN.tonyr < 0, 1.2, -0.2)) +
+  ylim(-200, 1500) +
+  labs(x = "", y = "TN load (metric tons/yr)", fill = "") +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/load_TN_total_annual.jpg", width = 6, height = 4)
+
+ggplot(loading_annual_summary, aes(x = WS_Type, y = load.TP.tonyr, fill = WS_Type)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = TP.percent), 
+            vjust = ifelse(loading_annual_summary$load.TP.tonyr < 0, 1.2, -0.2)) +
+  ylim(-50, 250) +
+  scale_fill_manual(values = c("#b5367a", "#db4a69", "#f27162", "#fc9d6f", "#fecc90", "#3b1165")) +
+  labs(x = "", y = "TP load (metric tons/yr)", fill = "") +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/load_TP_total_annual.jpg", width = 6, height = 4)
+
+
 ```
 
 
