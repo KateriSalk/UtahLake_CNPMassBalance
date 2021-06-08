@@ -482,7 +482,7 @@ ggplot(monitored_loading_monthly, aes(x = Month, y = Flow.acftmo, color = WS_Typ
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
-# ggsave("./Code/Output/hydrology_monitored_monthly.jpg", 
+# ggsave("./Code/Output/hydrology_monitored_monthly.jpg",
 #        height = 6, width = 7)
 
 ggplot(monitored_loading_monthly_total, aes(x = Month, y = Flow.acftmo)) +
@@ -494,7 +494,7 @@ ggplot(monitored_loading_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
-# ggsave("./Code/Output/hydrology_monitored_total_monthly.jpg", 
+# ggsave("./Code/Output/hydrology_monitored_total_monthly.jpg",
 #        height = 4, width = 5)
 
 ggplot(unmonitored_hydrology_monthly, aes(x = Month, y = Flow.acftmo)) +

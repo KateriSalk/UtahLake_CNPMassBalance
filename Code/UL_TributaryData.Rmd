@@ -317,9 +317,7 @@ USGS_flow <- readNWISdv(siteNumbers = c("10146400", "10150500",
                          startDate = "2010-01-01")
 
 USGS_flow_processed <- USGS_flow %>%
-  mutate(WS_Name = case_when(site_no == "10146400" ~ "Currant Creek", 
-                             site_no == "10150500" ~ "Spanish Fork River", 
-                             site_no == "10153100" ~ "Hobble Creek",
+  mutate(WS_Name = case_when(site_no == "10153100" ~ "Hobble Creek",
                              site_no == "10163000" ~ "Provo River")) %>%
   select(WS_Name, Date, X_00060_00003)
 
@@ -1390,7 +1388,7 @@ give.n <- function(x){
 
 #### Tickville Wash
 
-There is only one inflow monitored in Lake Mountain - Israel Canyon. Estimates are based on this site.
+There is only one inflow monitored in Tickville Wash. Estimates are based on this site.
 
 Flow
 
@@ -1410,7 +1408,7 @@ Nutrient loads
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.TN.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -1423,7 +1421,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TDN <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.TDN.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -1436,7 +1434,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TP <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.TP.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -1449,7 +1447,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TDP <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.TDP.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -1462,7 +1460,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
         axis.title.x = element_blank(), axis.text.x = element_blank())
 
 TOC <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.TOC.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -1474,7 +1472,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - I
   theme(legend.position = "none")
 
 DOC <-
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = load.DOC.kgd, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
