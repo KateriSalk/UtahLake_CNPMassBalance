@@ -287,7 +287,7 @@ flow_evap <- precipevap_hydrology_monthly %>%
   mutate(Source = "Evaporation")
 
 flow_jordan <- jordan_loading_annual %>%
-  summarise(Flow.acftyr = -Flow.acftyr) %>%
+  summarise(Flow.acftyr = Flow.acftyr) %>%
   mutate(Source = "Jordan River")
   
 flow_total <- rbind(flow_tribs, flow_gw, flow_precip, flow_evap, flow_jordan)
@@ -359,8 +359,8 @@ ggplot(wshds_loading) +
   scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TN load (metric ton/yr)", color = "Monitored") +
-  theme(legend.position = "top")
-#ggsave(file = "./Code/Output/map_TNload.jpg", width = 5, height = 6)
+  theme(legend.position = "top", legend.box = "vertical") 
+#ggsave(file = "./Code/Output/map_TNload.jpg", width = 4, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.TDN.tonyr, color = Monitored_)) +
@@ -374,8 +374,8 @@ ggplot(wshds_loading) +
   scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TP load (metric ton/yr)", color = "Monitored") +
-  theme(legend.position = "top")
-#ggsave(file = "./Code/Output/map_TPload.jpg", width = 5, height = 6)
+  theme(legend.position = "top", legend.box = "vertical") 
+#ggsave(file = "./Code/Output/map_TPload.jpg", width = 4, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.TDP.tonyr, color = Monitored_)) +
@@ -389,8 +389,8 @@ ggplot(wshds_loading) +
   scale_fill_viridis_c(option = "magma", direction = -1, begin = 0.4) +
   scale_color_manual(values = c("lightgray", "black")) +
   labs(fill = "TOC load (metric ton/yr)", color = "Monitored") +
-  theme(legend.position = "top")
-#ggsave(file = "./Code/Output/map_TOCload.jpg", width = 5, height = 6)
+  theme(legend.position = "top", legend.box = "vertical") 
+#ggsave(file = "./Code/Output/map_TOCload.jpg", width = 4, height = 6)
 
 ggplot(wshds_loading) +
   geom_sf(aes(fill = load.DOC.tonyr, color = Monitored_)) +

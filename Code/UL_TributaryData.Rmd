@@ -633,6 +633,57 @@ trib_fac_sites_intersect_downstream_flow <- trib_fac_sites_intersect_downstream 
 #           file = "./Data/Processed/UL_TributaryFlow_downstreamsites.csv",
 #           row.names = FALSE)
 
+# computing proportion of flow from WFWQC, in total and for Lindon Drain and Spanish Fork
+trib_fac_sites_intersect_downstream_flow_entities_TN <-
+  trib_fac_sites_intersect_downstream %>%
+  drop_na(Flow.cfs, TN) %>%
+  group_by(OrganizationIdentifier) %>%
+  summarise(n = n())
+trib_fac_sites_intersect_downstream_flow_entities_TN
+#   OrganizationIdentifier     n
+# * <chr>                  <int>
+# 1 UTAHDWQ_WQX              552
+# 2 WFWQC_UT                 111
+
+trib_fac_sites_intersect_downstream_flow_entities_TP <-
+  trib_fac_sites_intersect_downstream %>%
+  drop_na(Flow.cfs, TP) %>%
+  group_by(OrganizationIdentifier) %>%
+  summarise(n = n())
+trib_fac_sites_intersect_downstream_flow_entities_TP
+#   OrganizationIdentifier     n
+# * <chr>                  <int>
+# 1 UTAHDWQ_WQX              550
+# 2 WFWQC_UT                 168
+
+trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TP <-
+  trib_fac_sites_intersect_downstream %>%
+  filter(WS_Name %in% c("Lindon Drain", "Spanish Fork River")) %>%
+  drop_na(Flow.cfs, TP) %>%
+  group_by(OrganizationIdentifier, WS_Name) %>%
+  summarise(n = n())
+trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TP
+#   OrganizationIdentifier WS_Name                n
+#   <chr>                  <fct>              <int>
+# 1 UTAHDWQ_WQX            Lindon Drain          38
+# 2 UTAHDWQ_WQX            Spanish Fork River    31
+# 3 WFWQC_UT               Lindon Drain          17
+# 4 WFWQC_UT               Spanish Fork River     7
+
+
+trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TN <-
+  trib_fac_sites_intersect_downstream %>%
+  filter(WS_Name %in% c("Lindon Drain", "Spanish Fork River")) %>%
+  drop_na(Flow.cfs, TN) %>%
+  group_by(OrganizationIdentifier, WS_Name) %>%
+  summarise(n = n())
+trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TN
+#   OrganizationIdentifier WS_Name                n
+#   <chr>                  <fct>              <int>
+# 1 UTAHDWQ_WQX            Lindon Drain          38
+# 2 UTAHDWQ_WQX            Spanish Fork River    31
+# 3 WFWQC_UT               Lindon Drain          10
+# 4 WFWQC_UT               Spanish Fork River     5
 ```
 
 ### Jordan River Outflow
