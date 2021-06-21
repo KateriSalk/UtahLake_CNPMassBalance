@@ -61,6 +61,10 @@ ul_level <- read.xlsx("./Data/Processed/Copy of ULDB_Stage_Vol_SA_V3(sd-JLM).xls
                   sheet = "Time Series of Vol and SA", startRow = 11, 
                   cols = c(7:10))
 
+# 2019 and 2020 WFWQC flow data
+WFWQC_flow <- read.csv("./Data/Processed/WFWQC_Flow.csv")
+
+
 ```
 
 ## Data processing
@@ -168,6 +172,33 @@ ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.uni
   geom_point(alpha = 0.5) +
   scale_y_log10() +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
+
+WFWQC_flow$ActivityStartDate <- as.Date(WFWQC_flow$ActivityStartDate)
+
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "-0.153"] <- NA
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "too deep"] <- NA
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "no flow"] <- 0
+WFWQC_flow$ResultMeasureValue <- as.numeric(WFWQC_flow$ResultMeasureValue)
+
+flow_sites_names <- trib_wq %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, 
+         LatitudeMeasure, LongitudeMeasure,)
+
+WFWQC_flow_processed <- WFWQC_flow %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate), 
+         orig.units = "m3.sec",
+         Flow.cfs = ResultMeasureValue*35.3147) %>%
+  left_join(., flow_sites_names) %>%
+  select(ActivityStartDate, MonitoringLocationIdentifier, OrganizationIdentifier, 
+         OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+         LongitudeMeasure, ResultStatusIdentifier, Month, Year,
+         orig.units, Flow.cfs) %>%
+  distinct() %>%
+  drop_na(LatitudeMeasure, LongitudeMeasure)
+
+trib_flow_long <- rbind(trib_flow_long, WFWQC_flow_processed)
 ```
 
 ### Find non-sampled dates
@@ -654,7 +685,7 @@ trib_fac_sites_intersect_downstream_flow_entities_TP
 #   OrganizationIdentifier     n
 # * <chr>                  <int>
 # 1 UTAHDWQ_WQX              550
-# 2 WFWQC_UT                 168
+# 2 WFWQC_UT                 331
 
 trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TP <-
   trib_fac_sites_intersect_downstream %>%
@@ -667,8 +698,8 @@ trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TP
 #   <chr>                  <fct>              <int>
 # 1 UTAHDWQ_WQX            Lindon Drain          38
 # 2 UTAHDWQ_WQX            Spanish Fork River    31
-# 3 WFWQC_UT               Lindon Drain          17
-# 4 WFWQC_UT               Spanish Fork River     7
+# 3 WFWQC_UT               Lindon Drain          36
+# 4 WFWQC_UT               Spanish Fork River    21
 
 
 trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TN <-
@@ -1266,7 +1297,7 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 ### Flow time series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = Flow.cfs, shape = SiteType, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
@@ -3410,6 +3441,43 @@ loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
+
+# test WFWQC only
+# loading_LindonDrain_WF <- trib_fac_sites_intersect_downstream %>%
+#   ungroup() %>%
+#   filter(WS_Name == "Lindon Drain") %>%
+#   filter(OrganizationIdentifier == "WFWQC_UT") %>%
+#   group_by(WS_Name, Month) %>%
+#   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+#             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+#             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+#             load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+#             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+#             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+#             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+#             Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+#                                      Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+#                                      Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+#             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
+#             load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+#             load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TP.kgd * 28/1000),
+#             load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+#             load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+#             load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+#                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+#                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+#   distinct()
+
 
 # Powell Slough 
 # North Outfall
