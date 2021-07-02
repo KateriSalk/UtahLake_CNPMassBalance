@@ -342,8 +342,7 @@ trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow)
 
  
 ```{r}
-USGS_flow <- readNWISdv(siteNumbers = c("10146400", "10150500", 
-                                         "10153100", "10163000"),
+USGS_flow <- readNWISdv(siteNumbers = c("10153100", "10163000"),
                          parameterCd = "00060", 
                          startDate = "2010-01-01")
 
@@ -1298,8 +1297,7 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 ### Flow time series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = ActivityStartDate, y = Flow.cfs, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = ActivityStartDate, y = Flow.cfs, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 3) +
   scale_y_log10() +
@@ -1475,7 +1473,7 @@ There is only one inflow monitored in Tickville Wash. Estimates are based on thi
 Flow
 
 ```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lake Mountain - Israel Canyon"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
        aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
            color = Backwater)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
@@ -4515,16 +4513,15 @@ ggplot(loading_AllWatersheds_annual_combined,
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = TN, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = TN, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "TN (mg/L)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_TN.jpg", width = 8, height = 6, units = "in")
 
 # watersheds w/o WWTP, compare entities
 ggplot(subset(trib_fac_sites_intersect_downstream,
@@ -4560,29 +4557,27 @@ ggsave("./Code/Output/CQ_TN_WWTP.jpg", width = 5.25, height = 4, units = "in")
 
 # TDN
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = TDN, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = TDN, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "TDN (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "TDN (mg/L)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_TDN.jpg", width = 8, height = 6, units = "in")
 
 # TP
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = TP, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = TP, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "TP (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "TP (mg/L)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_TP.jpg", width = 8, height = 6, units = "in")
 
 # watersheds w/o WWTP, compare entities
 ggplot(subset(trib_fac_sites_intersect_downstream,
@@ -4615,44 +4610,42 @@ ggplot(subset(trib_fac_sites_intersect_downstream,
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
 ggsave("./Code/Output/CQ_TP_WWTP.jpg", width = 5.25, height = 4, units = "in")
+
 # TDP
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = TDP, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = TDP, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "TDP (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "TDP (mg/L)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_TDP.jpg", width = 8, height = 6, units = "in")
 
 # TOC
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = TOC, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = TOC, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "TOC (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "TOC (mg/L)",  color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_TOC.jpg", width = 8, height = 6, units = "in")
 
 # DOC
 ggplot(trib_fac_sites_intersect_downstream, 
-       aes(x = Flow.cfs, y = DOC, shape = SiteType, 
-           color = OrganizationIdentifier)) +
+       aes(x = Flow.cfs, y = DOC, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_x_log10() +
   scale_y_log10() +
-  labs(x = "Flow (cfs)", y = "DOC (mg/L)", shape = "Site Type", color = "Organization") +
-  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(x = "Flow (cfs)", y = "DOC (mg/L)", color = "Organization") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
+ggsave("./Code/Output/CQ_DOC.jpg", width = 8, height = 6, units = "in")
 
 ```
 
@@ -4677,6 +4670,138 @@ ggplot(p_et_summary, aes(x = as.factor(Month), y = et.acftmo)) +
 ## Appendix
 
 ### Nutrient concentrations across watersheds
+
+#### Watersheds w/ UDWQ only, no WWTP
+
+TN
+
+```{r}
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Tickville Wash") +
+  scale_fill_manual(values = c("#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Tickville.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Saratoga") +
+  scale_fill_manual(values = c("#f27162")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_DrySaratoga.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 200, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site", title = "Currant Creek") +
+  scale_fill_manual(values = c("#f27162", "#db4a69")) +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TNconc_Currant.jpg", height = 4, width = 5, units = "in")
+
+```
+
+
+TP
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Tickville Wash") +
+  scale_fill_manual(values = c("#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Tickville.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Dry Creek - Saratoga") +
+  scale_fill_manual(values = c("#f27162")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_DrySaratoga.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  geom_hline(yintercept = 3, lty = 2, color = "#f27162") +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site", title = "Currant Creek") +
+  scale_fill_manual(values = c("#f27162", "#db4a69")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/TPconc_Currant.jpg", height = 4, width = 5, units = "in")
+
+
+```
+
+Flow
+
+```{r}
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Tickville Wash") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Tickville.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Dry Creek - Saratoga") +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_DrySaratoga.jpg", height = 4, width = 5, units = "in")
+
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
+       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
+           color = Backwater)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
+  scale_y_log10() +
+  stat_summary(fun.data = give.n, geom = "text", size = 3,
+                  position = position_dodge(width = 0.75)) +
+  labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Currant Creek") +
+  scale_fill_manual(values = c("#f27162", "#db4a69")) +
+  scale_color_manual(values = c("black", "gray"), guide = "none") +
+  theme(legend.position = "top")
+ggsave("./Code/Output/Flow_Currant.jpg", height = 4, width = 5, units = "in")
+
+```
+
 
 #### Watersheds w/ UDWQ and WFWQC, no WWTP
 
