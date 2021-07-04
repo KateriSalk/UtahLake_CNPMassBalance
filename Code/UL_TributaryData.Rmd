@@ -1052,8 +1052,8 @@ dmr_flow <- dmr %>%
   filter(parameter_desc =="Flow, in conduit or thru treatment plant" & 
            statistical_base_short_desc == "30DA AVG") %>%
   filter(Year >= 2015) %>%
-  filter(NPES_Name %in% c("OREM CITY CORP", "PAYSON CITY CORP", "PROVO CITY CORP",
-                          "SALEM CITY CORP", "SPANISH FORK CITY CORP", 
+  filter(NPES_Name %in% c("OREM CITY CORP", "PacifiCorp Energy", "PAYSON CITY CORP", 
+                          "PROVO CITY CORP", "SALEM CITY CORP", "SPANISH FORK CITY CORP", 
                           "SPRINGVILLE- CITY OF", "TIMPANOGOS SPECIAL SERVICE DIS")) %>%
   select(npdes_id, Year, Month, 
          dmr_value_standard_units, statistical_base_short_desc,
@@ -1082,7 +1082,19 @@ dmr_flow_annual <- dmr_flow %>%
   group_by(NPES_Name) %>%
   summarise(Flow.acftyr = sum(Flow.acftmo))
 
-
+# PacifiCorp Energy does not report 30-day average
+dmr_flow_Lindon <- dmr %>%
+  filter(perm_feature_type_desc == "External Outfall") %>%
+  filter(parameter_desc =="Flow, in conduit or thru treatment plant") %>%
+  filter(Year >= 2015) %>%
+  filter(NPES_Name %in% c("PacifiCorp Energy")) %>%
+  select(npdes_id, Year, Month, 
+         dmr_value_standard_units, statistical_base_short_desc,
+         NPES_Name, NPDES.Type, NPDESID.Date) %>%
+  drop_na() %>%
+  group_by(Year, Month, NPES_Name) %>%
+  summarise(Flow.MGD = round(mean(dmr_value_standard_units), digits = 2)) 
+  
 # # 30 day avg most available for TP
 # ggplot(dmr_load, aes(x = NPDES.Name, y = TP, fill = stat)) +
 #   geom_boxplot()
@@ -1214,82 +1226,88 @@ ggsave("./Code/Output/map_watershed.jpg", height = 6.5, width = 6.5, units = "in
 ### Water Quality Time Series
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = TN, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "TN (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("TN ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_TNconc.jpg", width = 8, height = 6, units = "in")
   
 # TDN
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = TDN, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "TDN (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("TDN ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_TDNconc.jpg", width = 8, height = 6, units = "in")
 
 # TP
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = TP,
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "TP (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("TP ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_TPconc.jpg", width = 8, height = 6, units = "in")
 
 # TDP
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = TDP, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "TDP (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("TDP ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_TDPconc.jpg", width = 8, height = 6, units = "in")
 
 # TOC
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = TOC, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "TOC (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("TOC ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_TOCconc.jpg", width = 8, height = 6, units = "in")
 
 # DOC
-ggplot(trib_fac_sites_intersect_downstream_early, 
+ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = DOC, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
   facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
-  labs(x = "", y = "DOC (mg/L)", shape = "Site Type", color = "Organization") +
+  labs(x = "", y = expression("DOC ("*mu*"g/L)"), shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_DOCconc.jpg", width = 8, height = 6, units = "in")
 
 ```
 
@@ -1299,17 +1317,19 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 ggplot(trib_fac_sites_intersect_downstream, 
        aes(x = ActivityStartDate, y = Flow.cfs, color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
+  facet_wrap(vars(WS_Name), ncol = 4) +
   scale_y_log10() +
   labs(x = "", y = "Flow (cfs)", shape = "Site Type", color = "Organization") +
   scale_shape_manual(values = c(15, 16, 17, 18)) +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
+ggsave("./Code/Output/TimeSeries_Flow.jpg", width = 8, height = 6, units = "in")
+
 ```
 
 ### Load time series
-
+Note: this is an exploration, not a quantification of total load. Several watersheds have >2 sites that make up total load.
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # TN
 ggplot(trib_fac_sites_intersect_downstream_early, 
@@ -1393,7 +1413,7 @@ ggplot(trib_fac_sites_intersect_downstream_early,
 
 ```{r}
 # examine Mill race, specifically
-ggplot(subset(trib_fac_sites_intersect_downstream_early, WS_Name == "Mill Race"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = ActivityStartDate, y = load.TN.kgd, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
@@ -1404,7 +1424,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream_early, WS_Name == "Mill Race")
   theme(legend.position = "top") +
   guides(fill = guide_legend(ncol = 2))
 
-ggplot(subset(trib_fac_sites_intersect_downstream_early, WS_Name == "Mill Race"),
+ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = ActivityStartDate, y = load.TP.kgd, 
            color = OrganizationIdentifier)) +
   geom_point(alpha = 0.7, size = 2) +
@@ -1457,7 +1477,7 @@ ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
 
 ```
 
-### Monthly conditions by watershed
+### Monthly loads by watershed
 
 ```{r, include = FALSE}
 # code to generate sample sizes 
@@ -1469,22 +1489,6 @@ give.n <- function(x){
 #### Tickville Wash
 
 There is only one inflow monitored in Tickville Wash. Estimates are based on this site.
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loads
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -1577,23 +1581,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 There is only one inflow monitored in Dry Creek - Saratoga. Estimates are based on this site.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-
-Nutrient loads
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
@@ -1680,30 +1667,12 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
-
 
 
 #### Lehi Spring Creek
 
 There are two sites in Lehi Spring Creek. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
@@ -1791,29 +1760,9 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-
 #### American Fork River
 
 There are two sites in American Fork River. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  # scale_y_continuous(trans=scales::pseudo_log_trans(base = 10)) +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -1899,22 +1848,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 #### Timp SSD
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -2010,24 +1943,6 @@ REVISIT East side tributary (UTAHDWQ_WQX-4995041) has measurable concentrations 
 
 There are two sites in Lindon Drain. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
@@ -2111,23 +2026,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 
 #### Powell Slough Major
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -2216,23 +2114,6 @@ Powell Slough has both North and South outfalls. Need to add together load from 
 
 There are two site codes in Provo River (one DWQ and one WFWQC), but these are in the same location. Will compare loads to determine if the estimates can be combined.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
@@ -2316,24 +2197,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 
 #### Mill Race
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top") +
-  guides(fill = guide_legend(ncol = 2))
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -2465,24 +2328,6 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 #### Spring Creek - Springville
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top") +
-  guides(fill = guide_legend(ncol = 2))
-```
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
@@ -2573,24 +2418,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 4996275 represents Springville WWTP.
 
 #### Hobble Creek
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top") +
-  guides(fill = guide_legend(ncol = 2))
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -2683,24 +2510,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 
 #### Dry Creek - Spanish Fork
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top") +
-  guides(fill = guide_legend(ncol = 2))
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -2796,23 +2605,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 There are two sites in Spanish Fork River. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
@@ -2898,23 +2690,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 #### 4000 South Drain Spanish Fork
 
 There are two sites in 4000 South Drain Spanish Fork. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
-
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -3003,23 +2778,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 
 There are two sites in Benjamin Slough. DWQ site is upstream of WFWQC site. Will compare loads to determine if the estimates can be combined.
 
-Flow
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#f27162", "#62197d")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loading
-
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
@@ -3105,23 +2863,6 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 #### Currant Creek
 
 Two sites, UTAHDWQ_WQX-4995310 and UTAHDWQ_WQX-4995312, are located at the same coordinates. These sites are pooled in load calculations, as they represent the same location.
-
-Flow 
-
-```{r, fig.height = 3, fig.width = 5, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = Flow.cfs, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
-  stat_summary(fun.data = give.n, geom = "text", size = 3,
-                  position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "Flow (cfs)", fill = "Site") +
-  scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
-  scale_color_manual(values = c("black", "gray"), guide = "none") +
-  theme(legend.position = "top")
-```
-
-Nutrient loads
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
@@ -3210,11 +2951,9 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```
 
-
-
 ### Monthly and annual load across watersheds
 
-Monitoring locations
+#### Monitored tributaries
 ```{r}
 # Tickville Wash
 loading_TickvilleWash <- trib_fac_sites_intersect_downstream %>%
@@ -3404,12 +3143,43 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
   distinct() 
 
 # Lindon Drain
-# WFWQC flow is not consistent with DWQ. Per discussion with SP, use only DWQ data
-loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
+# WFWQC represents most downstream flow, DWQ data should be added to the DMR data for PacifiCorps Energy to represent total flow and load.
+# Lindon Drain DMR data has only flow and TP --> other constituents will be underestimated
+# REVISIT: calculate year-month loading for DMR + DWQ. Calculate year-month loading for WFWQC. Combine, then take mean of DMR + DWQ and WFWQC.
+loading_LindonDrain_dmr <- dmr_load %>%
+  ungroup() %>%
+  filter(NPDES.Name == "PacifiCorp Energy") %>%
+  group_by(NPDES.Name, Year, Month) %>%
+  summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
+            load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+  distinct() %>%
+  full_join(dmr_flow_Lindon) %>%
+  ungroup() %>%
+  mutate(WS_Name = "Lindon Drain", 
+         Year = Year,
+         Month = Month,
+         Flow.cfs = xxx,
+         load.TN.kgd = xxx,
+         load.TDN.kgd = xxx,
+         load.TP.kgd = xxx,
+         load.TDP.kgd = xxx,
+         load.TOC.kgd = xxx,
+         load.DOC.kgd = xxx,
+         Flow.acftmo = xxx,
+         load.TN.tonmo = xxx,
+         load.TDN.tonmo = xxx,
+         load.TP.tonmo = xxx,
+         load.TDP.tonmo = xxx,
+         load.TOC.tonmo = xxx,
+         load.DOC.tonmo = xxx) %>%
+  select(-NPDES.Name, -NPES_Name, -Flow.MGD)
+
+loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Lindon Drain") %>%
   filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
-  group_by(WS_Name, Month) %>%
+  group_by(WS_Name, Year, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3440,41 +3210,40 @@ loading_LindonDrain <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
 
-# test WFWQC only
-# loading_LindonDrain_WF <- trib_fac_sites_intersect_downstream %>%
-#   ungroup() %>%
-#   filter(WS_Name == "Lindon Drain") %>%
-#   filter(OrganizationIdentifier == "WFWQC_UT") %>%
-#   group_by(WS_Name, Month) %>%
-#   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
-#             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
-#             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
-#             load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
-#             load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
-#             load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
-#             load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
-#             Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
-#                                      Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
-#                                      Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
-#             load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.TN.kgd * 28/1000),
-#             load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.TDN.kgd * 28/1000),
-#             load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.TP.kgd * 28/1000),
-#             load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.TDP.kgd * 28/1000),
-#             load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.TOC.kgd * 28/1000),
-#             load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
-#                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
-#                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
-#   distinct()
+loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
+  ungroup() %>%
+  filter(WS_Name == "Lindon Drain") %>%
+  filter(OrganizationIdentifier == "WFWQC_UT") %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE),
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                     Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                     Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+            load.TN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TN.kgd * 28/1000),
+            load.TDN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDN.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDN.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDN.kgd * 28/1000),
+            load.TP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TP.kgd * 28/1000),
+            load.TDP.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TDP.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TDP.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TDP.kgd * 28/1000),
+            load.TOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.TOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.TOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.TOC.kgd * 28/1000),
+            load.DOC.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ load.DOC.kgd * 31/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
+                                     Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
+  distinct()
 
 
 # Powell Slough 
@@ -4116,7 +3885,7 @@ loading_CurrantCreek <- trib_fac_sites_intersect_downstream %>%
 ```
 
 
-DMR Data
+#### DMR Data
 ```{r}
 
 # Timp SSD
@@ -4669,7 +4438,7 @@ ggplot(p_et_summary, aes(x = as.factor(Month), y = et.acftmo)) +
 
 ## Appendix
 
-### Nutrient concentrations across watersheds
+### Nutrient concentrations and flow across watersheds
 
 #### Watersheds w/ UDWQ only, no WWTP
 
