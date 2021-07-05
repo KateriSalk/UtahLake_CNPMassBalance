@@ -3148,38 +3148,42 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
 # REVISIT: calculate year-month loading for DMR + DWQ. Calculate year-month loading for WFWQC. Combine, then take mean of DMR + DWQ and WFWQC.
 loading_LindonDrain_dmr <- dmr_load %>%
   ungroup() %>%
+  full_join(dmr_flow_Lindon) %>%
   filter(NPDES.Name == "PacifiCorp Energy") %>%
-  group_by(NPDES.Name, Year, Month) %>%
+  group_by(NPDES.Name, Month) %>%
   summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE),
+            Flow.MGD = mean(Flow.MGD, na.rm = TRUE)) %>%
   distinct() %>%
-  full_join(dmr_flow_Lindon) %>%
   ungroup() %>%
   mutate(WS_Name = "Lindon Drain", 
-         Year = Year,
          Month = Month,
-         Flow.cfs = xxx,
-         load.TN.kgd = xxx,
-         load.TDN.kgd = xxx,
-         load.TP.kgd = xxx,
-         load.TDP.kgd = xxx,
-         load.TOC.kgd = xxx,
-         load.DOC.kgd = xxx,
-         Flow.acftmo = xxx,
-         load.TN.tonmo = xxx,
-         load.TDN.tonmo = xxx,
-         load.TP.tonmo = xxx,
-         load.TDP.tonmo = xxx,
-         load.TOC.tonmo = xxx,
-         load.DOC.tonmo = xxx) %>%
-  select(-NPDES.Name, -NPES_Name, -Flow.MGD)
+         Flow.cfs = Flow.MGD/0.646317,
+         load.TN.kgd = NA,
+         load.TDN.kgd = NA,
+         load.TP.kgd = NA,
+         load.TDP.kgd = NA,
+         load.TOC.kgd = NA,
+         load.DOC.kgd = NA,
+         Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs * 86400 * 31/43559.9,
+                                 Month %in% c(4, 6, 9, 11) ~ Flow.cfs * 86400 * 30/43559.9,
+                                 Month %in% c(2) ~ Flow.cfs * 86400 * 28/43559.9),
+         load.TN.tonmo = NA,
+         load.TDN.tonmo = NA,
+         load.TP.tonmo = load.TP.tonmo,
+         load.TDP.tonmo = NA,
+         load.TOC.tonmo = NA,
+         load.DOC.tonmo = NA) %>%
+  select(WS_Name, Month, Flow.cfs, load.TN.kgd, load.TDN.kgd, load.TP.kgd,
+         load.TDP.kgd, load.TOC.kgd, load.DOC.kgd, Flow.acftmo, load.TN.tonmo,
+         load.TDN.tonmo, load.TP.tonmo, load.TDP.tonmo, load.TOC.tonmo, load.DOC.tonmo)
 
 loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
   filter(WS_Name == "Lindon Drain") %>%
   filter(OrganizationIdentifier == "UTAHDWQ_WQX") %>%
-  group_by(WS_Name, Year, Month) %>%
+  group_by(WS_Name, Month) %>%
   summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
             load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
             load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
@@ -3209,6 +3213,25 @@ loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(4, 6, 9, 11) ~ load.DOC.kgd * 30/1000,
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct() 
+
+loading_LindonDrain_DWQ <- loading_LindonDrain_DWQ %>%
+  rbind(., loading_LindonDrain_dmr) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = sum(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = sum(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = sum(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = sum(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = sum(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = sum(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = sum(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = sum(Flow.acftmo, na.rm = TRUE),
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = sum(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = sum(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = sum(load.DOC.tonmo, na.rm = TRUE))
+  
 
 loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
@@ -3245,6 +3268,32 @@ loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
                                      Month %in% c(2) ~ load.DOC.kgd * 28/1000)) %>%
   distinct()
 
+ggplot(loading_LindonDrain_DWQ, aes(x = Month, y = Flow.acftmo)) +
+  geom_line() +
+  geom_line(data = loading_LindonDrain_WFWQC, aes(x = Month, y = Flow.acftmo),
+            color = "blue")
+ggplot(loading_LindonDrain_DWQ, aes(x = Month, y = load.TP.tonmo)) +
+  geom_line() +
+  geom_line(data = loading_LindonDrain_WFWQC, aes(x = Month, y = load.TP.tonmo),
+            color = "blue")
+
+loading_LindonDrain <- loading_LindonDrain_DWQ %>%
+  rbind(., loading_LindonDrain_WFWQC) %>%
+  group_by(WS_Name, Month) %>%
+  summarise(Flow.cfs = mean(Flow.cfs, na.rm = TRUE),
+            load.TN.kgd = mean(load.TN.kgd, na.rm = TRUE), 
+            load.TDN.kgd = mean(load.TDN.kgd, na.rm = TRUE),
+            load.TP.kgd = mean(load.TP.kgd, na.rm = TRUE),
+            load.TDP.kgd = mean(load.TDP.kgd, na.rm = TRUE),
+            load.TOC.kgd = mean(load.TOC.kgd, na.rm = TRUE),
+            load.DOC.kgd = mean(load.DOC.kgd, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
+            load.TN.tonmo = mean(load.TN.tonmo, na.rm = TRUE),
+            load.TDN.tonmo = mean(load.TDN.tonmo, na.rm = TRUE),
+            load.TP.tonmo = mean(load.TP.tonmo, na.rm = TRUE),
+            load.TDP.tonmo = mean(load.TDP.tonmo, na.rm = TRUE),
+            load.TOC.tonmo = mean(load.TOC.tonmo, na.rm = TRUE),
+            load.DOC.tonmo = mean(load.DOC.tonmo, na.rm = TRUE))
 
 # Powell Slough 
 # North Outfall
@@ -4012,14 +4061,14 @@ loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
 # write.csv(loading_AllWatersheds_dmr,
 #           file = "./Data/Processed/loading_AllWatersheds_dmr.csv",
 #        row.names = FALSE)
-#  
+# 
 # write.csv(loading_AllWatersheds_dmr2_annual,
 #           file = "./Data/Processed/loading_AllWatersheds_dmr_annual.csv",
 #        row.names = FALSE)
    
 ```
 
-
+#### All watersheds, export
 ```{r}
 loading_AllWatersheds <- rbind(
   loading_TickvilleWash, loading_DryCreekSaratoga, 
@@ -4084,197 +4133,197 @@ loading_AllWatersheds_annual_combined <-
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.TN.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TN load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.TDN.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TDN load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.TP.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TP load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.TDP.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TDP load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.TOC.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TOC load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds, aes(x = Month, y = load.DOC.tonmo, color = OrganizationIdentifier)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3) +
-  scale_y_log10() +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "DOC load (ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-```
-
-
-```{r}
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TN.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDN.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TDN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TP.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDP.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TDP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TOC.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "TOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
-ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.DOC.difference)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
-  scale_x_continuous(n.breaks = 12) +
-  labs(y = "DOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
-  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
-  theme(legend.position = "top")
-
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.TN.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TN load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.TDN.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TDN load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.TP.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TP load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.TDP.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TDP load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.TOC.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TOC load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds, aes(x = Month, y = load.DOC.tonmo, color = OrganizationIdentifier)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3) +
+#   scale_y_log10() +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "DOC load (ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
 
 ```
 
 
 ```{r}
-ggplot(loading_AllWatersheds, 
-       aes(x = WS_Name, y = load.TN.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  facet_wrap(vars(OrganizationIdentifier)) +
-  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TN.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDN.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TDN load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TP.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TDP.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TDP load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.TOC.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "TOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
+# 
+# ggplot(loading_AllWatersheds_differences, aes(x = Month, y = load.DOC.difference)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(WS_Name), ncol = 3, scales = "free_y") +
+#   scale_x_continuous(n.breaks = 12) +
+#   labs(y = "DOC load difference (UTAHDWQ-WFWQC, ton/mo)", color = "Organization") +
+#   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
+#   theme(legend.position = "top")
 
-ggplot(loading_AllWatersheds_dmr, 
-       aes(x = WS_Name, y = load.TKN.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
-       aes(x = WS_Name, y = load.TDN.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "TDN loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
-ggplot(loading_AllWatersheds, 
-       aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  facet_wrap(vars(OrganizationIdentifier)) +
-  labs(x = "", y = "TP loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(loading_AllWatersheds_dmr, 
-       aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(loading_AllWatersheds, 
-       aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  facet_wrap(vars(OrganizationIdentifier)) +
-  labs(x = "", y = "TDP loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(loading_AllWatersheds_dmr, 
-       aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
-       aes(x = WS_Name, y = load.TOC.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "TOC loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
-       aes(x = WS_Name, y = load.DOC.tonmo, fill = as.factor(Month))) +
-  geom_bar(stat = "identity") +
-    scale_fill_viridis_d(option = "magma") +
-  labs(x = "", y = "DOC loading (tons/year)", fill = "Month") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(loading_AllWatersheds_annual_combined, 
-       aes(x = WS_Name, y = load.TP.tonyr, fill = OrganizationIdentifier)) +
-  geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
-  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
-  labs(x = "", y = "TP loading (tons/year)", fill = "Source") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(loading_AllWatersheds_annual_combined, 
-       aes(x = WS_Name, y = load.TN.tonyr, fill = OrganizationIdentifier)) +
-  geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
-  scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
-  labs(x = "", y = "TN loading (tons/year)", fill = "Source") +
-  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
-  
+```{r}
+# ggplot(loading_AllWatersheds, 
+#        aes(x = WS_Name, y = load.TN.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   facet_wrap(vars(OrganizationIdentifier)) +
+#   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds_dmr, 
+#        aes(x = WS_Name, y = load.TKN.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
+#        aes(x = WS_Name, y = load.TDN.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "TDN loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds, 
+#        aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   facet_wrap(vars(OrganizationIdentifier)) +
+#   labs(x = "", y = "TP loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds_dmr, 
+#        aes(x = WS_Name, y = load.TP.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds, 
+#        aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   facet_wrap(vars(OrganizationIdentifier)) +
+#   labs(x = "", y = "TDP loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds_dmr, 
+#        aes(x = WS_Name, y = load.TDP.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "TN loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
+#        aes(x = WS_Name, y = load.TOC.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "TOC loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(subset(loading_AllWatersheds, OrganizationIdentifier == "UTAHDWQ_WQX"),
+#        aes(x = WS_Name, y = load.DOC.tonmo, fill = as.factor(Month))) +
+#   geom_bar(stat = "identity") +
+#     scale_fill_viridis_d(option = "magma") +
+#   labs(x = "", y = "DOC loading (tons/year)", fill = "Month") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds_annual_combined, 
+#        aes(x = WS_Name, y = load.TP.tonyr, fill = OrganizationIdentifier)) +
+#   geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
+#   scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
+#   labs(x = "", y = "TP loading (tons/year)", fill = "Source") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# ggplot(loading_AllWatersheds_annual_combined, 
+#        aes(x = WS_Name, y = load.TN.tonyr, fill = OrganizationIdentifier)) +
+#   geom_bar(stat = "identity", position = position_dodge(preserve = "single")) +
+#   scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8) +
+#   labs(x = "", y = "TN loading (tons/year)", fill = "Source") +
+#   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+#   
 ```
 
 ### C-Q
