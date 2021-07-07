@@ -1,11 +1,14 @@
 ---
 title: "Stage Discharge Curve Development"
 author: "Scott Daly"
-date: ""
+date: ''
 output:
-    html_notebook:
-        toc: yes
-        toc_float: yes
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    toc_float: yes
 ---
 
 <!-- Please don't mess with the next few lines! -->
@@ -78,7 +81,7 @@ PTData2 <- mutate(PTData,DateTime2)
 
 ###Round Date to nearest 15 minutes for join with grab sample flow
 ```{r}
-PTData2$DateRound <- round_date(PTData2$DateRound, "15 minutes") 
+PTData2$DateRound <- round_date(PTData2$DateTime2, "15 minutes") 
 ```
 
 
@@ -303,10 +306,9 @@ activitylog_noflow <- activitylog %>%
 ```{r}
 PT_flow_match <- trib_flow_long %>% inner_join(PTData2, by=c("MLID","DateRound"))
 
-plotly::plot_ly(data=PT_flow_match) %>% 
+pt_plotly=plotly::plot_ly(data=PT_flow_match) %>% 
 	plotly::add_trace(type="scatter", mode="markers", x=~PPSI, y=~Flow.cfs, name=~MLID)
-
-
+htmlwidgets::saveWidget(pt_plotly, "pt_plotly.html")
 
 ```
 
@@ -314,7 +316,7 @@ plotly::plot_ly(data=PT_flow_match) %>%
 #source: https://thewetlandblog.wordpress.com/2013/06/17/fitting-rating-curves-with-r/
 ##Filter MLID
 
-```{r}
+```{r, eval=F}
 #PT_4792 <- 
 PT_5578 <- PT_flow_match %>%  filter(MLID %in% c("4995578"))
 PT_6540 <- PT_flow_match %>%  filter(MLID %in% c("4996540"))
@@ -330,7 +332,7 @@ summary(Power.nls)
 ```
 
 
-```{r}
+```{r, eval=F}
 nls <- nlsLM(data = PT_6540, formula = Flow.cfs~C*(PPSI+a)^n, start=list(a=1, n=0, C=2))
 nls
 coef(nls)
@@ -339,20 +341,16 @@ a <- coef(nls)["a"]
 n <- coef(nls)["n"]
 
 ```
-```{r}
+```{r, eval=F}
 with(PT_6540, plot(PPSI, Flow.cfs))
 curve(C*(x+a)^n, add=TRUE)
 ```
 
-```{r}
+```{r, eval=F}
 ggplot(data = PT_6540, mapping = aes(x = PPSI, y = Flow.cfs)) +
     geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1) ) +  geom_smooth(method= 'loess', formula = y~C*(x+a)^n)   
     #facet_wrap(facets = vars(MLID))
 # + scale_y_continuous(trans='log10')
-```
-
-
-) 
 ```
 
 
