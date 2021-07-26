@@ -714,6 +714,142 @@ trib_fac_sites_intersect_downstream_flow_entities_LDandSF_TN
 # 2 UTAHDWQ_WQX            Spanish Fork River    31
 # 3 WFWQC_UT               Lindon Drain          10
 # 4 WFWQC_UT               Spanish Fork River     5
+
+
+# summarize for report
+trib_fac_downstream_summary <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n.2015 = length(ActivityStartDate[Year == 2015]),
+            n.2016 = length(ActivityStartDate[Year == 2016]),
+            n.2017 = length(ActivityStartDate[Year == 2017]),
+            n.2018 = length(ActivityStartDate[Year == 2018]),
+            n.2019 = length(ActivityStartDate[Year == 2019]),
+            n.2020 = length(ActivityStartDate[Year == 2020]))
+
+trib_fac_downstream_summary_flow <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(Flow.cfs) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(Flow.cfs),
+            P10 = quantile(Flow.cfs, 0.10),
+            P25 = quantile(Flow.cfs, 0.25),
+            Median = quantile(Flow.cfs, 0.5), 
+            Mean = mean (Flow.cfs), 
+            P75 = quantile(Flow.cfs, 0.75), 
+            P90 = quantile(Flow.cfs, 0.90), 
+            Max = max(Flow.cfs))
+
+trib_fac_downstream_summary_TP <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(TP) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(TP),
+            P10 = quantile(TP, 0.10),
+            P25 = quantile(TP, 0.25),
+            Median = quantile(TP, 0.5), 
+            Mean = mean (TP), 
+            P75 = quantile(TP, 0.75), 
+            P90 = quantile(TP, 0.90), 
+            Max = max(TP))
+
+trib_fac_downstream_summary_TN <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(TN) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(TN),
+            P10 = quantile(TN, 0.10),
+            P25 = quantile(TN, 0.25),
+            Median = quantile(TN, 0.5), 
+            Mean = mean (TN), 
+            P75 = quantile(TN, 0.75), 
+            P90 = quantile(TN, 0.90), 
+            Max = max(TN))
+
+trib_fac_downstream_summary_TDP <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(TDP) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(TDP),
+            P10 = quantile(TDP, 0.10),
+            P25 = quantile(TDP, 0.25),
+            Median = quantile(TDP, 0.5), 
+            Mean = mean (TDP), 
+            P75 = quantile(TDP, 0.75), 
+            P90 = quantile(TDP, 0.90), 
+            Max = max(TDP))
+
+trib_fac_downstream_summary_TDN <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(TDN) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(TDN),
+            P10 = quantile(TDN, 0.10),
+            P25 = quantile(TDN, 0.25),
+            Median = quantile(TDN, 0.5), 
+            Mean = mean (TDN), 
+            P75 = quantile(TDN, 0.75), 
+            P90 = quantile(TDN, 0.90), 
+            Max = max(TDN))
+
+trib_fac_downstream_summary_TOC <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(TOC) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(TOC),
+            P10 = quantile(TOC, 0.10),
+            P25 = quantile(TOC, 0.25),
+            Median = quantile(TOC, 0.5), 
+            Mean = mean (TOC), 
+            P75 = quantile(TOC, 0.75), 
+            P90 = quantile(TOC, 0.90), 
+            Max = max(TOC))
+
+trib_fac_downstream_summary_DOC <- trib_fac_sites_intersect_downstream %>%
+  group_by(WS_Name, MonitoringLocationIdentifier, OrganizationIdentifier) %>%
+  drop_na(DOC) %>%
+  summarise(StartDate = min(ActivityStartDate), 
+            EndDate = max(ActivityStartDate),
+            n = n(), 
+            Min = min(DOC),
+            P10 = quantile(DOC, 0.10),
+            P25 = quantile(DOC, 0.25),
+            Median = quantile(DOC, 0.5), 
+            Mean = mean (DOC), 
+            P75 = quantile(DOC, 0.75), 
+            P90 = quantile(DOC, 0.90), 
+            Max = max(DOC))
+
+# write.csv(trib_fac_downstream_summary, "./Data/Processed/DownstreamSitesSummary.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_flow, "./Data/Processed/DownstreamSitesSummary_Flow.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_TN, "./Data/Processed/DownstreamSitesSummary_TN.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_TDN, "./Data/Processed/DownstreamSitesSummary_TDN.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_TP, "./Data/Processed/DownstreamSitesSummary_TP.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_TDP, "./Data/Processed/DownstreamSitesSummary_TDP.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_TOC, "./Data/Processed/DownstreamSitesSummary_TOC.csv",
+#           row.names = FALSE)
+# write.csv(trib_fac_downstream_summary_DOC, "./Data/Processed/DownstreamSitesSummary_DOC.csv",
+#           row.names = FALSE)
+
 ```
 
 ### Jordan River Outflow
