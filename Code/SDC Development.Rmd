@@ -1,11 +1,14 @@
 ---
 title: "Stage Discharge Curve Development"
 author: "Scott Daly"
-date: ""
+date: ''
 output:
-    html_notebook:
-        toc: yes
-        toc_float: yes
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    toc_float: yes
 ---
 
 <!-- Please don't mess with the next few lines! -->
@@ -14,7 +17,7 @@ output:
 
 #TO DO
 *Data type issue for 2017 to 2019? PT values are not plotting correctly.
-*DST tz correction of PT datetime
+*DST tz correction of PT datetime JV note - DWQ & WFWQC grab samples appear to also all come from WQP in MST. So conversion probably not necessary.
 *Address differnces between WFWQC and DWQ flow
 *Address outliers
 
@@ -34,6 +37,7 @@ library(zoo)
 #Read and Clean Pressure Transducer Data
 ##Read in data
 ```{r}
+setwd("C:\\Users\\jvander\\Documents\\R\\UtahLake_CNPMassBalance")
 PT_2018 <- read.csv("./Data/Processed/PT2018.csv")
 PT_2019 <- read.csv("./Data/Processed/PT2019.csv")
 PT_2020 <- read.csv("./Data/Processed/PT2020.csv")
@@ -74,20 +78,10 @@ PTData2 <- mutate(PTData,DateTime2)
 #### DST Adjustment
  PT sensor records all time in MST and does not correct for MDST. Need to verify tz of observed grab sample flow.
 
-```{r}
-#This code does not work for adjusting tz for dst. Needs modified.
-
-PTData2 <- mutate(PTData2, DateRound = force_tz(PTData2$DateTime2),
-  quiet = FALSE,
-  tz = "America/Denver",
-  locale = Sys.getlocale("LC_TIME"),
-  truncated = 0
-)
-```
 
 ###Round Date to nearest 15 minutes for join with grab sample flow
 ```{r}
-PTData2$DateRound <- round_date(PTData2$DateRound, "15 minutes") 
+PTData2$DateRound <- round_date(PTData2$DateTime2, "15 minutes") 
 ```
 
 
@@ -119,19 +113,19 @@ favstats(PPSI ~ MLID, data = PTData2)
 
 
 ## Plot
-```{r}
+```{r, eval=F}
 ggplot(data=PTData2, mapping = aes(x = MLID, y=PPSI)) +
     geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  labs(x = "MLID", y= "Pressure (PSI)")   
 
 ```
 
 ## Plot
-```{r}
+```{r, eval=F}
 ggplot(data=PTData2, mapping = aes(x = Year, y=PPSI, group = Year)) +
     geom_boxplot()  + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  labs(x = "Year", y= "Pressure (PSI)")   
 ```
 
-```{r}
+```{r, eval=F}
 ggplot(data = PTData2, mapping = aes(x = DateRound, y = PPSI)) +
     geom_line() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
     facet_wrap(facets = vars(MLID))# + scale_y_continuous(trans='log10')
@@ -140,7 +134,7 @@ ggplot(data = PTData2, mapping = aes(x = DateRound, y = PPSI)) +
 
 
 
-```{r}
+```{r, eval=F}
 ggplot(PTData2, mapping = aes(x = DateTime, y = PPSI, color = MLID)) +
     geom_point()#+ scale_y_continuous(trans='log10')
 ```
@@ -153,6 +147,7 @@ ggplot(PTData2, mapping = aes(x = DateTime, y = PPSI, color = MLID)) +
 
 ```{r}
 # tributary data
+setwd("C:\\Users\\jvander\\Documents\\R\\UtahLake_CNPMassBalance")
 trib <- read.csv("./Data/Processed/ul_Tribdata_wqp_processed_2020-12-17.csv")
 
 # watershed spatial data
@@ -195,7 +190,8 @@ Flow data were converted to cubic feet/sec (cfs) when units originally appeared 
 ###Reformat date/time
 
 ```{r}
-DateRound <- strptime(x = as.character(trib$datetime), format = "%m/%d/%Y %H:%M", tz="America/Denver")
+#DateRound <- strptime(x = as.character(trib$datetime), format = "%m/%d/%Y %H:%M", tz="America/Denver")
+trib$DateRound=as.POSIXct(trib$datetime, format = "%Y-%m-%d %H:%M:%S")
 trib <- mutate(trib,DateRound)
 trib$DateRound <- round_date(trib$DateRound, "15 minutes") 
 ```
@@ -309,20 +305,25 @@ activitylog_noflow <- activitylog %>%
 # Join Trib Grab Flow with matching PT observation
 ```{r}
 PT_flow_match <- trib_flow_long %>% inner_join(PTData2, by=c("MLID","DateRound"))
+
+pt_plotly=plotly::plot_ly(data=PT_flow_match) %>% 
+	plotly::add_trace(type="scatter", mode="markers", x=~PPSI, y=~Flow.cfs, name=~MLID)
+htmlwidgets::saveWidget(pt_plotly, "pt_plotly.html")
+
 ```
 
 #Rating Curve Development
 #source: https://thewetlandblog.wordpress.com/2013/06/17/fitting-rating-curves-with-r/
 ##Filter MLID
 
-```{r}
+```{r, eval=F}
 #PT_4792 <- 
 PT_5578 <- PT_flow_match %>%  filter(MLID %in% c("4995578"))
 PT_6540 <- PT_flow_match %>%  filter(MLID %in% c("4996540"))
 ```
 
 
-```{r}
+```{r, eval=F}
 #This code (borrowed from The Wetland Lab) does not work. INstead used nlsLM function below.
 
 #power.nls<-
@@ -331,7 +332,7 @@ summary(Power.nls)
 ```
 
 
-```{r}
+```{r, eval=F}
 nls <- nlsLM(data = PT_6540, formula = Flow.cfs~C*(PPSI+a)^n, start=list(a=1, n=0, C=2))
 nls
 coef(nls)
@@ -340,20 +341,16 @@ a <- coef(nls)["a"]
 n <- coef(nls)["n"]
 
 ```
-```{r}
+```{r, eval=F}
 with(PT_6540, plot(PPSI, Flow.cfs))
 curve(C*(x+a)^n, add=TRUE)
 ```
 
-```{r}
+```{r, eval=F}
 ggplot(data = PT_6540, mapping = aes(x = PPSI, y = Flow.cfs)) +
     geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1) ) +  geom_smooth(method= 'loess', formula = y~C*(x+a)^n)   
     #facet_wrap(facets = vars(MLID))
 # + scale_y_continuous(trans='log10')
-```
-
-
-) 
 ```
 
 
