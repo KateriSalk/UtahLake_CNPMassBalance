@@ -1711,6 +1711,7 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Tickville.jpg", height = 6, width = 7)
 ```
 
 #### Dry Creek - Saratoga
@@ -1802,6 +1803,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_DrySaratoga.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -1894,6 +1897,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Lehi.jpg", height = 6, width = 7)
+
 ```
 
 #### American Fork River
@@ -1979,6 +1984,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_American.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -2070,6 +2077,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Timp.jpg", height = 6, width = 7)
+
 ```
 
 REVISIT East side tributary (UTAHDWQ_WQX-4995041) has measurable concentrations but no flow (one near-zero flow, one flow duplicated from 4995038). Scott's recommendation was to average concentrations at 4995041 and 4995038 and apply them to the flow at 4995038, but this assumes that the volume-weighted average is the same as the arithmetic average (i.e., that the volumes at both sites are the same). I'm not sure if this assumption is valid. For now, I will ignore the east side tributary and calculate loads based on the sites that have flow data.
@@ -2158,6 +2167,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Lindon.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -2242,6 +2253,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Powell.jpg", height = 6, width = 7)
+
 ```
 
 Powell Slough has both North and South outfalls. Need to add together load from North and South to compute total load. WFWQC samples only at the north outfall. 
@@ -2329,6 +2342,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Provo.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -2419,8 +2434,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
-# ggsave("./Code/Output/MillRace_monthly_allnutrients.jpg", 
-#        width = 8, height = 6)
+#ggsave("./Code/Output/load_Mill.jpg", height = 6, width = 7)
+
 
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
        aes(x = MonitoringLocationIdentifier, y = load.TN.kgd, fill = MonitoringLocationIdentifier)) +
@@ -2549,6 +2564,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+# ggsave("./Code/Output/load_Spring.jpg", height = 6, width = 7)
+
 ```
 
 4996275 represents Springville WWTP.
@@ -2640,6 +2657,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+# ggsave("./Code/Output/load_Hobble.jpg", height = 6, width = 7)
+
 ```
 
 4996096 and 4996100 are equivalent sites. 
@@ -2732,6 +2751,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_DrySpanish.jpg", height = 6, width = 7)
+
 ```
 
 4996040 is the primary site in this watershed and represents the sum total of loads. 4996042 and 4996044 represent equivalent sites for the East tributary but do not include the south fork. East tributary sites will be removed and the primary site used for loads.
@@ -2820,6 +2841,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Spanish.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -2835,7 +2858,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TN load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -2847,7 +2870,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDN load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -2859,7 +2882,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TP load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -2871,7 +2894,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TDP load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -2883,7 +2906,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "TOC load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -2894,7 +2917,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
   labs(x = "Month", y = "DOC load (kg/d)", fill = "Site") +
-  scale_fill_manual(values = c("#62197d", "#f27162")) +
+  scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
@@ -2906,6 +2929,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_4000.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -2993,6 +3018,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Benjamin.jpg", height = 6, width = 7)
+
 ```
 
 
@@ -3085,6 +3112,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+#ggsave("./Code/Output/load_Currant.jpg", height = 6, width = 7)
+
 ```
 
 ### Monthly and annual load across watersheds
@@ -5323,7 +5352,6 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough")
   scale_y_log10() +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  ylim(0, 2) +
   labs(x = "Month", y = "Flow (cfs)", fill = "Site", title = "Benjamin Slough") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   theme(legend.position = "top")
@@ -5336,11 +5364,10 @@ ggsave("./Code/Output/Flow_Benjamin.jpg", height = 4, width = 5, units = "in")
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5348,11 +5375,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5360,11 +5386,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5372,11 +5397,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5384,22 +5408,20 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Tickville Wash"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5412,6 +5434,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Tickville.jpg", height = 6, width = 7)
+
 ```
 
 #### Dry Creek - Saratoga
@@ -5419,11 +5443,10 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5431,11 +5454,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Sarat
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5443,11 +5465,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Sarat
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5455,11 +5476,10 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Sarat
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5467,22 +5487,20 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Sarat
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Saratoga"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5495,6 +5513,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_DrySaratoga.jpg", height = 6, width = 7)
+
 ```
 
 #### Lehi Spring Creek
@@ -5502,12 +5522,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5515,12 +5534,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5528,12 +5546,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5541,12 +5558,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5554,24 +5570,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lehi Spring Creek"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5584,6 +5598,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Lehi.jpg", height = 6, width = 7)
+
 ```
 
 #### American Fork River
@@ -5591,12 +5607,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5604,12 +5619,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork Riv
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5617,12 +5631,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork Riv
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5630,12 +5643,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork Riv
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5643,24 +5655,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork Riv
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "American Fork River"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5673,6 +5683,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_American.jpg", height = 6, width = 7)
+
 ```
 
 #### Timp SSD
@@ -5680,12 +5692,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5693,12 +5704,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5706,12 +5716,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5719,12 +5728,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5732,24 +5740,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Timp SSD"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5762,6 +5768,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Timp.jpg", height = 6, width = 7)
+
 ```
 
 #### Lindon Drain
@@ -5769,12 +5777,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5787,7 +5794,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5800,7 +5807,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5813,7 +5820,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5826,7 +5833,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5838,7 +5845,7 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Lindon Drain"),
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5851,6 +5858,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Lindon.jpg", height = 6, width = 7)
+
 ```
 
 #### Powell Slough Major
@@ -5858,12 +5867,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5871,12 +5879,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Maj
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5884,12 +5891,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Maj
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5897,12 +5903,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Maj
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5910,24 +5915,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Maj
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Powell Slough Major"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -5940,6 +5943,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Powell.jpg", height = 6, width = 7)
+
 ```
 
 #### Provo River
@@ -5947,12 +5952,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5960,12 +5964,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5973,12 +5976,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5986,12 +5988,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -5999,24 +6000,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Provo River"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6029,6 +6028,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Provo.jpg", height = 6, width = 7)
+
 ```
 
 #### Mill Race
@@ -6036,12 +6037,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6050,12 +6050,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6064,12 +6063,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6078,12 +6076,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6092,12 +6089,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
@@ -6105,18 +6101,17 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69", "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
   guides(fill = guide_legend(ncol = 2))
 
-legend <- get_legend(TN + guides(fill = guide_legend(nrow = 1)) + 
+legend <- get_legend(TN + guides(fill = guide_legend(nrow = 2)) + 
                      theme(legend.position = "top"))
 
 CNP <-
@@ -6124,18 +6119,19 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Mill.jpg", height = 6, width = 7)
+
 ```
 
 #### Spring Creek - Springville
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6143,12 +6139,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Sp
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6156,12 +6151,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Sp
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6169,12 +6163,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Sp
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6182,24 +6175,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Sp
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spring Creek - Springville"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6212,6 +6203,7 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Spring.jpg", height = 6, width = 7)
 
 ```
 
@@ -6220,12 +6212,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6234,12 +6225,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6248,12 +6238,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6262,12 +6251,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6276,12 +6264,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
@@ -6289,12 +6276,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Hobble Creek"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f",  "#8a2880", "#3b1165")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
@@ -6308,6 +6294,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Hobble.jpg", height = 6, width = 7)
+
 ```
 
 #### Dry Creek - Spanish Fork
@@ -6315,12 +6303,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6329,12 +6316,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spani
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6343,12 +6329,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spani
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6357,12 +6342,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spani
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6371,12 +6355,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spani
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
@@ -6384,18 +6367,17 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spani
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Dry Creek - Spanish Fork"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none") +
   guides(fill = guide_legend(ncol = 2))
 
-legend <- get_legend(TN + guides(fill = guide_legend(nrow = 1)) + 
+legend <- get_legend(TN + guides(fill = guide_legend(nrow = 2)) + 
                      theme(legend.position = "top"))
 
 CNP <-
@@ -6403,6 +6385,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_DrySpanish.jpg", height = 6, width = 7)
+
 ```
 
 #### Spanish Fork River
@@ -6410,12 +6394,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6423,12 +6406,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork Rive
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6436,12 +6418,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork Rive
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6449,12 +6430,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork Rive
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6462,24 +6442,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork Rive
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Spanish Fork River"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6492,6 +6470,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Spanish.jpg", height = 6, width = 7)
+
 ```
 
 #### 4000 South Drain Spanish Fork
@@ -6499,12 +6479,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6512,12 +6491,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6525,12 +6503,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6538,12 +6515,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#62197d", "#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6551,24 +6527,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain 
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "4000 South Drain Spanish Fork"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6581,6 +6555,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_4000.jpg", height = 6, width = 7)
+
 ```
 
 #### Benjamin Slough
@@ -6588,12 +6564,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6601,12 +6576,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough")
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6614,12 +6588,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough")
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6627,12 +6600,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough")
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6640,24 +6612,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough")
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Benjamin Slough"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#f27162", "#62197d")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6670,6 +6640,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Benjamin.jpg", height = 6, width = 7)
+
 ```
 
 #### Currant Creek
@@ -6677,12 +6649,11 @@ plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 TN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6690,12 +6661,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
 
 TDN <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDN, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDN (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDN ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6703,12 +6673,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
 
 TP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6716,12 +6685,11 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
 
 TDP <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TDP, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TDP (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TDP ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none", 
@@ -6729,24 +6697,22 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
 
 TOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = TOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "TOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("TOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
 
 DOC <-
 ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Currant Creek"),
-       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier, 
-           color = Backwater)) +
+       aes(x = as.factor(Month), y = DOC, fill = MonitoringLocationIdentifier)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.8) +
   stat_summary(fun.data = give.n, geom = "text", size = 3,
                   position = position_dodge(width = 0.75)) +
-  labs(x = "Month", y = "DOC (mg/L)", fill = "Site") +
+  labs(x = "Month", y = expression("DOC ("*mu*"g/L)"), fill = "Site") +
   scale_fill_manual(values = c("#fc9d6f", "#db4a69")) +
   scale_color_manual(values = c("black", "gray"), guide = "none") +
   theme(legend.position = "none")
@@ -6759,6 +6725,8 @@ plot_grid(TN, TDN, TP, TDP, TOC, DOC,
           nrow = 3, align = "hv")
 
 plot_grid(legend, CNP, ncol = 1, rel_heights = c(0.1, 1))
+ggsave("./Code/Output/concentration_Currant.jpg", height = 6, width = 7)
+
 ```
 
 ## Spare code
