@@ -39,12 +39,25 @@ jordan_loading_annual <- read.csv("./Data/Processed/loading_Jordan_annual.csv")
 jordan_loading_monthly <- read.csv("./Data/Processed/loading_Jordan_monthly.csv")
 gw_loading_annual <- read.csv("./Data/Processed/loading_groundwater_annual.csv")
 precipevap_hydrology_monthly <- read.csv("./Data/Processed/hydrology_precip_et_monthly.csv")
+precipevap_hydrology_total <- read.csv("./Data/Processed/hydrology_precip_et.csv")
+
 
 # watershed spatial data
 wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
 ```
 
 ## Processing 
+
+### Annual precip and evap estimates
+```{r}
+precipevap_hydrology_annual <- precipevap_hydrology_total %>%
+  group_by(Year) %>%
+  summarise(et.acftyr = sum(et.acftmo),
+            precip.acftyr = sum(precip.acftmo))
+write.csv(precipevap_hydrology_annual, file = "./Data/Processed/hydrology_precip_et_annual.csv",
+          row.names = FALSE)  
+```
+
 
 ### Unmonitored Watershed Data
 ```{r}
@@ -94,7 +107,7 @@ unmonitored_hydrology_annual <- unmonitored_hydrology_monthly %>%
   group_by(WS_Name) %>%
   summarise(Flow.acftyr = sum(Flow.acftmo)) 
 
-
+unmonitored_loading_annual$Flow.acftyr <- unmonitored_hydrology_annual$Flow.acftyr
 ```
 
 ### Reorder watershed names
@@ -155,6 +168,22 @@ monitored_loading_monthly_total <- monitored_loading_monthly %>%
 
 # For Timp SSD and Powell Slough, use DMR data for loading estimates when available.
 # Decided on by the SP 5/20/21
+monitored_loading_monthly$load.TN.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TN.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+monitored_loading_monthly$load.TP.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TP.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+monitored_loading_monthly$load.TDP.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TDP.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+
+monitored_loading_monthly$load.TN.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TN.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+monitored_loading_monthly$load.TP.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TP.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+monitored_loading_monthly$load.TDP.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TDP.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+
+# For Timp SSD and Powell Slough, use DMR data for loading estimates when available.
+# Decided on by the SP 5/20/21
 monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
   dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
 monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
@@ -176,7 +205,9 @@ monitored_loading_annual <- monitored_loading_annual %>%
                    "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
                    "Benjamin Slough") ~ "WWTP", 
     TRUE ~ "No WWTP"))
-
+# 
+# write.csv(monitored_loading_monthly, file = "./Data/Processed/monitored_loading_monthly.csv",
+#             row.names = FALSE)
 ```
 
 
@@ -244,7 +275,15 @@ loading_annual_summary$TN.percent <- round(loading_annual_summary$TN.percent, di
 loading_annual_summary$TP.percent <- round(loading_annual_summary$TP.percent, digits = 1)
 
 loading_annual_summary$TN.percent <- paste(loading_annual_summary$TN.percent, "%")  
-loading_annual_summary$TP.percent <- paste(loading_annual_summary$TP.percent, "%")  
+loading_annual_summary$TP.percent <- paste(loading_annual_summary$TP.percent, "%") 
+
+# add evap and precip 
+loading_annual <- loading_annual %>%
+  add_row(WS_Name = "Precipitation", Flow.acftyr = flow_total$Flow.acftyr[flow_total$Source == "Precipitation"]) %>%
+  add_row(WS_Name = "Evaporation", Flow.acftyr = flow_total$Flow.acftyr[flow_total$Source == "Evaporation"])
+
+# write.csv(loading_annual, file = "./Data/Processed/total_loading_annual.csv",
+#           row.names = FALSE)
 
 ```
 

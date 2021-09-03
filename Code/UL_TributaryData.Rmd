@@ -1251,6 +1251,16 @@ dmr_flow_Lindon <- dmr %>%
 # ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
 #   geom_boxplot()
 
+dmr_concentration <- dmr_load %>%
+  mutate(WS_Name = case_when(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "Timp SSD",
+                             NPDES.Name == "OREM CITY CORP" ~ "Powell Slough Major",
+                             NPDES.Name == "PROVO CITY CORP" ~ "Mill Race",
+                             NPDES.Name == "SPRINGVILLE- CITY OF" ~ "Spring Creek - Springville",
+                             NPDES.Name == "SPANISH FORK CITY CORP" ~ "Dry Creek - Spanish Fork", 
+                             NPDES.Name == "SALEM CITY CORP" ~ "Benjamin Slough",
+                             NPDES.Name == "PAYSON CITY CORP" ~ "Benjamin Slough", 
+                             NPDES.Name == "PacifiCorp Energy" ~ "Lindon Drain"))
+
 dmr_load <- dmr_load %>%
   filter(stat == "30DA AVG") %>%
   # load is in ton/yr. convert to metric tons/mo
@@ -1612,6 +1622,97 @@ ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
   labs(y = "TKN load (metric ton/mo)", x = "Month")
 
 ```
+
+### DMR Flow, concentration, and load
+```{r}
+ggplot(dmr_flow, aes(x = Month, y = Flow.acftmo)) +
+  geom_line() +
+  labs(y = "Flow (ac*ft/mo)") +
+  scale_y_continuous(sec.axis = sec_axis(~./(30 * 3.06889), name = "Flow (MGD)")) +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE)) 
+#ggsave("./Code/Output/DMR_Flow_Monthly.jpg", width = 8, height = 4)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = TP)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(y = expression("TP ("*mu*"g/L)"), x = "") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TPconc_TimeSeries.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = TKN)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(y = expression("TKN ("*mu*"g/L)"), x = "") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TKNconc_TimeSeries.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = PO4)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(y = expression("Orthophosphate ("*mu*"g/L)"), x = "") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_PO4conc_TimeSeries.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = TP)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = expression("TP ("*mu*"g/L)"), x = "Month") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TPconc_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = TKN)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = expression("TKN ("*mu*"g/L)"), x = "Month") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TKNconc_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = PO4)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = expression("Orthophosphate ("*mu*"g/L)"), x = "Month") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_PO4conc_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_load, 
+              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT"))),
+       aes(x = as.factor(Month), y = TP.tonmo)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = "TP (metric ton/mo)", x = "Month") +
+  facet_wrap(vars(NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TPload_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_load, 
+              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT", "PacifiCorp Energy"))),
+       aes(x = as.factor(Month), y = TKN.tonmo)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = "TKN load (metric ton/mo)", x = "Month") +
+  facet_wrap(vars(NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TKNload_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_load, 
+              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT", "PacifiCorp Energy"))),
+       aes(x = as.factor(Month), y = PO4.tonmo)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = "Orthophosphate load (metric ton/mo)", x = "Month") +
+  facet_wrap(vars(NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_PO4load_Monthly.jpg", width = 8, height = 5)
+
+```
+
 
 ### Monthly loads by watershed
 
