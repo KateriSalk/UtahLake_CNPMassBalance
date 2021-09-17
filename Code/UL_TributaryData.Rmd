@@ -52,6 +52,9 @@ dmr <- read.xlsx("./Data/Processed/DMR_Analysis_v3_updated 12-7-20.xlsx",
                  sheet = "DMR.Formatted")
 dmr_LUT <- read.xlsx("./Data/Processed/DMR_Analysis_v3_updated 12-7-20.xlsx", 
                      sheet = "LUT_SiteList", startRow = 2, cols = 1:5)
+dmr_Payson <- read.xlsx("./Data/Processed/dmr_payson.xlsx",
+                        sheet = "DMR - 30 day avg nutrients", startRow = 3)
+
 # Jordan River outflow hydrology
 jordan_outflow <- read.xlsx("./Data/Processed/Jordan_River_Outflow.xlsx", 
                   sheet = "DailyValues20219216", startRow = 5)
@@ -1159,6 +1162,7 @@ p_et_monthly <- p_et_summary %>%
 ### DMR data
 
 ```{r}
+
 dmr_load <- dmr %>%
   filter(perm_feature_type_desc == "External Outfall") %>%
   filter(Nuts.ParmName %in% 
@@ -1182,6 +1186,67 @@ dmr_load$Date <- as.Date(as.numeric(dmr_load$Date), origin = "1899-12-30")
 colnames(dmr_load) <- c("NPDES.ID", "Year", "Month", "value.type", "value", 
                         "units", "stat", "NPDES.Name", "Type", "Date", 
                         "TP", "NH3", "PO4", "TKN", "NO3")
+
+dmr_load <- dmr_load %>%
+  filter(stat == "30DA AVG") %>%
+  # load is in ton/yr. convert to metric tons/mo
+  mutate(TP.tonmo = TP/(12*1.10231), 
+         PO4.tonmo = PO4/(12*1.10231),
+         TKN.tonmo = TKN/(12*1.10231),
+         NH3.tonmo = NH3/(12*1.10231),
+         NO3.tonmo = NO3/(12*1.10231)) %>%
+  select(-TP, -PO4, -TKN, -NH3, -NO3) %>%
+  mutate(MonitoringLocationIdentifier = 
+           case_when(NPDES.Name == "MCWANE DUCTILE-UTAH" ~ "UTAHDWQ_WQX-4996430", 
+                     NPDES.Name == "OREM CITY CORP" ~ "UTAHDWQ_WQX-4995250",
+                     NPDES.Name == "PacifiCorp Energy" ~ "UTAHDWQ_WQX-4995124",
+                     NPDES.Name == "PAYSON POWER PROJECT" ~ "UTAHDWQ_WQX-4995480",
+                     NPDES.Name == "PROVO CITY CORP" ~ "UTAHDWQ_WQX-4996560",
+                     NPDES.Name == "SALEM CITY CORP" ~ "UTAHDWQ_WQX-4995440",
+                     NPDES.Name == "SPANISH FORK CITY CORP" ~ "UTAHDWQ_WQX-4996020",
+                     NPDES.Name == "SPRINGVILLE- CITY OF" ~ "UTAHDWQ_WQX-4996280",
+                     NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "UTAHDWQ_WQX-4995040"))
+
+
+dmr_concentration <- dmr %>%
+  filter(perm_feature_type_desc == "External Outfall") %>%
+  filter(Nuts.ParmName %in% 
+           c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]", 
+             "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]", 
+             "Phosphorus, total [as P]")) %>%
+  filter(Year >= 2015) %>%
+  select(npdes_id, Year, Month, 
+         value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+         NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName, Load) %>%
+  na.omit(Load) %>%
+  group_by(npdes_id, Year, Month, 
+           value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
+           NPES_Name, NPDES.Type, NPDESID.Date, Nuts.ParmName) %>%
+  summarise(Load = mean(Load)) %>%
+  ungroup() %>%
+  separate(col = NPDESID.Date, into = c(NA, "Date")) %>%
+  filter(dmr_unit_desc == "mg/L" & statistical_base_short_desc == "30DA AVG") %>%
+  pivot_wider(names_from = "Nuts.ParmName", values_from = "dmr_value_nmbr")
+
+dmr_concentration$Date <- as.Date(as.numeric(dmr_concentration$Date), origin = "1899-12-30")
+colnames(dmr_concentration) <- c("NPDES.ID", "Year", "Month", "value.type", 
+                        "units", "stat", "NPDES.Name", "Type", "Date", "Load",
+                        "PO4", "TP", "NH3",  "TKN")
+
+dmr_concentration <- dmr_concentration %>%
+  mutate(WS_Name = case_when(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "Timp SSD",
+                             NPDES.Name == "OREM CITY CORP" ~ "Powell Slough Major",
+                             NPDES.Name == "PROVO CITY CORP" ~ "Mill Race",
+                             NPDES.Name == "SPRINGVILLE- CITY OF" ~ "Spring Creek - Springville",
+                             NPDES.Name == "SPANISH FORK CITY CORP" ~ "Dry Creek - Spanish Fork", 
+                             NPDES.Name == "SALEM CITY CORP" ~ "Benjamin Slough",
+                             NPDES.Name == "PAYSON CITY CORP" ~ "Benjamin Slough", 
+                             NPDES.Name == "PacifiCorp Energy" ~ "Lindon Drain")) %>%
+  mutate(PO4 = PO4*1000, 
+         TP = TP*1000, 
+         NH3 = NH3*1000, 
+         TKN = TKN*1000)
+
 
 dmr_flow <- dmr %>%
   filter(perm_feature_type_desc == "External Outfall") %>%
@@ -1212,7 +1277,6 @@ dmr_flow <- dmr_flow %>%
                                  Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 3.06889,
                                  Month %in% c(2) ~ Flow.MGD * 28 * 3.06889)) %>%
   arrange(NPES_Name, Month)
-#write.csv(dmr_flow, file = "./Data/Processed/DMR_flow.csv", row.names = FALSE)
 
 dmr_flow_annual <- dmr_flow %>%
   group_by(NPES_Name) %>%
@@ -1251,35 +1315,56 @@ dmr_flow_Lindon <- dmr %>%
 # ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
 #   geom_boxplot()
 
-dmr_concentration <- dmr_load %>%
-  mutate(WS_Name = case_when(NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "Timp SSD",
-                             NPDES.Name == "OREM CITY CORP" ~ "Powell Slough Major",
-                             NPDES.Name == "PROVO CITY CORP" ~ "Mill Race",
-                             NPDES.Name == "SPRINGVILLE- CITY OF" ~ "Spring Creek - Springville",
-                             NPDES.Name == "SPANISH FORK CITY CORP" ~ "Dry Creek - Spanish Fork", 
-                             NPDES.Name == "SALEM CITY CORP" ~ "Benjamin Slough",
-                             NPDES.Name == "PAYSON CITY CORP" ~ "Benjamin Slough", 
-                             NPDES.Name == "PacifiCorp Energy" ~ "Lindon Drain"))
 
-dmr_load <- dmr_load %>%
-  filter(stat == "30DA AVG") %>%
-  # load is in ton/yr. convert to metric tons/mo
-  mutate(TP.tonmo = TP/(12*1.10231), 
-         PO4.tonmo = PO4/(12*1.10231),
-         TKN.tonmo = TKN/(12*1.10231),
-         NH3.tonmo = NH3/(12*1.10231),
-         NO3.tonmo = NO3/(12*1.10231)) %>%
-  select(-TP, -PO4, -TKN, -NH3, -NO3) %>%
-  mutate(MonitoringLocationIdentifier = 
-           case_when(NPDES.Name == "MCWANE DUCTILE-UTAH" ~ "UTAHDWQ_WQX-4996430", 
-                     NPDES.Name == "OREM CITY CORP" ~ "UTAHDWQ_WQX-4995250",
-                     NPDES.Name == "PacifiCorp Energy" ~ "UTAHDWQ_WQX-4995124",
-                     NPDES.Name == "PAYSON POWER PROJECT" ~ "UTAHDWQ_WQX-4995480",
-                     NPDES.Name == "PROVO CITY CORP" ~ "UTAHDWQ_WQX-4996560",
-                     NPDES.Name == "SALEM CITY CORP" ~ "UTAHDWQ_WQX-4995440",
-                     NPDES.Name == "SPANISH FORK CITY CORP" ~ "UTAHDWQ_WQX-4996020",
-                     NPDES.Name == "SPRINGVILLE- CITY OF" ~ "UTAHDWQ_WQX-4996280",
-                     NPDES.Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "UTAHDWQ_WQX-4995040"))
+dmr_Payson_load <- dmr_Payson %>%
+  mutate(NPDES.ID = NPDES.ID, 
+         Year = Year,
+         Month = Month, 
+         value.type = NA, 
+         value = NA,
+         units = "mg/L", 
+         stat = "30DA AVG",
+         NPDES.Name = "PAYSON CITY CORP",
+         Type = "Municipal",
+         Date = ymd(Year,Month,"1"),
+         TP.tonmo = `TP.mg/L`*Effluent.Flow.MGD,
+         PO4.tonmo = `Ortho.P.mg/L`*Effluent.Flow.MGD,
+         TKN.tonmo = `TKN.mg/L`*Effluent.Flow.MGD,
+         NH3.tonmo = NA,
+         NO3.tonmo = `Nitrate.mg/L`*Effluent.Flow.MGD,
+         MonitoringLocationIdentifier = NA) %>%
+  select(-c(Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`, `TP.mg/L`,
+            `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
+
+dmr_Payson_concentration <- dmr_Payson %>%
+  mutate(NPDES.ID = NPDES.ID, 
+         Year = Year,
+         Month = Month, 
+         value.type = NA, 
+         units = "mg/L", 
+         stat = "30DA AVG",
+         NPDES.Name = "PAYSON CITY CORP",
+         Type = "Municipal",
+         Date = ymd(Year,Month,"1"),
+         Load = NA,
+         PO4 = `Ortho.P.mg/L`*1000,
+         TP = `TP.mg/L`*1000,
+         NH3 = NA,
+         TKN = `TKN.mg/L`*1000,
+         WS_Name = "Benjamin Slough") %>%
+  select(-c(Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`, `TP.mg/L`,
+            `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
+
+dmr_Payson_flow <- dmr_Payson %>%
+  mutate(Month = Month, 
+         NPES_Name = "PAYSON CITY CORP",
+         Flow.MGD = Effluent.Flow.MGD,
+         Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.MGD * 31 * 3.06889, 
+                                 Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 3.06889,
+                                 Month %in% c(2) ~ Flow.MGD * 28 * 3.06889)) %>%
+  select(-c(NPDES.ID, Year, Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`,
+            `TP.mg/L`, `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
+  
 
 dmr_sites <- dmr_load %>%
   select(NPDES.Name, MonitoringLocationIdentifier) %>%
@@ -1291,6 +1376,9 @@ dmr_sites_sf <- st_as_sf(dmr_sites, coords = c("LongitudeMeasure", "LatitudeMeas
                               crs = 4326, dim = "XY") #CRS = WGS84
 dmr_sites_sf <- st_intersection(dmr_sites_sf, wshds)
 
+
+
+#write.csv(dmr_flow, file = "./Data/Processed/DMR_flow.csv", row.names = FALSE)
 
 ```
 
