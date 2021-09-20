@@ -353,6 +353,33 @@ flow_total$Flow.percent[flow_total$Source == "Balance"] <- ""
 
 ```
 
+### combining monthly dmr and trib data
+```{r}
+dmr_loading_monthly_subset <- dmr_loading_monthly %>%
+  group_by(WS_Name, Month) %>%
+  summarise(load.TP.tonmo = sum(load.TP.tonmo), 
+            load.TN.tonmo = sum(load.TKN.tonmo)) %>%
+  select(WS_Name, Month, load.TP.tonmo, load.TN.tonmo) %>%
+  mutate(SiteType = "DMR")
+
+monitored_loading_monthly_subset <- monitored_loading_monthly %>%
+  select(WS_Name, Month, load.TP.tonmo, load.TN.tonmo) %>%
+  mutate(SiteType = "Tributary")
+
+dmr_trib_monthly <- rbind(dmr_loading_monthly_subset, monitored_loading_monthly_subset)
+
+dmr_trib_monthly$WS_Name <- 
+  factor(dmr_trib_monthly$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+
+```
+
+
 ## Visualization
 ### Loading maps
 ```{r}
@@ -571,6 +598,28 @@ ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
 
   
 ```
+
+### Monthly comparison between trib and DMR
+```{r}
+
+ggplot(dmr_trib_monthly, aes(x = as.factor(Month), y = load.TP.tonmo, color = SiteType)) +
+  geom_point() +
+  facet_wrap(vars(WS_Name), ncol= 4) +
+  labs(x = "Month", y = "TP load (metric tons/month)", color = "Site Type") +
+  scale_color_viridis_d(option = "magma", begin = 0.5, end = 0.7) +
+  theme(legend.position = "top")
+#ggsave("./Code/Output/loading_TP_monthly_tribvsDMR.jpg", width = 8, height = 6, units = "in")
+
+ggplot(dmr_trib_monthly, aes(x = as.factor(Month), y = load.TN.tonmo, color = SiteType)) +
+  geom_point() +
+  facet_wrap(vars(WS_Name), ncol= 4) +
+  labs(x = "Month", y = "TN load (metric tons/month)", color = "Site Type") +
+  scale_color_viridis_d(option = "magma", begin = 0.5, end = 0.7) +
+  theme(legend.position = "top")
+#ggsave("./Code/Output/loading_TN_monthly_tribvsDMR.jpg", width = 8, height = 6, units = "in")
+
+```
+
 
 ### Annual loads
 ```{r}

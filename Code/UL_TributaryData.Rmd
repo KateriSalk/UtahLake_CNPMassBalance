@@ -1315,7 +1315,7 @@ dmr_flow_Lindon <- dmr %>%
 # ggplot(dmr_load, aes(x = NPDES.Name, y = NH3, fill = stat)) +
 #   geom_boxplot()
 
-
+# add in Payson data
 dmr_Payson_load <- dmr_Payson %>%
   mutate(NPDES.ID = NPDES.ID, 
          Year = Year,
@@ -1326,15 +1326,17 @@ dmr_Payson_load <- dmr_Payson %>%
          stat = "30DA AVG",
          NPDES.Name = "PAYSON CITY CORP",
          Type = "Municipal",
-         Date = ymd(Year,Month,"1"),
-         TP.tonmo = `TP.mg/L`*Effluent.Flow.MGD,
-         PO4.tonmo = `Ortho.P.mg/L`*Effluent.Flow.MGD,
-         TKN.tonmo = `TKN.mg/L`*Effluent.Flow.MGD,
+         Date = as.Date(paste(Year, Month, "01", sep = "-")),
+         TP.tonmo = `TP.mg/L`*Effluent.Flow.MGD * 30 * 3785411.78 / 1000000000,
+         PO4.tonmo = `Ortho.P.mg/L`*Effluent.Flow.MGD * 30 * 3785411.78 / 1000000000,
+         TKN.tonmo = `TKN.mg/L`*Effluent.Flow.MGD * 30 * 3785411.78 / 1000000000,
          NH3.tonmo = NA,
-         NO3.tonmo = `Nitrate.mg/L`*Effluent.Flow.MGD,
+         NO3.tonmo = `Nitrate.mg/L`*Effluent.Flow.MGD * 30 * 3785411.78 / 1000000000,
          MonitoringLocationIdentifier = NA) %>%
   select(-c(Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`, `TP.mg/L`,
             `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
+
+dmr_load <- rbind(dmr_load, dmr_Payson_load)
 
 dmr_Payson_concentration <- dmr_Payson %>%
   mutate(NPDES.ID = NPDES.ID, 
@@ -1345,7 +1347,7 @@ dmr_Payson_concentration <- dmr_Payson %>%
          stat = "30DA AVG",
          NPDES.Name = "PAYSON CITY CORP",
          Type = "Municipal",
-         Date = ymd(Year,Month,"1"),
+         Date = as.Date(paste(Year, Month, "01", sep = "-")),
          Load = NA,
          PO4 = `Ortho.P.mg/L`*1000,
          TP = `TP.mg/L`*1000,
@@ -1355,16 +1357,19 @@ dmr_Payson_concentration <- dmr_Payson %>%
   select(-c(Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`, `TP.mg/L`,
             `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
 
-dmr_Payson_flow <- dmr_Payson %>%
-  mutate(Month = Month, 
-         NPES_Name = "PAYSON CITY CORP",
-         Flow.MGD = Effluent.Flow.MGD,
-         Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.MGD * 31 * 3.06889, 
-                                 Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 3.06889,
-                                 Month %in% c(2) ~ Flow.MGD * 28 * 3.06889)) %>%
-  select(-c(NPDES.ID, Year, Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`,
-            `TP.mg/L`, `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
-  
+dmr_concentration <- rbind(dmr_concentration, dmr_Payson_concentration)
+
+# dmr_Payson_flow <- dmr_Payson %>%
+#   mutate(Month = Month, 
+#          NPES_Name = "PAYSON CITY CORP",
+#          Flow.MGD = Effluent.Flow.MGD,
+#          Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.MGD * 31 * 3.06889, 
+#                                  Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 3.06889,
+#                                  Month %in% c(2) ~ Flow.MGD * 28 * 3.06889)) %>%
+#   select(-c(NPDES.ID, Year, Effluent.Flow.MGD, `NH32.mg/L`, `Ortho.P.mg/L`,
+#             `TP.mg/L`, `Nitrate.mg/L`, `Nitrite.mg/L`, `TKN.mg/L`))
+#   
+# dmr_flow <- rbind(dmr_flow, dmr_Payson_flow)
 
 dmr_sites <- dmr_load %>%
   select(NPDES.Name, MonitoringLocationIdentifier) %>%
@@ -1752,6 +1757,14 @@ ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y =
   facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TPconc_Monthly.jpg", width = 8, height = 5)
+
+ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Year), y = TP)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = expression("TP ("*mu*"g/L)"), x = "Year") +
+  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TPconc_annual.jpg", width = 8, height = 5)
 
 ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = TKN)) +
   geom_boxplot() +
@@ -4399,18 +4412,17 @@ loading_DryCreekSpanishFork_dmr <- dmr_load %>%
 
 loading_BenjaminSlough_dmr <- dmr_load %>%
   ungroup() %>%
-  filter(NPDES.Name %in% c("SALEM CITY CORP", "PAYSON POWER PROJECT")) %>%
+  filter(NPDES.Name %in% c("SALEM CITY CORP", "PAYSON CITY CORP")) %>%
   group_by(NPDES.Name, Month) %>%
   summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
             load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
-  group_by(Month) %>%
+  group_by(Month, NPDES.Name) %>%
   summarise(load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
             load.TKN.tonmo = sum(load.TKN.tonmo, na.rm = TRUE)) %>%
-  mutate(WS_Name = "Benjamin Slough", 
-         NPDES.Name = "SALEM CITY CORP & PAYSON POWER PROJECT") %>%
+  mutate(WS_Name = "Benjamin Slough") %>%
   select(NPDES.Name, Month, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
 
 loading_AllWatersheds_dmr <- 
