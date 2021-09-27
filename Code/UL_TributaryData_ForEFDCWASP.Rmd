@@ -58,6 +58,9 @@ jordan_outflow <- read.xlsx("./Data/Raw/Jordan_River_Outflow.xlsx",
 # 2019 and 2020 WFWQC flow data
 WFWQC_flow <- read.csv("./Data/Raw/WFWQC_Flow.csv")
 
+# groundwater data
+gw <- read.csv("./Data/Raw/ul_wqp_gwdata_processed_2021-01-07.csv")
+
 ```
 
 ## Data processing
@@ -522,7 +525,7 @@ colnames(jordan_outflow) <- c("Date", "Flow.narrows.cfs")
 # if flow at the monitoring site is zero, assign value of zero to narrows. 
 jordan <- trib_fac_sites_intersect %>%
   filter(MonitoringLocationIdentifier == "UTAHDWQ_WQX-4994790") %>%
-  filter(Year >= 2015) %>%
+  filter(Year >= 2010) %>%
   left_join(., jordan_outflow, by = c("ActivityStartDate" = "Date")) %>%
   mutate(Flow.narrows.cfs = case_when(Flow.cfs == 0 ~ Flow.cfs,
                                       TRUE ~ Flow.narrows.cfs)) %>%
@@ -549,4 +552,59 @@ write.csv(jordan, file = "./Data/Processed/UL_Jordan_ForEFDCWASP.csv",
 
 ```
 
+
+### Groundwater
+
+```{r}
+gw_wq <- gw %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen", "Dissolved oxygen (DO)", "Chlorophyll a", 
+             "Biochemical oxygen demand, standard conditions",
+             "Chlorophyll a, uncorrected for pheophytin")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P", "ug/l")) %>%
+  mutate(ResultSampleFractionText = case_when(CharacteristicName == "Chlorophyll a" ~ "Total", 
+                                              TRUE ~ ResultSampleFractionText)) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
+
+
+gw_wq <- gw_wq %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+
+colnames(gw_wq)
+
+# .d indicates dissolved, .t indicates total.
+colnames(gw_wq)[12:24] <- c("NO23.d_mgL", "PO4.d_mgL", "CO3.d_mgL", "NO3.d_mgL",
+                                  "Nmixed_d_mgL", "DOC_mgL", "TDN_mgL", "NH3.d_mgL", 
+                                  "NO23.t_mgL", "TP_mgL", "TDP_mgL", "NH3.t_mgL", 
+                                  "CO3.t_mgL")
+                                  
+write.csv(gw_wq, file = "./Data/Processed/UL_Groundwater_ForEFDCWASP.csv",
+       row.names = FALSE)
+
+
+```
 
