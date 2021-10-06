@@ -1,0 +1,610 @@
+---
+title: "UtahLake_TributaryData_ForEFDCWASP"
+author: "Kateri Salk"
+date: "9/23/2021"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(viridis)
+library(wqTools)
+library(sf)
+library(tmap)
+library(cowplot)
+library(openxlsx)
+library(dataRetrieval)
+
+theme_set(theme_classic())
+options(scipen = 4)
+```
+
+## Details
+
+
+## Load data
+
+Data were loaded from spreadsheets obtained by Utah DWQ: 
+
+```{r}
+# tributary data
+trib <- read.csv("./Data/Raw/ul_Tribdata_wqp_processed_2021-03-02.csv")
+# facility data
+fac <- read.csv("./Data/Raw/ul_Facilitydata_wqp_processed.csv")
+# watershed spatial data
+wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
+# sampling activity logs
+activitylog <- read.csv("./Data/Raw/UL_Trib_SampleActivities_exported 12-17-20.csv")
+
+# DMR data
+dmr <- read.xlsx("./Data/Raw/DMR_Analysis_v3_updated 12-7-20.xlsx", 
+                 sheet = "DMR.Formatted")
+dmr_LUT <- read.xlsx("./Data/Raw/DMR_Analysis_v3_updated 12-7-20.xlsx", 
+                     sheet = "LUT_SiteList", startRow = 2, cols = 1:5)
+dmr_Payson <- read.xlsx("./Data/Raw/dmr_payson.xlsx",
+                        sheet = "DMR - 30 day avg nutrients", startRow = 3)
+
+# Jordan River outflow hydrology
+jordan_outflow <- read.xlsx("./Data/Raw/Jordan_River_Outflow.xlsx", 
+                  sheet = "DailyValues20219216", startRow = 5)
+
+# 2019 and 2020 WFWQC flow data
+WFWQC_flow <- read.csv("./Data/Raw/WFWQC_Flow.csv")
+
+# groundwater data
+gw <- read.csv("./Data/Raw/ul_wqp_gwdata_processed_2021-01-07.csv")
+
+```
+
+## Data processing
+
+### Watersheds
+
+Watersheds were divided into monitored and unmonitored and arranged in clockwise order.
+
+```{r}
+wshds_monitored <- wshds %>%
+  filter(Monitored_ == "YES") %>%
+  # Dry Creek - Saratoga appears twice. Remove the instance with very very small area. 
+  filter(OBJECTID_1 != 74)
+
+wshds_monitored$WS_Name <- 
+  factor(wshds_monitored$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+levels(wshds_monitored$WS_Name)
+
+```
+
+
+### Tributary data
+
+Tributary dataset was filtered for: 
+
+1. Variables pertaining to C, N, P, or flow (discharge)
+2. Years 2010-2020
+
+Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
+
+```{r}
+trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
+# unique(trib$CharacteristicName)
+trib$ResultMeasureValue <- as.numeric(as.character(trib$ResultMeasureValue))
+
+trib_wq <- trib %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen", "Dissolved oxygen (DO)", "Chlorophyll a", 
+             "Biochemical oxygen demand, standard conditions",
+             "Chlorophyll a, uncorrected for pheophytin")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P", "ug/l")) %>%
+  mutate(ResultSampleFractionText = case_when(CharacteristicName == "Chlorophyll a" ~ "Total", 
+                                              TRUE ~ ResultSampleFractionText)) %>%
+  select(ActivityStartDate:ResultSampleFractionText,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
+         ResultStatusIdentifier) %>%
+  mutate(Month = month(ActivityStartDate), 
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
+
+trib_flow <- trib %>%
+  filter(CharacteristicName %in% c("Flow", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels() %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(ActivityStartDate:ResultSampleFractionText,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
+         ResultStatusIdentifier) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText,
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  group_by(ActivityStartDate, MonitoringLocationIdentifier, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure,
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue) %>%
+  # USGS data has both cfs and cms, always duplicated. remove cfs. 
+  select(-'ft3/s')
+
+colnames(trib_flow)[11:14] <- c("m3.sec", "cfs", "mgd", "g.min")
+
+# convert everything to cfs
+trib_flow$mgd <- trib_flow$mgd/0.646317
+trib_flow$g.min <- trib_flow$g.min*0.002228017
+trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
+
+trib_flow_long <- trib_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
+
+
+WFWQC_flow$ActivityStartDate <- as.Date(WFWQC_flow$ActivityStartDate)
+
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "-0.153"] <- NA
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "too deep"] <- NA
+WFWQC_flow$ResultMeasureValue[WFWQC_flow$ResultMeasureValue == "no flow"] <- 0
+WFWQC_flow$ResultMeasureValue <- as.numeric(WFWQC_flow$ResultMeasureValue)
+
+flow_sites_names <- trib_wq %>%
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, 
+         LatitudeMeasure, LongitudeMeasure)
+
+WFWQC_flow_processed <- WFWQC_flow %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate), 
+         orig.units = "m3.sec",
+         Flow.cfs = ResultMeasureValue*35.3147) %>%
+  left_join(., flow_sites_names) %>%
+  select(ActivityStartDate, MonitoringLocationIdentifier, OrganizationIdentifier, 
+         OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+         LongitudeMeasure, ResultStatusIdentifier, Month, Year,
+         orig.units, Flow.cfs) %>%
+  distinct() %>%
+  drop_na(LatitudeMeasure, LongitudeMeasure)
+
+trib_flow_long <- rbind(trib_flow_long, WFWQC_flow_processed)
+```
+
+
+
+### Facility data
+
+Tributary dataset was filtered for: 
+
+1. Variables pertaining to C, N, P, or flow (discharge)
+2. Years 2010-2020
+
+Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
+
+```{r}
+fac$datetime <- as.POSIXct(fac$datetime)
+#unique(fac$CharacteristicName)
+
+fac_wq <- fac %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen", "Dissolved oxygen (DO)", "Chlorophyll a", 
+             "Biochemical oxygen demand, standard conditions",
+             "Chlorophyll a, uncorrected for pheophytin")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P", "ug/l")) %>%
+  mutate(ResultSampleFractionText = case_when(CharacteristicName == "Chlorophyll a" ~ "Total", 
+                                              TRUE ~ ResultSampleFractionText)) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
+
+# match date field with trib
+colnames(fac_wq)[2] <- "ActivityStartDate"
+
+
+fac_flow <- fac %>%
+  filter(CharacteristicName == "Flow") %>%
+           #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
+  droplevels() %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  group_by(MonitoringLocationIdentifier, datetime, OrganizationIdentifier, 
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
+
+fac_flow$datetime <- as.Date(fac_flow$datetime)
+colnames(fac_flow)[2] <- "ActivityStartDate"
+
+colnames(fac_flow)[11:14] <- c("mgd", "cfs", "g.min", "m3.sec")
+
+# convert everything to cfs
+fac_flow$mgd <- fac_flow$mgd/0.646317
+fac_flow$g.min <- fac_flow$g.min*0.002228017
+fac_flow$m3.sec <- fac_flow$m3.sec*35.3147
+
+fac_flow_long <- fac_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
+
+```
+
+### Combine trib and fac data
+
+Tributary and facility water quality and flow datasets were combined.
+
+```{r, include = FALSE}
+trib_fac_wq <- rbind(trib_wq, fac_wq)
+  
+trib_fac_wq <- trib_fac_wq %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+
+colnames(trib_fac_wq)
+
+# .d indicates dissolved, .t indicates total.
+colnames(trib_fac_wq)[12:33] <- c("NH3.d_mgL", "NH3.t_mgL", "DO_mgL", "NO23.d_mgL", "NO23.t_mgL", "TDN_mgL", 
+                                  "TN_mgL", "DOC_mgL", "TOC_mgL", "TDP_mgL", "TP_mgL", "Chla_ugL", "CO3.t_mgL",
+                                  "BOD_mgL", "TKN.t_mgL", "PO4.d_mgL", "Chla_uncorrected_ugL",
+                                   "TKN.d_mgL", "NO3.t_mgL", "NO2.t_mgL", "PO4.t_mgL", "TKN.t2_mgL")
+
+summary(trib_fac_wq)
+
+trib_fac_flow <- rbind(trib_flow_long, fac_flow_long)
+
+trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow) 
+
+```
+
+### USGS gage data for missing discharge
+
+ 
+```{r}
+USGS_flow <- readNWISdv(siteNumbers = c("10153100", "10163000"),
+                         parameterCd = "00060", 
+                         startDate = "2010-01-01")
+
+USGS_flow_processed <- USGS_flow %>%
+  mutate(WS_Name = case_when(site_no == "10153100" ~ "Hobble Creek",
+                             site_no == "10163000" ~ "Provo River")) %>%
+  select(WS_Name, Date, X_00060_00003)
+
+colnames(USGS_flow_processed) <- c("WS_Name", "ActivityStartDate", "Flow.USGS.cfs")
+
+
+
+```
+
+### Create spatial datasets for tributary and facility datasets
+
+1. Intersect stations with watersheds
+2. Join water quality data with intersected dataset
+3. If a station is not associated with a watershed, assign it
+4. Determine downstream stations in watersheds
+
+
+```{r, message = FALSE, warning = FALSE}
+
+trib_fac_sites <- trib_fac_wq_flow %>% 
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, 
+           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure) %>%
+  distinct() %>%
+  mutate(SiteType = ifelse(MonitoringLocationTypeName %in% 
+                  c("Canal Drainage", "Canal Irrigation", "Canal Transport"), "Canal", 
+                ifelse(MonitoringLocationTypeName %in% c("River/Stream", "Stream", "Stream: Ditch"), "Stream",
+                       ifelse(MonitoringLocationTypeName %in% c("Facility Industrial", "Facility Other"), "Facility", 
+                              "Storm Sewer"))))
+
+
+trib_fac_sites_sf <- st_as_sf(trib_fac_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+
+trib_fac_sites_intersect <- trib_fac_sites_sf %>%
+  st_intersection(wshds) %>%
+  left_join(trib_fac_wq_flow, .,) 
+
+unique(trib_fac_sites_intersect$MonitoringLocationName[is.na(trib_fac_sites_intersect$WS_Name)])
+unique(trib_fac_sites_intersect$MonitoringLocationIdentifier[is.na(trib_fac_sites_intersect$WS_Name)])
+unique(trib_fac_sites_intersect$WS_Name)
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Powell Slough WMA North Outfall to Utah Lake"] <- "Powell Slough Major"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Powell Slough WMA South Outfall to Utah Lake"] <- "Powell Slough Major"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Dry Ck Near Utah Lake-WLA"] <- "Dry Creek - Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Mill Race at mouth 1.25 miles west of I-15"] <- "Mill Race"  
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Hobble Creek at Utah Lake mouth"] <- "Hobble Creek"
+                                 
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Beer Creek at Utah Lake mouth"] <- "Benjamin Slough"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Lindon Drain at Utah Lake Inlet"] <- "Lindon Drain"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Timpanogos WWTP at Utah Lake mouth"] <- "Timp SSD"
+                                   
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "American Fork River at mouth"] <- "American Fork River"
+                                
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Unnamed flow at 4000 West @ mouth"] <- "4000 South Drain Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "JORDAN R AT UTAH L OUTLET U121 XING"] <- "Jordan River"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "DRY CK EAST TRIBUTARY"] <- "Dry Creek - Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "Drainage Canal 0.5 mile bl I-15 at about 2500 West, Springville"] <- "Dry Creek - Spanish Fork"
+
+trib_fac_sites_intersect$WS_Name[trib_fac_sites_intersect$MonitoringLocationName == 
+                                   "PROVO STATION 6-WLA"] <- "Mill Race"
+
+trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect %>%
+  filter(MonitoringLocationIdentifier %in% 
+           c("UTAHDWQ_WQX-4995312", "UTAHDWQ_WQX-4995310", # Currant Creek, duplicate sites at same lat/lon
+             "UTAHDWQ_WQX-4995465", "WFWQC_UT-4995467", # Benjamin Slough
+             "UTAHDWQ_WQX-5919910", "WFWQC_UT-4917712", # 4000 South Drain Spanish Fork
+             "UTAHDWQ_WQX-4995578", "WFWQC_UT-4995575", # Spanish Fork River
+             "UTAHDWQ_WQX-4996040", "WFWQC_UT-4996040", # Dry Creek - Spanish Fork
+             "UTAHDWQ_WQX-4996042", "UTAHDWQ_WQX-4996044", # Dry Creek - Spanish Fork
+             "WFWQC_UT-4996100", "UTAHDWQ_WQX-4996100", "WFWQC_UT-4996096",
+             "UTAHDWQ_WQX-4996275", "WFWQC_UT-4996275", # Hobble Creek
+             "WFWQC_UT-4996536", "WFWQC_UT-4996540", "UTAHDWQ_WQX-4996540", "UTAHDWQ_WQX-4996566", # Mill Race
+             "WFWQC_UT-4996680", "UTAHDWQ_WQX-4996680", # Provo River
+             "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210", "UTAHDWQ_WQX-4995210", # Powell Slough Major
+             "WFWQC_UT-4995075", "UTAHDWQ_WQX-4995120", # Lindon Drain 
+             "WFWQC_UT-4995043", "UTAHDWQ_WQX-4995041", "UTAHDWQ_WQX-4995038", # Timp SSD
+             "WFWQC_UT-4994958", "UTAHDWQ_WQX-4994960", # American Fork River
+             "WFWQC_UT-4994948", "UTAHDWQ_WQX-4994950", #Lehi Spring Creek
+             "UTAHDWQ_WQX-4994804", # Dry Creek - Saratoga
+             "UTAHDWQ_WQX-4994792")) %>% #Lake Mountain - Israel Canyon
+  mutate(Backwater = ifelse(MonitoringLocationIdentifier %in% 
+         c("WFWQC_UT-4917712", "WFWQC_UT-4994958", "UTAHDWQ_WQX-4995465", 
+           "WFWQC_UT-4995467", "WFWQC_UT-4996536", "UTAHDWQ_WQX-4995210", 
+           "UTAHDWQ_WQX-4995230", "WFWQC_UT-4995210", "WFWQC_UT-4995575"), 
+         "Yes", "No")) %>%
+  left_join(., USGS_flow_processed)
+unique(trib_fac_sites_intersect_downstream$WS_Name)
+
+# check that flow at USGS gage is in line with measured flow at chem sites, when data exist together.
+# Some cases in Spanish Fork River where measured flow was near zero but USGS flow was not. Otherwise lines up on 1:1 line.
+# Will proceed to replace missing flow with USGS flow in those 
+
+
+trib_fac_sites_intersect_downstream$Flow.cfs[is.na(trib_fac_sites_intersect_downstream$Flow.cfs)] <-
+  trib_fac_sites_intersect_downstream$Flow.USGS.cfs[is.na(trib_fac_sites_intersect_downstream$Flow.cfs)]
+
+# remove zero flow samples from watersheds that do not go dry
+
+
+# then, calculate daily loads
+
+trib_fac_sites_intersect_downstream <- trib_fac_sites_intersect_downstream %>%
+  mutate(Flow.cfs = case_when(WS_Name == "Lehi Spring Creek" & Flow.cfs == 0 ~ NA_real_, 
+                              WS_Name == "Timp SSD" & OrganizationIdentifier == "WFWQC_UT" & 
+                                Flow.cfs == 0 ~ NA_real_, 
+                              WS_Name == "Powell Slough Major" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Provo River" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Mill Race" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Hobble Creek" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Dry Creek - Spanish Fork" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Spanish Fork River" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "4000 South Drain Spanish Fork" & Flow.cfs == 0 ~ NA_real_,
+                              WS_Name == "Benjamin Slough" & Flow.cfs == 0 ~ NA_real_, 
+                              TRUE ~ Flow.cfs)) %>%
+  mutate(load.TN_kgd = TN_mgL * Flow.cfs * 28.3168 * 86400 / 1000000, 
+         load.TDN_kgd = TDN_mgL * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TP_kgd = TP_mgL * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TDP_kgd = TDP_mgL * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.TOC_kgd = TOC_mgL * Flow.cfs * 28.3168 * 86400 / 1000000,
+         load.DOC_kgd = DOC_mgL * Flow.cfs * 28.3168 * 86400 / 1000000)
+
+trib_fac_sites_intersect_downstream$load.TN_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+trib_fac_sites_intersect_downstream$load.TDN_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+trib_fac_sites_intersect_downstream$load.TP_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+trib_fac_sites_intersect_downstream$load.TDP_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+trib_fac_sites_intersect_downstream$load.TOC_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+trib_fac_sites_intersect_downstream$load.DOC_kgd[trib_fac_sites_intersect_downstream$Flow.cfs == 0] <- 0
+
+trib_fac_sites_intersect_downstream$SiteType[is.na(trib_fac_sites_intersect_downstream$SiteType)] <- "Not specified"
+
+trib_fac_sites_downstream <- trib_fac_sites_intersect_downstream %>% 
+  ungroup() %>%
+  select(MonitoringLocationIdentifier, MonitoringLocationName, OrganizationIdentifier,
+           MonitoringLocationTypeName, LatitudeMeasure, LongitudeMeasure, WS_Name) %>%
+  distinct()
+
+
+trib_fac_sites_downstream_sf <- st_as_sf(trib_fac_sites_downstream, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+
+trib_fac_sites_downstream_sf$WS_Name <- 
+  factor(trib_fac_sites_downstream_sf$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+                                                                                                                      
+trib_fac_sites_intersect_downstream$WS_Name <- 
+  factor(trib_fac_sites_intersect_downstream$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+
+
+
+# There is one TP value from WFWQC of 2 ug/L, which is below the detection limit of 10 ug/L. Set to 1/2 detection limit. 
+trib_fac_sites_intersect_downstream$TP_mgL[trib_fac_sites_intersect_downstream$TP_mgL == 2] <- 5
+
+
+write.csv(trib_fac_sites_intersect_downstream, row.names = FALSE,
+          file = "./Data/Processed/UL_TributaryData_ForEFDCWASP.csv")
+write.csv()
+```
+
+### Jordan River Outflow
+
+```{r}
+jordan_outflow$Date <- as.Date(jordan_outflow$Date, origin = "1899-12-30")
+jordan_outflow <- jordan_outflow %>%
+  select(Date, Flow)
+colnames(jordan_outflow) <- c("Date", "Flow.narrows.cfs")
+
+# if flow at the monitoring site is zero, assign value of zero to narrows. 
+jordan <- trib_fac_sites_intersect %>%
+  filter(MonitoringLocationIdentifier == "UTAHDWQ_WQX-4994790") %>%
+  filter(Year >= 2010) %>%
+  left_join(., jordan_outflow, by = c("ActivityStartDate" = "Date")) %>%
+  mutate(Flow.narrows.cfs = case_when(Flow.cfs == 0 ~ Flow.cfs,
+                                      TRUE ~ Flow.narrows.cfs)) %>%
+    mutate(load.TN_kgd = TN_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000, 
+         load.TDN_kgd = TDN_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000,
+         load.TP_kgd = TP_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000,
+         load.TDP_kgd = TDP_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000,
+         load.TOC_kgd = TOC_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000,
+         load.DOC_kgd = DOC_mgL * Flow.narrows.cfs * 28.3168 * 86400 / 1000000) 
+
+
+jordan$load.TN_kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TDN_kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TP_kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TDP_kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.TOC_kgd[jordan$Flow.cfs == 0] <- 0
+jordan$load.DOC_kgd[jordan$Flow.cfs == 0] <- 0
+
+
+write.csv(jordan, file = "./Data/Processed/UL_Jordan_ForEFDCWASP.csv",
+       row.names = FALSE)
+
+
+
+```
+
+
+### Groundwater
+
+```{r}
+gw_wq <- gw %>%
+  # Set nondetects (qualifier code U) as 1/2 MDL. 
+  # Qualifier code J is above detection but below reporting. Values retained as-is.
+  # REVISIT: What does qualifier code Q mean? One sample for ammonium at 0.062
+  mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
+                                        TRUE ~ ResultMeasureValue)) %>%
+  filter(CharacteristicName %in% 
+           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+             "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
+             "Phosphorus", "Ammonia and ammonium", 
+             "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
+             "Kjeldahl nitrogen", "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)",
+             "Organic Nitrogen", "Ammonia-nitrogen", "Phosphate-phosphorus",
+             "Total Kjeldahl nitrogen", "Dissolved oxygen (DO)", "Chlorophyll a", 
+             "Biochemical oxygen demand, standard conditions",
+             "Chlorophyll a, uncorrected for pheophytin")) %>%
+  filter(ResultMeasure.MeasureUnitCode %in% c("ueq/L", "mg/l", "mg/l as N", "<NA>", "mg/l as P", "ug/l")) %>%
+  mutate(ResultSampleFractionText = case_when(CharacteristicName == "Chlorophyll a" ~ "Total", 
+                                              TRUE ~ ResultSampleFractionText)) %>%
+  select(MonitoringLocationIdentifier:LongitudeMeasure, ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  mutate(Month = month(datetime), 
+         Year = year(datetime)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  filter(!is.na(ResultMeasureValue)) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
+  unite("Variable", CharacteristicName:ResultSampleFractionText) 
+
+
+gw_wq <- gw_wq %>%
+  group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
+  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+
+colnames(gw_wq)
+
+# .d indicates dissolved, .t indicates total.
+colnames(gw_wq)[12:24] <- c("NO23.d_mgL", "PO4.d_mgL", "CO3.d_mgL", "NO3.d_mgL",
+                                  "Nmixed_d_mgL", "DOC_mgL", "TDN_mgL", "NH3.d_mgL", 
+                                  "NO23.t_mgL", "TP_mgL", "TDP_mgL", "NH3.t_mgL", 
+                                  "CO3.t_mgL")
+                                  
+write.csv(gw_wq, file = "./Data/Processed/UL_Groundwater_ForEFDCWASP.csv",
+       row.names = FALSE)
+
+
+```
+

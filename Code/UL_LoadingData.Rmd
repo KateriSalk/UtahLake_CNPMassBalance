@@ -39,12 +39,25 @@ jordan_loading_annual <- read.csv("./Data/Processed/loading_Jordan_annual.csv")
 jordan_loading_monthly <- read.csv("./Data/Processed/loading_Jordan_monthly.csv")
 gw_loading_annual <- read.csv("./Data/Processed/loading_groundwater_annual.csv")
 precipevap_hydrology_monthly <- read.csv("./Data/Processed/hydrology_precip_et_monthly.csv")
+precipevap_hydrology_total <- read.csv("./Data/Processed/hydrology_precip_et.csv")
+
 
 # watershed spatial data
 wshds <- read_sf("./Data/GIS/UL_subwshedsWGS84_v2.shp")
 ```
 
 ## Processing 
+
+### Annual precip and evap estimates
+```{r}
+precipevap_hydrology_annual <- precipevap_hydrology_total %>%
+  group_by(Year) %>%
+  summarise(et.acftyr = sum(et.acftmo),
+            precip.acftyr = sum(precip.acftmo))
+write.csv(precipevap_hydrology_annual, file = "./Data/Processed/hydrology_precip_et_annual.csv",
+          row.names = FALSE)  
+```
+
 
 ### Unmonitored Watershed Data
 ```{r}
@@ -94,7 +107,7 @@ unmonitored_hydrology_annual <- unmonitored_hydrology_monthly %>%
   group_by(WS_Name) %>%
   summarise(Flow.acftyr = sum(Flow.acftmo)) 
 
-
+unmonitored_loading_annual$Flow.acftyr <- unmonitored_hydrology_annual$Flow.acftyr
 ```
 
 ### Reorder watershed names
@@ -146,14 +159,30 @@ monitored_loading_monthly <- monitored_loading_monthly %>%
   mutate(WS_Type = case_when(
     WS_Name %in% c("Timp SSD", "Powell Slough Major", "Mill Race", 
                    "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
-                   "Benjamin Slough") ~ "WWTP", 
-    TRUE ~ "No WWTP"))
+                   "Benjamin Slough") ~ "Monitored w/ WWTP", 
+    TRUE ~ "Monitored w/o WWTP"))
 
 monitored_loading_monthly_total <- monitored_loading_monthly %>%
   group_by(Month) %>%
   summarise(Flow.acftmo = sum(Flow.acftmo))
 
-# For Timp SSD, Powell Slough, and Mill Race, use DMR data for loading estimates when available.
+# For Timp SSD and Powell Slough, use DMR data for loading estimates when available.
+# Decided on by the SP 5/20/21
+monitored_loading_monthly$load.TN.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TN.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+monitored_loading_monthly$load.TP.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TP.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+monitored_loading_monthly$load.TDP.tonyr[monitored_loading_monthly$WS_Name == "Timp SSD"] <- 
+  dmr_loading_monthly$load.TDP.tonyr[dmr_loading_monthly$WS_Name == "Timp SSD"]
+
+monitored_loading_monthly$load.TN.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TN.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+monitored_loading_monthly$load.TP.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TP.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+monitored_loading_monthly$load.TDP.tonyr[monitored_loading_monthly$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_monthly$load.TDP.tonyr[dmr_loading_monthly$WS_Name == "Powell Slough Major"]
+
+# For Timp SSD and Powell Slough, use DMR data for loading estimates when available.
 # Decided on by the SP 5/20/21
 monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
   dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
@@ -162,27 +191,23 @@ monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Timp
 monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Timp SSD"] <- 
   dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Timp SSD"]
 
-monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
-  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
-monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
-  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
-monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough"] <- 
-  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough"]
+monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Powell Slough Major"]
+monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough Major"]
+monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Powell Slough Major"] <- 
+  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Powell Slough Major"]
 
-monitored_loading_annual$load.TN.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
-  dmr_loading_annual$load.TN.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
-monitored_loading_annual$load.TP.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
-  dmr_loading_annual$load.TP.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
-monitored_loading_annual$load.TDP.tonyr[monitored_loading_annual$WS_Name == "Mill Race"] <- 
-  dmr_loading_annual$load.TDP.tonyr[dmr_loading_annual$WS_Name == "Mill Race"]
 
 monitored_loading_annual <- monitored_loading_annual %>%
   mutate(WS_Type = case_when(
     WS_Name %in% c("Timp SSD", "Powell Slough Major", "Mill Race", 
                    "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
-                   "Benjamin Slough") ~ "WWTP", 
-    TRUE ~ "No WWTP"))
-
+                   "Benjamin Slough") ~ "Monitored w/ WWTP", 
+    TRUE ~ "Monitored w/o WWTP"))
+# 
+# write.csv(monitored_loading_monthly, file = "./Data/Processed/monitored_loading_monthly.csv",
+#             row.names = FALSE)
 ```
 
 
@@ -233,7 +258,7 @@ loading_annual <- loading_annual %>%
 
 loading_annual$WS_Type <- 
   factor(loading_annual$WS_Type, 
-         levels = c("WWTP", "No WWTP", "Unmonitored", "Atmosphere", "Groundwater", "Jordan River"))
+         levels = c("Monitored w/ WWTP", "Monitored w/o WWTP", "Unmonitored", "Atmosphere", "Groundwater", "Jordan River"))
 
 loading_annual_summary <- loading_annual %>%
   group_by(WS_Type) %>%
@@ -250,7 +275,15 @@ loading_annual_summary$TN.percent <- round(loading_annual_summary$TN.percent, di
 loading_annual_summary$TP.percent <- round(loading_annual_summary$TP.percent, digits = 1)
 
 loading_annual_summary$TN.percent <- paste(loading_annual_summary$TN.percent, "%")  
-loading_annual_summary$TP.percent <- paste(loading_annual_summary$TP.percent, "%")  
+loading_annual_summary$TP.percent <- paste(loading_annual_summary$TP.percent, "%") 
+
+# add evap and precip 
+loading_annual <- loading_annual %>%
+  add_row(WS_Name = "Precipitation", Flow.acftyr = flow_total$Flow.acftyr[flow_total$Source == "Precipitation"]) %>%
+  add_row(WS_Name = "Evaporation", Flow.acftyr = flow_total$Flow.acftyr[flow_total$Source == "Evaporation"])
+
+# write.csv(loading_annual, file = "./Data/Processed/total_loading_annual.csv",
+#           row.names = FALSE)
 
 ```
 
@@ -260,19 +293,28 @@ wshds_loading <- wshds %>%
   left_join(., loading_annual)
 ```
 
-## Calculations
-### total tributary inflow
+### Flow
 
 ```{r}
 flow_unmonitored <- unmonitored_hydrology_annual %>%
-  select(WS_Name, Flow.acftyr)
+  select(WS_Name, Flow.acftyr) %>%
+    mutate(WS_Type = "Unmonitored")
+
 flow_monitored <- monitored_loading_annual %>%
-  select(WS_Name, Flow.acftyr)
+  select(WS_Name, Flow.acftyr) %>%
+    mutate(WS_Type = case_when(
+    WS_Name %in% c("Timp SSD", "Powell Slough Major", "Mill Race", 
+                   "Spring Creek - Springville", "Dry Creek - Spanish Fork", 
+                   "Benjamin Slough") ~ "Monitored w/ WWTP", 
+    TRUE ~ "Monitored w/o WWTP"))
+
 flow <- rbind(flow_unmonitored, flow_monitored)
 
 flow_tribs <- flow %>%
+  group_by(WS_Type) %>%
   summarise(Flow.acftyr = sum(Flow.acftyr)) %>%
-  mutate(Source = "Tributaries")
+  mutate(Source = WS_Type) %>%
+  select(-WS_Type)
 
 flow_gw <- gw_loading_annual %>%
   summarise(Flow.acftyr = sum(Flow.acftyr)) %>%
@@ -295,7 +337,7 @@ flow_total <- rbind(flow_tribs, flow_gw, flow_precip, flow_evap, flow_jordan)
 flow_total <- flow_total %>%
   mutate(Flow.percent = case_when(Flow.acftyr > 0 ~ Flow.acftyr/sum(Flow.acftyr[which(Flow.acftyr>0)])*100, 
                                   Flow.acftyr < 0 ~ Flow.acftyr/sum(Flow.acftyr[which(Flow.acftyr<0)])*100)) 
-flow_total$Flow.percent <- round(flow_total$Flow.percent, digits = 2)
+flow_total$Flow.percent <- round(flow_total$Flow.percent, digits = 1)
 
 flow_balance <- data.frame(Flow.acftyr = sum(flow_total$Flow.acftyr), 
                            Source = "Balance", 
@@ -303,12 +345,40 @@ flow_balance <- data.frame(Flow.acftyr = sum(flow_total$Flow.acftyr),
                              sum(flow_total$Flow.acftyr[flow_total$Flow.acftyr > 0])*100)
 flow_total <- rbind(flow_total, flow_balance)
 flow_total$Source <- factor(flow_total$Source, 
-         levels = c("Tributaries", "Precipitation", "Groundwater",
+         levels = c("Monitored w/ WWTP", "Monitored w/o WWTP", "Unmonitored",
+                    "Precipitation", "Groundwater",
                     "Jordan River", "Evaporation", "Balance"))
 flow_total$Flow.percent <- paste(flow_total$Flow.percent, "%")  
 flow_total$Flow.percent[flow_total$Source == "Balance"] <- "" 
 
 ```
+
+### combining monthly dmr and trib data
+```{r}
+dmr_loading_monthly_subset <- dmr_loading_monthly %>%
+  group_by(WS_Name, Month) %>%
+  summarise(load.TP.tonmo = sum(load.TP.tonmo), 
+            load.TN.tonmo = sum(load.TKN.tonmo)) %>%
+  select(WS_Name, Month, load.TP.tonmo, load.TN.tonmo) %>%
+  mutate(SiteType = "DMR")
+
+monitored_loading_monthly_subset <- monitored_loading_monthly %>%
+  select(WS_Name, Month, load.TP.tonmo, load.TN.tonmo) %>%
+  mutate(SiteType = "Tributary")
+
+dmr_trib_monthly <- rbind(dmr_loading_monthly_subset, monitored_loading_monthly_subset)
+
+dmr_trib_monthly$WS_Name <- 
+  factor(dmr_trib_monthly$WS_Name, 
+         levels = c("Tickville Wash", "Dry Creek - Saratoga", "Lehi Spring Creek", 
+                    "American Fork River", "Timp SSD", "Lindon Drain", 
+                    "Powell Slough Major", "Provo River", "Mill Race", 
+                    "Spring Creek - Springville", "Hobble Creek", 
+                    "Dry Creek - Spanish Fork", "Spanish Fork River", 
+                    "4000 South Drain Spanish Fork", "Benjamin Slough", "Currant Creek"))
+
+```
+
 
 ## Visualization
 ### Loading maps
@@ -503,7 +573,7 @@ ggplot(unmonitored_hydrology_monthly, aes(x = Month, y = Flow.acftmo)) +
   scale_x_continuous(breaks = sequence(1:12)) +
   facet_wrap(vars(WS_Name), ncol = 6, labeller = label_wrap_gen()) +
   labs(y = "Inflow (ac*ft/mo)")
-# ggsave("./Code/Output/hydrology_unmonitored_monthly.jpg", 
+# ggsave("./Code/Output/hydrology_unmonitored_monthly.jpg",
 #        height = 9, width = 9)
 
 ggplot(unmonitored_hydrology_monthly_total, aes(x = Month, y = Flow.acftmo)) +
@@ -515,7 +585,7 @@ ggplot(unmonitored_hydrology_monthly_total, aes(x = Month, y = Flow.acftmo)) +
   labs(y = "Inflow (ac*ft/mo)", color = "") +
   scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.7, direction = -1) +
   theme(legend.position = "top")
-# ggsave("./Code/Output/hydrology_unmonitored_total_monthly.jpg", 
+# ggsave("./Code/Output/hydrology_unmonitored_total_monthly.jpg",
 #        height = 4, width = 5)
 
 ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
@@ -529,6 +599,28 @@ ggplot(jordan_loading_monthly, aes(x = Month, y = Flow.acftmo)) +
   
 ```
 
+### Monthly comparison between trib and DMR
+```{r}
+
+ggplot(dmr_trib_monthly, aes(x = as.factor(Month), y = load.TP.tonmo, color = SiteType)) +
+  geom_point() +
+  facet_wrap(vars(WS_Name), ncol= 4) +
+  labs(x = "Month", y = "TP load (metric tons/month)", color = "Site Type") +
+  scale_color_viridis_d(option = "magma", begin = 0.5, end = 0.7) +
+  theme(legend.position = "top")
+#ggsave("./Code/Output/loading_TP_monthly_tribvsDMR.jpg", width = 8, height = 6, units = "in")
+
+ggplot(dmr_trib_monthly, aes(x = as.factor(Month), y = load.TN.tonmo, color = SiteType)) +
+  geom_point() +
+  facet_wrap(vars(WS_Name), ncol= 4) +
+  labs(x = "Month", y = "TN load (metric tons/month)", color = "Site Type") +
+  scale_color_viridis_d(option = "magma", begin = 0.5, end = 0.7) +
+  theme(legend.position = "top")
+#ggsave("./Code/Output/loading_TN_monthly_tribvsDMR.jpg", width = 8, height = 6, units = "in")
+
+```
+
+
 ### Annual loads
 ```{r}
 # hydrology
@@ -537,10 +629,11 @@ ggplot(flow_total, aes(x = Source, y = Flow.acftyr, fill = Source)) +
   geom_text(aes(label = Flow.percent), 
             vjust = ifelse(flow_total$Flow.acftyr < 0, 1.2, -0.2)) +
   labs(x = "", y = expression("Hydrologic Inflow or Outflow (ac*ft"^3*"/yr)")) +
-  scale_fill_manual(values = c("#fc9d6f", "#f27162", "#db4a69",
+  scale_fill_manual(values = c("#fc9d6f", "#fc9d6f", "#fc9d6f", "#f27162", "#db4a69",
                                "#8a2880", "#62197d", "gray")) +
-  theme(legend.position = "none")
-#ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 6, height = 4)
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave(file = "./Code/Output/hydrologyload_total_annual.jpg", width = 6, height = 5)
 
 # nutrients, monitored watersheds
 ggplot(monitored_loading_annual, aes(x = WS_Name, y = load.TN.tonyr, fill = WS_Type)) +
@@ -570,12 +663,12 @@ ggplot(monitored_loading_annual, aes(x = WS_Name, y = load.TOC.tonyr, fill = WS_
 # nutrients, all sources
 ggplot(loading_annual_summary, aes(x = WS_Type, y = load.TN.tonyr, fill = WS_Type)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values = c("#b5367a", "#db4a69", "#f27162", "#fc9d6f", "#fecc90", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f", "#fc9d6f", "#fc9d6f", "#f27162", "#db4a69", "#8a2880")) +
   geom_text(aes(label = TN.percent), 
             vjust = ifelse(loading_annual_summary$load.TN.tonyr < 0, 1.2, -0.2)) +
   ylim(-200, 1500) +
   labs(x = "", y = "TN load (metric tons/yr)", fill = "") +
-  theme(legend.position = "top", 
+  theme(legend.position = "none", 
         axis.text.x = element_text(angle = 45, hjust = 1))
 #ggsave(file = "./Code/Output/load_TN_total_annual.jpg", width = 6, height = 4)
 
@@ -584,16 +677,13 @@ ggplot(loading_annual_summary, aes(x = WS_Type, y = load.TP.tonyr, fill = WS_Typ
   geom_text(aes(label = TP.percent), 
             vjust = ifelse(loading_annual_summary$load.TP.tonyr < 0, 1.2, -0.2)) +
   ylim(-50, 250) +
-  scale_fill_manual(values = c("#b5367a", "#db4a69", "#f27162", "#fc9d6f", "#fecc90", "#3b1165")) +
+  scale_fill_manual(values = c("#fc9d6f", "#fc9d6f", "#fc9d6f", "#f27162", "#db4a69", "#8a2880")) +
   labs(x = "", y = "TP load (metric tons/yr)", fill = "") +
-  theme(legend.position = "top", 
+  theme(legend.position = "none", 
         axis.text.x = element_text(angle = 45, hjust = 1))
 #ggsave(file = "./Code/Output/load_TP_total_annual.jpg", width = 6, height = 4)
 
 
 ```
 
-
-```{r}
-```
 
