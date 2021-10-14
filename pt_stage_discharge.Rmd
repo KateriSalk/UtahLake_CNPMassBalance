@@ -1,0 +1,238 @@
+---
+title: "Pressure trandsucer discharge rating curves"
+author: "Jake Vander Laan"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true  
+    toc_float: true
+    fig_width: 1
+---
+
+# Libraries
+```{r, libs}
+setwd("C:\\Users\\jvander\\Documents\\R\\UtahLake_CNPMassBalance")
+library(wqTools)
+library(leaflet)
+library(plotly)
+library(tidyr)
+library(lubridate)
+```
+
+# Data import & pre-process
+## Data import
+```{r}
+trib <- read.csv("Data/Processed/ul_Tribdata_wqp_processed_2021-03-02.csv")
+trib$ActivityStartDate <- as.Date(trib$ActivityStartDate)
+trib$ResultMeasureValue <- as.numeric(as.character(trib$ResultMeasureValue))
+
+trib_flow <- trib %>%
+  filter(CharacteristicName %in% c("Flow", "Stream flow, instantaneous")) %>%
+  droplevels() %>%
+  #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
+  select(ActivityStartDate:ResultSampleFractionText,datetime,
+         OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure,
+         LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode,
+         ResultStatusIdentifier) %>%
+  select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText,
+         -MonitoringLocationTypeName, -CharacteristicName) %>%
+  group_by(ActivityStartDate,datetime,MonitoringLocationIdentifier, OrganizationIdentifier,
+           OrganizationFormalName, MonitoringLocationName, LatitudeMeasure,
+           LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
+  summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
+  mutate(Month = month(ActivityStartDate),
+         Year = year(ActivityStartDate)) %>%
+  filter(Year >= 2010) %>%
+  droplevels() %>%
+  pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue) %>%
+  # USGS data has both cfs and cms, always duplicated. remove cfs. 
+  select(-'ft3/s')
+
+colnames(trib_flow)[12:15] <- c("m3.sec", "cfs", "mgd", "g.min")
+
+# convert everything to cfs
+trib_flow$mgd <- trib_flow$mgd/0.646317
+trib_flow$g.min <- trib_flow$g.min*0.002228017
+trib_flow$m3.sec <- trib_flow$m3.sec*35.3147
+
+trib_flow_long <- trib_flow %>%
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+               names_to = "orig.units", values_to = "Flow.cfs") %>%
+  drop_na(Flow.cfs)
+
+# conversions seem to match up
+ggplot(trib_flow_long, aes(x = ActivityStartDate, y = Flow.cfs, color = orig.units)) +
+  geom_point(alpha = 0.5) +
+  #scale_y_log10() +
+  scale_color_viridis_d(option = "magma", begin = 0.2, end = 0.8)
+
+sites_grab=unique(trib_flow_long[,c("MonitoringLocationIdentifier", "OrganizationIdentifier", "MonitoringLocationName", "LatitudeMeasure", "LongitudeMeasure")])
+
+
+pt_data18=read.csv(file="Data/Processed/PT2018.csv")
+pt_data19=read.csv(file="Data/Processed/PT2019.csv")
+pt_data20=read.csv(file="Data/Processed/PT2020.csv")
+
+pt_data=rbind(pt_data18,pt_data19,pt_data20)
+
+sites_pt=unique(pt_data[,c("MLID","Site")])
+
+```
+
+
+### Map
+```{r, map, out.width = "100%", echo=F}
+baseMap() %>% 
+	addCircleMarkers(data=sites_grab, lat=~LatitudeMeasure, lng=~LongitudeMeasure, group="Sites", 
+		color = "blue", opacity=0.8,layerId=~MonitoringLocationIdentifier,
+		label=~MonitoringLocationIdentifier, labelOptions = labelOptions(noHide = F),
+		popup = paste0(
+			"Location ID: ", sites_grab$MonitoringLocationIdentifier,
+			"<br> Name: ", sites_grab$MonitoringLocationName,
+			"<br> Org: ", sites_grab$OrganizationIdentifier
+		)
+	) %>% 
+	fitBounds(min(sites_grab$LongitudeMeasure)*0.9999, min(sites_grab$LatitudeMeasure)*0.9999, max(sites_grab$LongitudeMeasure)*1.0001, max(sites_grab$LatitudeMeasure)*1.0001) %>% 
+	leaflet.extras::addSearchFeatures(targetGroups="Sites")
+```
+
+
+### Join PT data and grab sample flow measures
+```{r}
+pt_data$MonitoringLocationIdentifier=paste0("UTAHDWQ_WQX-",pt_data$MLID)
+pt_data$datetime=as.POSIXct(pt_data$Date.and.Time, format="%m/%d/%Y %H:%M")
+pt_data$datetime=lubridate::round_date(pt_data$datetime, "15 minutes") # round to 15 mins
+head(pt_data)
+
+trib_flow_long=subset(trib_flow_long, MonitoringLocationIdentifier %in% pt_data$MonitoringLocationIdentifier)
+trib_flow_long$datetime=as.POSIXct(trib_flow_long$datetime)
+trib_flow_long$datetime=lubridate::round_date(trib_flow_long$datetime, "15 minutes") # round to 15 mins
+
+
+pt_grab_data=merge(trib_flow_long, pt_data)
+table(pt_grab_data$MonitoringLocationName, pt_grab_data$Site)
+
+pt_grab_data=pt_grab_data %>% dplyr::rename(depth_ft=Depth..ft.)
+
+plot_ly(data=pt_grab_data) %>% 
+	add_trace(type="scatter", mode="markers", x=~depth_ft, y=~Flow.cfs, name=~MLID)
+
+
+```
+
+
+
+## Rating curves
+https://thewetlandblog.wordpress.com/2013/06/17/fitting-rating-curves-with-r/
+https://rpubs.com/cassiorampinelli/528388
+
+
+### 4995578 Spanish Fork at Utah Lake inlet
+rc_data=subset(pt_grab_data,MLID==4995578)
+rc_data$depth_ft[rc_data$depth_ft<0]=0
+
+rc_nls<-nls(Flow.cfs~C*(depth_ft+a)^n, data=rc_data, start=list(C=1, a=0, n=1))
+
+#plotting the first regression model
+C <- round(summary(rc_nls)$coefficients[1], 3)
+a <- round(summary(rc_nls)$coefficients[2], 3)
+n <- round(summary(rc_nls)$coefficients[3], 3)
+
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+depth_ft <- seq(0, 3, 0.05)
+lines(depth_ft, C*(depth_ft+a)^n, lty = 1, col = "black")
+
+
+### 4995210
+rc_data=subset(pt_grab_data,MLID==4995210)
+rc_data$depth_ft[rc_data$depth_ft<0]=0
+
+rc_nls<-nls(Flow.cfs~C*(depth_ft+a)^n, data=rc_data, start=list(C=1, a=0, n=1))
+
+#plotting the first regression model
+C <- round(summary(rc_nls)$coefficients[1], 3)
+#a <- round(summary(rc_nls)$coefficients[2], 3)
+n <- round(summary(rc_nls)$coefficients[3], 3)
+
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+depth_ft <- seq(0, 3, 0.05)
+lines(depth_ft, C*(depth_ft)^n, lty = 1, col = "black")
+
+
+
+
+
+
+### 4994960
+rc_data=subset(pt_grab_data,MLID==4994960)
+#rc_data$depth_ft[rc_data$depth_ft<=0]=0.05
+#rc_data$Flow.cfs[rc_data$Flow.cfs<=0]=0.1
+rc_data=subset(rc_data, Flow.cfs>0)
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+
+#rc_nls<-nls(Flow.cfs~C*(depth_ft+a)^n, data=rc_data, start=list(C=2.4, a=1, n=0.5))
+rc_nls<-nls(Flow.cfs~C*(depth_ft)^n, data=rc_data, start=list(C=0.78, n=0.5))
+rc_lm=lm(Flow.cfs~log10(depth_ft), data=rc_data)
+summary(rc_lm)
+
+#plotting the first regression model
+C <- round(summary(rc_nls)$coefficients[1], 3)
+#a <- round(summary(rc_nls)$coefficients[2], 3)
+n <- round(summary(rc_nls)$coefficients[3], 3)
+
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+depth_ft <- seq(0, 3, 0.05)
+lines(depth_ft, C*(depth_ft)^n, lty = 1, col = "black")
+
+
+
+
+
+
+
+
+
+### 4996275
+rc_data=subset(pt_grab_data,MLID==4996275)
+rc_data$depth_ft[rc_data$depth_ft<=0.1]=0.1
+rc_lm=lm(log10(Flow.cfs)~log10(depth_ft), data=rc_data)
+plot(Flow.cfs~depth_ft, data=rc_data, log='xy')
+
+
+rc_nls<-nls(Flow.cfs~C*(depth_ft+a)^n, data=rc_data, start=list(C=0.45483, a=0, n=exp(0.67837)))
+
+
+
+#plotting the first regression model
+C <- round(summary(rc_nls)$coefficients[1], 3)
+a <- round(summary(rc_nls)$coefficients[2], 3)
+n <- round(summary(rc_nls)$coefficients[3], 3)
+
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+depth_ft <- seq(0, 3, 0.05)
+lines(depth_ft, C*(depth_ft+a)^n, lty = 1, col = "black")
+
+
+### 4994804
+rc_data=subset(pt_grab_data,MLID==4994804)
+rc_data$depth_ft[rc_data$depth_ft<0]=0
+
+rc_nls<-nls(Flow.cfs~C*(depth_ft+a)^n, data=rc_data, start=list(C=1, a=0, n=1))
+
+#plotting the first regression model
+C <- round(summary(rc_nls)$coefficients[1], 3)
+a <- round(summary(rc_nls)$coefficients[2], 3)
+n <- round(summary(rc_nls)$coefficients[3], 3)
+
+plot(Flow.cfs~depth_ft, data=rc_data, main = "Rating Curve ",ylab="Discharge (cfs)",xlab="Height (ft)")
+depth_ft <- seq(0, 3, 0.05)
+lines(depth_ft, C*(depth_ft+a)^n, lty = 1, col = "black")
+
+
+
+
+
+
+
+
+

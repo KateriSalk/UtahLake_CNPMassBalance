@@ -40,7 +40,7 @@ library(zoo)
 setwd("C:\\Users\\jvander\\Documents\\R\\UtahLake_CNPMassBalance")
 PT_2018 <- read.csv("./Data/Processed/PT2018.csv")
 PT_2019 <- read.csv("./Data/Processed/PT2019.csv")
-PT_2020 <- read.csv("./Data/Processed/PT2020.csv")
+PT_2020 <- read.csv("./Data/Processed/PT2020_v2.csv")
 PTData <- rbind(PT_2018,PT_2019,PT_2020)
 ```
 
@@ -229,13 +229,13 @@ trib_flow <- trib %>%
            #c("Height, gage", "Stream flow, instantaneous", "Stream flow, mean. daily")) %>%
   droplevels() %>%
   #filter(ResultStatusIdentifier != "Provisional") %>% # can filter out provisional data
-  select(MonitoringLocationIdentifier:ResultSampleFractionText,
+  select(MonitoringLocationIdentifier:ResultSampleFractionText,ResultValueTypeName,
          OrganizationIdentifier:MonitoringLocationTypeName, LatitudeMeasure, 
          LongitudeMeasure, ResultMeasureValue, ResultMeasure.MeasureUnitCode, 
          ResultStatusIdentifier,DateRound) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultSampleFractionText, 
          -MonitoringLocationTypeName, -CharacteristicName) %>%
-  group_by(MonitoringLocationIdentifier, DateRound, OrganizationIdentifier, 
+  group_by(MonitoringLocationIdentifier, DateRound, OrganizationIdentifier,ResultValueTypeName, 
            OrganizationFormalName, MonitoringLocationName, LatitudeMeasure, 
            LongitudeMeasure, ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
@@ -245,7 +245,7 @@ trib_flow <- trib %>%
   droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
-colnames(trib_flow)[11:14] <- c("cfs", "mgd", "g.min", "m3.sec")
+colnames(trib_flow)[12:15] <- c("cfs", "mgd", "g.min", "m3.sec")
 
 # convert everything to cfs
 trib_flow$mgd <- trib_flow$mgd/0.646317
@@ -309,8 +309,21 @@ PT_flow_match <- trib_flow_long %>% inner_join(PTData2, by=c("MLID","DateRound")
 pt_plotly=plotly::plot_ly(data=PT_flow_match) %>% 
 	plotly::add_trace(type="scatter", mode="markers", x=~PPSI, y=~Flow.cfs, name=~MLID)
 htmlwidgets::saveWidget(pt_plotly, "pt_plotly.html")
+writexl::write_xlsx(list(joined=PT_flow_match, all_grab_flow=trib_flow_long),path="joined_pt_data.xlsx")
+```
+
+# Compare all PSI to joined PSI by MLID
+```{r}
+boxplot(PTData2$PPSI, PT_flow_match$PPSI, ylab="PSI", names=c("All PT","Grab sample joined"))
+plotly::plot_ly() %>% 
+	plotly::add_boxplot(data=PTData2, y=~PPSI, x=~paste0(" ",MLID, " "), name="All") %>%
+	plotly::add_boxplot(data=PT_flow_match, y=~PPSI, x=~paste0(" ",MLID, " "), name="Grab join") %>%
+	plotly::layout(boxmode = "group", xaxis=list(title=""))
+
+
 
 ```
+
 
 #Rating Curve Development
 #source: https://thewetlandblog.wordpress.com/2013/06/17/fitting-rating-curves-with-r/
