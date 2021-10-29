@@ -93,7 +93,7 @@ levels(wshds_monitored$WS_Name)
 Tributary dataset was filtered for: 
 
 1. Variables pertaining to C, N, P, or flow (discharge)
-2. Years 2010-2020
+2. Years 2000-2020
 
 Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
 
@@ -127,7 +127,7 @@ trib_wq <- trib %>%
          ResultStatusIdentifier) %>%
   mutate(Month = month(ActivityStartDate), 
          Year = year(ActivityStartDate)) %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
@@ -149,13 +149,13 @@ trib_flow <- trib %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
   mutate(Month = month(ActivityStartDate),
          Year = year(ActivityStartDate)) %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue) %>%
   # USGS data has both cfs and cms, always duplicated. remove cfs. 
   select(-'ft3/s')
 
-colnames(trib_flow)[11:14] <- c("m3.sec", "cfs", "mgd", "g.min")
+colnames(trib_flow)[11:14] <- c("cfs", "m3.sec", "mgd", "g.min")
 
 # convert everything to cfs
 trib_flow$mgd <- trib_flow$mgd/0.646317
@@ -203,7 +203,7 @@ trib_flow_long <- rbind(trib_flow_long, WFWQC_flow_processed)
 Tributary dataset was filtered for: 
 
 1. Variables pertaining to C, N, P, or flow (discharge)
-2. Years 2010-2020
+2. Years 2000-2020
 
 Flow data were converted to cubic feet/sec (cfs) when units originally appeared as gallon/min, cubic meters/sec, and million gallons/day.
 
@@ -234,7 +234,7 @@ fac_wq <- fac %>%
          ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
@@ -259,22 +259,24 @@ fac_flow <- fac %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue)) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   droplevels() %>%
   pivot_wider(names_from = ResultMeasure.MeasureUnitCode, values_from = ResultMeasureValue)
 
 fac_flow$datetime <- as.Date(fac_flow$datetime)
 colnames(fac_flow)[2] <- "ActivityStartDate"
 
-colnames(fac_flow)[11:14] <- c("mgd", "cfs", "g.min", "m3.sec")
+colnames(fac_flow)[11:16] <- c("cfs", "mgd", "g.min", "gal.min", "mg.d", "m3.sec")
 
 # convert everything to cfs
 fac_flow$mgd <- fac_flow$mgd/0.646317
 fac_flow$g.min <- fac_flow$g.min*0.002228017
+fac_flow$g.min <- fac_flow$gal.min*0.002228017
+fac_flow$mg.d <- NA
 fac_flow$m3.sec <- fac_flow$m3.sec*35.3147
 
 fac_flow_long <- fac_flow %>%
-  pivot_longer(cols = c("cfs", "mgd", "g.min", "m3.sec"), 
+  pivot_longer(cols = c("cfs", "mgd", "g.min", "gal.min", "mg.d", "m3.sec"), 
                names_to = "orig.units", values_to = "Flow.cfs") %>%
   drop_na(Flow.cfs)
 
@@ -298,9 +300,9 @@ trib_fac_wq <- trib_fac_wq %>%
 colnames(trib_fac_wq)
 
 # .d indicates dissolved, .t indicates total.
-colnames(trib_fac_wq)[12:33] <- c("NH3.d_mgL", "NH3.t_mgL", "DO_mgL", "NO23.d_mgL", "NO23.t_mgL", "TDN_mgL", 
+colnames(trib_fac_wq)[12:35] <- c("NH3.d_mgL", "NH3.t_mgL", "DO_mgL", "NO23.d_mgL", "NO23.t_mgL", "TDN_mgL", 
                                   "TN_mgL", "DOC_mgL", "TOC_mgL", "TDP_mgL", "TP_mgL", "Chla_ugL", "CO3.t_mgL",
-                                  "BOD_mgL", "TKN.t_mgL", "PO4.d_mgL", "Chla_uncorrected_ugL",
+                                  "BOD_mgL", "TKN.t_mgL", "DO_mgL_2", "PO4.d_mgL", "DON_mgL", "Chla_uncorrected_ugL",
                                    "TKN.d_mgL", "NO3.t_mgL", "NO2.t_mgL", "PO4.t_mgL", "TKN.t2_mgL")
 
 summary(trib_fac_wq)
@@ -317,7 +319,7 @@ trib_fac_wq_flow <- full_join(trib_fac_wq, trib_fac_flow)
 ```{r}
 USGS_flow <- readNWISdv(siteNumbers = c("10153100", "10163000"),
                          parameterCd = "00060", 
-                         startDate = "2010-01-01")
+                         startDate = "2000-01-01")
 
 USGS_flow_processed <- USGS_flow %>%
   mutate(WS_Name = case_when(site_no == "10153100" ~ "Hobble Creek",
@@ -509,9 +511,9 @@ trib_fac_sites_intersect_downstream$WS_Name <-
 trib_fac_sites_intersect_downstream$TP_mgL[trib_fac_sites_intersect_downstream$TP_mgL == 2] <- 5
 
 
-write.csv(trib_fac_sites_intersect_downstream, row.names = FALSE,
-          file = "./Data/Processed/UL_TributaryData_ForEFDCWASP.csv")
-write.csv()
+# write.csv(trib_fac_sites_intersect_downstream, row.names = FALSE,
+#           file = "./Data/Processed/UL_TributaryData_ForEFDCWASP.csv")
+
 ```
 
 ### Jordan River Outflow
@@ -525,7 +527,7 @@ colnames(jordan_outflow) <- c("Date", "Flow.narrows.cfs")
 # if flow at the monitoring site is zero, assign value of zero to narrows. 
 jordan <- trib_fac_sites_intersect %>%
   filter(MonitoringLocationIdentifier == "UTAHDWQ_WQX-4994790") %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   left_join(., jordan_outflow, by = c("ActivityStartDate" = "Date")) %>%
   mutate(Flow.narrows.cfs = case_when(Flow.cfs == 0 ~ Flow.cfs,
                                       TRUE ~ Flow.narrows.cfs)) %>%
@@ -545,8 +547,8 @@ jordan$load.TOC_kgd[jordan$Flow.cfs == 0] <- 0
 jordan$load.DOC_kgd[jordan$Flow.cfs == 0] <- 0
 
 
-write.csv(jordan, file = "./Data/Processed/UL_Jordan_ForEFDCWASP.csv",
-       row.names = FALSE)
+# write.csv(jordan, file = "./Data/Processed/UL_Jordan_ForEFDCWASP.csv",
+#        row.names = FALSE)
 
 
 
@@ -579,7 +581,7 @@ gw_wq <- gw %>%
          ResultMeasure.MeasureUnitCode, ResultStatusIdentifier) %>%
   mutate(Month = month(datetime), 
          Year = year(datetime)) %>%
-  filter(Year >= 2010) %>%
+  filter(Year >= 2000) %>%
   droplevels() %>%
   filter(!is.na(ResultMeasureValue)) %>%
   select(-SampleDepthValue, -RelativeDepth, -ResultMeasure.MeasureUnitCode) %>%
@@ -597,13 +599,13 @@ gw_wq <- gw_wq %>%
 colnames(gw_wq)
 
 # .d indicates dissolved, .t indicates total.
-colnames(gw_wq)[12:24] <- c("NO23.d_mgL", "PO4.d_mgL", "CO3.d_mgL", "NO3.d_mgL",
-                                  "Nmixed_d_mgL", "DOC_mgL", "TDN_mgL", "NH3.d_mgL", 
-                                  "NO23.t_mgL", "TP_mgL", "TDP_mgL", "NH3.t_mgL", 
-                                  "CO3.t_mgL")
+colnames(gw_wq)[12:29] <- c("NO23.d_mgL", "PO4.d_mgL", "CO3.d_mgL", "NO3.d_mgL",
+                            "Nmixed_d_mgL", "DOC_mgL", "TDN_mgL", "NH3.d_mgL", 
+                            "TDP_mgL_2", "TKN.d_mgL", "NO2.d_mgL", "DON_mgL", "DO_mgL", 
+                            "TP_mgL", "TDP_mgL", "NH3.t_mgL", "CO3.t_mgL", "NO23.t_mgL")
                                   
-write.csv(gw_wq, file = "./Data/Processed/UL_Groundwater_ForEFDCWASP.csv",
-       row.names = FALSE)
+# write.csv(gw_wq, file = "./Data/Processed/UL_Groundwater_ForEFDCWASP.csv",
+#        row.names = FALSE)
 
 
 ```
