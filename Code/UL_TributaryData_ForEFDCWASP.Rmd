@@ -109,7 +109,7 @@ trib_wq <- trib %>%
   mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
                                         TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
-           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+           c("Ammonia-nitrogen as N", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
              "Phosphorus", "Ammonia and ammonium", 
              "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
@@ -218,7 +218,7 @@ fac_wq <- fac %>%
   mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
                                         TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
-           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+           c("Ammonia-nitrogen as N", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
              "Phosphorus", "Ammonia and ammonium", 
              "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
@@ -290,20 +290,54 @@ Tributary and facility water quality and flow datasets were combined.
 trib_fac_wq <- rbind(trib_wq, fac_wq)
   
 trib_fac_wq <- trib_fac_wq %>%
+  # .d indicates dissolved, .t indicates total.
+  mutate(Variable_summary = case_when(Variable == "Carbonate_Total" ~ "CO3.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_Total" ~ "DO_mgL",
+                                       Variable == "Inorganic nitrogen (nitrate and nitrite)_Dissolved" ~ "NO23_mgL",
+                                       Variable == "Ammonia-nitrogen_Total" ~ "NH3.t_mgL",
+                                       Variable == "Phosphate-phosphorus_Dissolved" ~ "TDP_mgL",
+                                       Variable == "Phosphate-phosphorus_Total" ~ "TP_mgL",
+                                       Variable == "Biochemical oxygen demand, standard conditions_Total" ~ "BOD_mgL",
+                                       Variable == "Ammonia and ammonium_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Carbonate_Dissolved" ~ "CO3.d_mgL",
+                                       Variable == "Kjeldahl nitrogen_Dissolved" ~ "TKN.d_mgL",
+                                       Variable == "Kjeldahl nitrogen_Total" ~ "TKN.t_mgL",
+                                       Variable == "Nitrate_Dissolved" ~ "NO3_mgL",
+                                       Variable == "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)_Dissolved" ~ "MixedN.d_mgL",
+                                       Variable == "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)_Total" ~ "MixedN.t_mgL",
+                                       Variable == "Organic Nitrogen_Dissolved" ~ "DON_mgL",
+                                       Variable == "Organic Nitrogen_Total" ~ "TON_mgL",
+                                       Variable == "Phosphorus_Dissolved" ~ "TDP_mgL",
+                                       Variable == "Phosphorus_Total" ~ "TP_mgL",
+                                       Variable == "Organic carbon_Total" ~ "TOC_mgL",
+                                       Variable == "Inorganic nitrogen (nitrate and nitrite)_Total" ~ "NO23.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_NA" ~ "DO_mgL",
+                                       Variable == "Nitrite_Dissolved" ~ "NO2.d_mgL",
+                                       Variable == "Orthophosphate_Dissolved" ~ "PO4.d_mgL",
+                                       Variable == "Ammonia-nitrogen as N_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Nitrate as N_Dissolved" ~ "NO3.d_mgL",
+                                       Variable == "Organic carbon_Dissolved" ~ "DOC_mgL",
+                                       Variable == "Ammonium_Total" ~ "NH3.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_Dissolved" ~ "DO_mgL",
+                                       Variable == "Inorganic carbon_Dissolved" ~ "DIC_mgL",
+                                       Variable == "Nitrate_Total" ~ "NO3.t_mgL",
+                                       Variable == "Nitrogen_Total" ~ "TN_mgL",
+                                       Variable == "Phosphorus_NA" ~ "P_NA",
+                                       Variable == "Ammonia-nitrogen_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Chlorophyll a, uncorrected for pheophytin_Total" ~ "Chla_uncorrected_ugL",
+                                       Variable == "Nitrite_Total" ~ "NO2.t_mgL",
+                                       Variable == "Nitrogen_Dissolved" ~ "TDN_mgL",
+                                       Variable == "Chlorophyll a_Total" ~ "Chla_ugL",
+                                       Variable == "Orthophosphate_Total" ~ "PO4.t_mgL",
+                                       Variable == "Total Kjeldahl nitrogen_Total" ~ "TKN.t_mgL")) %>%
   group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
            OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
-           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable_summary, 
            ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
-  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+  pivot_wider(names_from = Variable_summary, values_from = ResultMeasureValue)
 
 colnames(trib_fac_wq)
-
-# .d indicates dissolved, .t indicates total.
-colnames(trib_fac_wq)[12:35] <- c("NH3.d_mgL", "NH3.t_mgL", "DO_mgL", "NO23.d_mgL", "NO23.t_mgL", "TDN_mgL", 
-                                  "TN_mgL", "DOC_mgL", "TOC_mgL", "TDP_mgL", "TP_mgL", "Chla_ugL", "CO3.t_mgL",
-                                  "BOD_mgL", "TKN.t_mgL", "DO_mgL_2", "PO4.d_mgL", "DON_mgL", "Chla_uncorrected_ugL",
-                                   "TKN.d_mgL", "NO3.t_mgL", "NO2.t_mgL", "PO4.t_mgL", "TKN.t2_mgL")
 
 summary(trib_fac_wq)
 
@@ -510,7 +544,7 @@ trib_fac_sites_intersect_downstream$WS_Name <-
 # There is one TP value from WFWQC of 2 ug/L, which is below the detection limit of 10 ug/L. Set to 1/2 detection limit. 
 trib_fac_sites_intersect_downstream$TP_mgL[trib_fac_sites_intersect_downstream$TP_mgL == 2] <- 5
 
-
+summary(trib_fac_sites_intersect_downstream)
 # write.csv(trib_fac_sites_intersect_downstream, row.names = FALSE,
 #           file = "./Data/Processed/UL_TributaryData_ForEFDCWASP.csv")
 
@@ -565,7 +599,7 @@ gw_wq <- gw %>%
   mutate(ResultMeasureValue = case_when(MeasureQualifierCode == "U" ~ MethodDetectionLevel/2, 
                                         TRUE ~ ResultMeasureValue)) %>%
   filter(CharacteristicName %in% 
-           c("Ammonia-nitrogen as N", "Carbon", "Nitrate as N", "Organic carbon",
+           c("Ammonia-nitrogen as N", "Nitrate as N", "Organic carbon",
              "Ammonium", "Carbonate", "Inorganic carbon", "Nitrate", "Nitrogen", 
              "Phosphorus", "Ammonia and ammonium", 
              "Inorganic nitrogen (nitrate and nitrite)", "Nitrite", "Orthophosphate", 
@@ -589,21 +623,55 @@ gw_wq <- gw %>%
 
 
 gw_wq <- gw_wq %>%
+  # .d indicates dissolved, .t indicates total.
+  mutate(Variable_summary = case_when(Variable == "Carbonate_Total" ~ "CO3.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_Total" ~ "DO_mgL",
+                                       Variable == "Inorganic nitrogen (nitrate and nitrite)_Dissolved" ~ "NO23_mgL",
+                                       Variable == "Ammonia-nitrogen_Total" ~ "NH3.t_mgL",
+                                       Variable == "Phosphate-phosphorus_Dissolved" ~ "TDP_mgL",
+                                       Variable == "Phosphate-phosphorus_Total" ~ "TP_mgL",
+                                       Variable == "Biochemical oxygen demand, standard conditions_Total" ~ "BOD_mgL",
+                                       Variable == "Ammonia and ammonium_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Carbonate_Dissolved" ~ "CO3.d_mgL",
+                                       Variable == "Kjeldahl nitrogen_Dissolved" ~ "TKN.d_mgL",
+                                       Variable == "Kjeldahl nitrogen_Total" ~ "TKN.t_mgL",
+                                       Variable == "Nitrate_Dissolved" ~ "NO3_mgL",
+                                       Variable == "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)_Dissolved" ~ "MixedN.d_mgL",
+                                       Variable == "Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)_Total" ~ "MixedN.t_mgL",
+                                       Variable == "Organic Nitrogen_Dissolved" ~ "DON_mgL",
+                                       Variable == "Organic Nitrogen_Total" ~ "TON_mgL",
+                                       Variable == "Phosphorus_Dissolved" ~ "TDP_mgL",
+                                       Variable == "Phosphorus_Total" ~ "TP_mgL",
+                                       Variable == "Organic carbon_Total" ~ "TOC_mgL",
+                                       Variable == "Inorganic nitrogen (nitrate and nitrite)_Total" ~ "NO23.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_NA" ~ "DO_mgL",
+                                       Variable == "Nitrite_Dissolved" ~ "NO2.d_mgL",
+                                       Variable == "Orthophosphate_Dissolved" ~ "PO4.d_mgL",
+                                       Variable == "Ammonia-nitrogen as N_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Nitrate as N_Dissolved" ~ "NO3.d_mgL",
+                                       Variable == "Organic carbon_Dissolved" ~ "DOC_mgL",
+                                       Variable == "Ammonium_Total" ~ "NH3.t_mgL",
+                                       Variable == "Dissolved oxygen (DO)_Dissolved" ~ "DO_mgL",
+                                       Variable == "Inorganic carbon_Dissolved" ~ "DIC_mgL",
+                                       Variable == "Nitrate_Total" ~ "NO3.t_mgL",
+                                       Variable == "Nitrogen_Total" ~ "TN_mgL",
+                                       Variable == "Phosphorus_NA" ~ "P_NA",
+                                       Variable == "Ammonia-nitrogen_Dissolved" ~ "NH3.d_mgL",
+                                       Variable == "Chlorophyll a, uncorrected for pheophytin_Total" ~ "Chla_uncorrected_ugL",
+                                       Variable == "Nitrite_Total" ~ "NO2.t_mgL",
+                                       Variable == "Nitrogen_Dissolved" ~ "TDN_mgL",
+                                       Variable == "Chlorophyll a_Total" ~ "Chla_ugL",
+                                       Variable == "Orthophosphate_Total" ~ "PO4.t_mgL",
+                                       Variable == "Total Kjeldahl nitrogen_Total" ~ "TKN.t_mgL")) %>%
   group_by(MonitoringLocationIdentifier, ActivityStartDate, OrganizationIdentifier,
            OrganizationFormalName, MonitoringLocationName, MonitoringLocationTypeName,
-           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable, 
+           LatitudeMeasure, LongitudeMeasure, Month, Year, Variable_summary, 
            ResultStatusIdentifier) %>%
   summarise(ResultMeasureValue = mean(ResultMeasureValue, na.rm = TRUE)) %>%
-  pivot_wider(names_from = Variable, values_from = ResultMeasureValue)
+  pivot_wider(names_from = Variable_summary, values_from = ResultMeasureValue)
 
 colnames(gw_wq)
 
-# .d indicates dissolved, .t indicates total.
-colnames(gw_wq)[12:29] <- c("NO23.d_mgL", "PO4.d_mgL", "CO3.d_mgL", "NO3.d_mgL",
-                            "Nmixed_d_mgL", "DOC_mgL", "TDN_mgL", "NH3.d_mgL", 
-                            "TDP_mgL_2", "TKN.d_mgL", "NO2.d_mgL", "DON_mgL", "DO_mgL", 
-                            "TP_mgL", "TDP_mgL", "NH3.t_mgL", "CO3.t_mgL", "NO23.t_mgL")
-                                  
 # write.csv(gw_wq, file = "./Data/Processed/UL_Groundwater_ForEFDCWASP.csv",
 #        row.names = FALSE)
 
