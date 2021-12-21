@@ -4584,13 +4584,18 @@ loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%
 
 loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
   ungroup() %>%
+  group_by(WS_Name) %>%
+  summarise(Flow.acftyr = sum(Flow.acftyr), 
+            load.TP.tonyr = sum(load.TP.tonyr),
+            load.TDP.tonyr = sum(load.TDP.tonyr),
+            load.TKN.tonyr = sum(load.TKN.tonyr)) %>%
   mutate(OrganizationIdentifier = "DMR", 
          Flow.cfs = NA, 
          load.TN.tonyr = load.TKN.tonyr, 
          load.TDN.tonyr = NA,
          load.TOC.tonyr = NA,
          load.DOC.tonyr = NA) %>%
-  select(-NPES_Name, -load.TKN.tonyr) %>%
+  select( -load.TKN.tonyr) %>%
   select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr, 
          Flow.acftyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
 
