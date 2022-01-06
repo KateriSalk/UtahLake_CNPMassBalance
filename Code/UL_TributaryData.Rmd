@@ -63,9 +63,8 @@ jordan_outflow <- read.xlsx("./Data/Raw/Jordan_River_Outflow.xlsx",
                   sheet = "DailyValues20219216", startRow = 5)
 
 # Utah lake storage capacity curve
-ul_level <- read.xlsx("./Data/Raw/Copy of ULDB_Stage_Vol_SA_V3(sd-JLM).xlsm", 
-                  sheet = "Time Series of Vol and SA", startRow = 11, 
-                  cols = c(7:10))
+ul_level <- read.xlsx("./Data/Raw/Copy of ULDB_Stage_Vol_SA_V3(sd-JLM).xlsx", 
+                  startRow = 11, cols = c(7:10))
 
 # 2019 and 2020 WFWQC flow data
 WFWQC_flow <- read.csv("./Data/Raw/WFWQC_Flow.csv")
@@ -506,8 +505,8 @@ trib_fac_sites_counts <- trib_fac_sites_intersect %>%
   group_by(MonitoringLocationIdentifier, OrganizationIdentifier, OrganizationFormalName,
            MonitoringLocationName, MonitoringLocationTypeName, LatitudeMeasure,
            LongitudeMeasure, SiteType, OBJECTID_1, OBJECTID, TARGET_FID,
-           Type, wsa_sqkm, WS_Name, Monitored_, WS_NAME_1, WS_NAME_12, 
-           Shape_Leng, Shape_Le_1, Shape_Area) %>%
+           Type, wsa_sqkm, WS_Name, Monitored_, 
+           Shape_Leng, Shape_Area) %>%
   tally() %>%
   ungroup() %>%
   select(MonitoringLocationIdentifier, n)
@@ -1171,7 +1170,7 @@ dmr_updated_concentration <- dmr_updated %>%
   filter(monitoring_location_desc == "Effluent Gross") %>%
   filter(parameter_desc %in%
            c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]",
-             "Nitrogen, Kjeldahl, dissolved [as N]",
+             "Nitrogen, Kjeldahl, dissolved [as N]", "Nitrite + Nitrate total [as N]",
              "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]",
              "Phosphorus, total [as P]", "Flow, in conduit or thru treatment plant")) %>%
   filter(Year >= 2015 & Year <= 2020) %>%
@@ -1189,6 +1188,7 @@ dmr_updated_concentration <- dmr_updated %>%
                        parameter_desc == "Flow, in conduit or thru treatment plant" ~ 0.21,
                      TRUE ~ dmr_value_nmbr),
          parameter = case_when(parameter_desc == "Nitrogen, ammonia total [as N]" ~ "NH3.mgL",
+                               parameter_desc == "Nitrite + Nitrate total [as N]" ~ "NO3.mgL",
                                parameter_desc == "Flow, in conduit or thru treatment plant" ~ "Flow.MGD",
                                parameter_desc == "Phosphorus, total [as P]" ~ "TP.mgL",
                                parameter_desc == "Phosphate, ortho [as P]" ~ "PO4.mgL",
@@ -1204,7 +1204,7 @@ dmr_updated_concentration_Lindon <- dmr_updated %>%
   filter(monitoring_location_desc == "Effluent Gross") %>%
   filter(parameter_desc %in%
            c("Nitrogen, ammonia total [as N]", "Nitrogen, Kjeldahl, total [as N]",
-             "Nitrogen, Kjeldahl, dissolved [as N]",
+             "Nitrogen, Kjeldahl, dissolved [as N]", "Nitrite + Nitrate total [as N]",
              "Nitrogen, nitrate total [as N]", "Phosphate, ortho [as P]",
              "Phosphorus, total [as P]", "Flow, in conduit or thru treatment plant")) %>%
   filter(Year >= 2015 & Year <= 2020) %>%
@@ -1214,6 +1214,7 @@ dmr_updated_concentration_Lindon <- dmr_updated %>%
          value_type_desc, dmr_value_nmbr, dmr_unit_desc, statistical_base_short_desc,
          NPES_Name, NPDES.Type, NPDESID.Date, parameter_desc) %>%
   mutate(parameter = case_when(parameter_desc == "Nitrogen, ammonia total [as N]" ~ "NH3.mgL",
+                               parameter_desc == "Nitrite + Nitrate total [as N]" ~ "NO3.mgL",
                                parameter_desc == "Flow, in conduit or thru treatment plant" ~ "Flow.MGD",
                                parameter_desc == "Phosphorus, total [as P]" ~ "TP.mgL",
                                parameter_desc == "Phosphate, ortho [as P]" ~ "PO4.mgL",
@@ -1253,7 +1254,11 @@ dmr_updated_wide <- dmr_updated_concentration %>%
                                      Month %in% c(2) ~ PO4.mgL * Flow.MGD * 28 * 3.78541/1000),
          TKN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ TKN.mgL * Flow.MGD * 31 * 3.78541/1000,
                                      Month %in% c(4, 6, 9, 11) ~ TKN.mgL * Flow.MGD * 30 * 3.78541/1000,
-                                     Month %in% c(2) ~ TKN.mgL * Flow.MGD * 28 * 3.78541/1000))
+                                     Month %in% c(2) ~ TKN.mgL * Flow.MGD * 28 * 3.78541/1000),
+         NO3.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ NO3.mgL * Flow.MGD * 31 * 3.78541/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ NO3.mgL * Flow.MGD * 30 * 3.78541/1000,
+                                     Month %in% c(2) ~ NO3.mgL * Flow.MGD * 28 * 3.78541/1000),
+         TN.tonmo = TKN.tonmo + NO3.tonmo)
            
 # add in Payson data
 dmr_updated_Payson <- dmr_Payson %>%
@@ -1266,6 +1271,7 @@ dmr_updated_Payson <- dmr_Payson %>%
          TP.mgL = `TP.mg/L`,
          PO4.mgL = `Ortho.P.mg/L`,
          TKN.mgL = `TKN.mg/L`,
+         NO3.mgL = `Nitrate.mg/L`,
          Flow.acftmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.MGD * 31 * 1000000/325851,
                                      Month %in% c(4, 6, 9, 11) ~ Flow.MGD * 30 * 1000000/325851,
                                      Month %in% c(2) ~ Flow.MGD * 28 * 1000000/325851),
@@ -1277,16 +1283,43 @@ dmr_updated_Payson <- dmr_Payson %>%
                                      Month %in% c(2) ~ PO4.mgL * Flow.MGD * 28 * 3.78541/1000),
          TKN.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ TKN.mgL * Flow.MGD * 31 * 3.78541/1000,
                                      Month %in% c(4, 6, 9, 11) ~ TKN.mgL * Flow.MGD * 30 * 3.78541/1000,
-                                     Month %in% c(2) ~ TKN.mgL * Flow.MGD * 28 * 3.78541/1000)) %>%
+                                     Month %in% c(2) ~ TKN.mgL * Flow.MGD * 28 * 3.78541/1000),
+         NO3.tonmo = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ NO3.mgL * Flow.MGD * 31 * 3.78541/1000,
+                                     Month %in% c(4, 6, 9, 11) ~ NO3.mgL * Flow.MGD * 30 * 3.78541/1000,
+                                     Month %in% c(2) ~ NO3.mgL * Flow.MGD * 28 * 3.78541/1000),
+         TN.tonmo = TKN.tonmo + NO3.tonmo) %>%
   select(npdes_id, NPES_Name, Year, Month, Flow.MGD, NH3.mgL, TP.mgL, 
-         PO4.mgL, TKN.mgL, Flow.acftmo, TP.tonmo, PO4.tonmo, TKN.tonmo)
+         PO4.mgL, TKN.mgL, NO3.mgL, Flow.acftmo, TP.tonmo, PO4.tonmo, 
+         TKN.tonmo, NO3.tonmo, TN.tonmo)
 
 dmr_updated_wide <- rbind(dmr_updated_wide, dmr_updated_Payson)
   
 dmr_updated_wide$Flow.acftmo <-  round(dmr_updated_wide$Flow.acftmo, digits = 2)
 dmr_updated_wide$TP.tonmo <-  round(dmr_updated_wide$TP.tonmo, digits = 2)
 dmr_updated_wide$PO4.tonmo <-  round(dmr_updated_wide$PO4.tonmo, digits = 2)
-dmr_updated_wide$TKN.tonmo <-  round(dmr_updated_wide$TKN.tonmo, digits = 2)
+dmr_updated_wide$TN.tonmo <-  round(dmr_updated_wide$TN.tonmo, digits = 2)
+
+
+dmr_updated_wide <- dmr_updated_wide %>%
+  mutate(MonitoringLocationIdentifier =
+           case_when(NPES_Name == "OREM CITY CORP" ~ "UTAHDWQ_WQX-4995250",
+                     NPES_Name == "PacifiCorp Energy" ~ "UTAHDWQ_WQX-4995124",
+                     NPES_Name == "PAYSON POWER PROJECT" ~ "UTAHDWQ_WQX-4995480",
+                     NPES_Name == "PROVO CITY CORP" ~ "UTAHDWQ_WQX-4996560",
+                     NPES_Name == "SALEM CITY CORP" ~ "UTAHDWQ_WQX-4995440",
+                     NPES_Name == "SPANISH FORK CITY CORP" ~ "UTAHDWQ_WQX-4996020",
+                     NPES_Name == "SPRINGVILLE- CITY OF" ~ "UTAHDWQ_WQX-4996280",
+                     NPES_Name == "TIMPANOGOS SPECIAL SERVICE DIS" ~ "UTAHDWQ_WQX-4995040"))
+
+dmr_sites <- dmr_updated_wide %>%
+  select(NPES_Name, MonitoringLocationIdentifier) %>%
+  distinct() %>%
+  left_join(., trib_fac_sites) %>%
+  filter(!is.na(MonitoringLocationTypeName))
+
+dmr_sites_sf <- st_as_sf(dmr_sites, coords = c("LongitudeMeasure", "LatitudeMeasure"),
+                              crs = 4326, dim = "XY") #CRS = WGS84
+dmr_sites_sf <- st_intersection(dmr_sites_sf, wshds)
 
 #### OLD DATA ####
 # dmr_load <- dmr %>%
@@ -1804,49 +1837,50 @@ ggplot(subset(trib_fac_sites_intersect_downstream, WS_Name == "Mill Race"),
 
 
 ```{r}
-ggplot(dmr_load, aes(x = Date, y = TP.tonmo)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TP load (metric ton/mo)")
 
-ggplot(dmr_load, aes(x = Date, y = PO4.tonmo)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TDP load (metric ton/mo)")
-
-ggplot(dmr_load, aes(x = Date, y = TKN.tonmo)) +
-  geom_point(alpha = 0.7, size = 2) +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TKN load (metric ton/mo)")
-
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TP load (metric ton/mo)", x = "Month")
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TDP load (metric ton/mo)", x = "Month")
-
-ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
-  geom_boxplot() +
-  facet_wrap(vars(NPDES.Name), nrow = 2) +
-  scale_y_log10() +
-  labs(y = "TKN load (metric ton/mo)", x = "Month")
+# ggplot(dmr_load, aes(x = Date, y = TP.tonmo)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TP load (metric ton/mo)")
+# 
+# ggplot(dmr_load, aes(x = Date, y = PO4.tonmo)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TDP load (metric ton/mo)")
+# 
+# ggplot(dmr_load, aes(x = Date, y = TKN.tonmo)) +
+#   geom_point(alpha = 0.7, size = 2) +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TKN load (metric ton/mo)")
+# 
+# 
+# ggplot(dmr_load, aes(x = as.factor(Month), y = TP.tonmo)) +
+#   geom_boxplot() +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TP load (metric ton/mo)", x = "Month")
+# 
+# ggplot(dmr_load, aes(x = as.factor(Month), y = PO4.tonmo)) +
+#   geom_boxplot() +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TDP load (metric ton/mo)", x = "Month")
+# 
+# ggplot(dmr_load, aes(x = as.factor(Month), y = TKN.tonmo)) +
+#   geom_boxplot() +
+#   facet_wrap(vars(NPDES.Name), nrow = 2) +
+#   scale_y_log10() +
+#   labs(y = "TKN load (metric ton/mo)", x = "Month")
 
 ```
 
 ### DMR Flow, concentration, and load
-REVISIT
+
 ```{r}
-ggplot(dmr_flow, aes(x = Month, y = Flow.acftmo)) +
+ggplot(dmr_updated_wide, aes(x = Month, y = Flow.acftmo)) +
   geom_line() +
   labs(y = "Flow (ac*ft/mo)") +
   scale_y_continuous(sec.axis = sec_axis(~./(30 * 3.06889), name = "Flow (MGD)")) +
@@ -1854,89 +1888,100 @@ ggplot(dmr_flow, aes(x = Month, y = Flow.acftmo)) +
              labeller = label_wrap_gen(width = 20, multi_line = TRUE)) 
 #ggsave("./Code/Output/DMR_Flow_Monthly.jpg", width = 8, height = 4)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = TP)) +
+ggplot(dmr_updated_wide, aes(x = lubridate::mdy(paste(Month, 1, Year)), y = TP.mgL)) +
   geom_point() +
   scale_y_log10() +
-  labs(y = expression("TP ("*mu*"g/L)"), x = "") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("TP (mg/L)"), x = "") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TPconc_TimeSeries.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = TKN)) +
+ggplot(dmr_updated_wide, aes(x = lubridate::mdy(paste(Month, 1, Year)), y = TKN.mgL)) +
   geom_point() +
   scale_y_log10() +
-  labs(y = expression("TKN ("*mu*"g/L)"), x = "") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("TKN (mg/L)"), x = "") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TKNconc_TimeSeries.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = Date, y = PO4)) +
+ggplot(dmr_updated_wide, aes(x = lubridate::mdy(paste(Month, 1, Year)), y = NO3.mgL)) +
   geom_point() +
   scale_y_log10() +
-  labs(y = expression("Orthophosphate ("*mu*"g/L)"), x = "") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("Nitrate (mg/L)"), x = "") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_NO3conc_TimeSeries.jpg", width = 8, height = 5)
+
+ggplot(dmr_updated_wide, aes(x = lubridate::mdy(paste(Month, 1, Year)), y = PO4.mgL)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(y = expression("Orthophosphate (mg/L)"), x = "") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_PO4conc_TimeSeries.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = TP)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = TP.mgL)) +
   geom_boxplot() +
   scale_y_log10() +
-  labs(y = expression("TP ("*mu*"g/L)"), x = "Month") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("TP (mg/L)"), x = "Month") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TPconc_Monthly.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Year), y = TP)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Year), y = TP.mgL)) +
   geom_boxplot() +
   scale_y_log10() +
-  labs(y = expression("TP ("*mu*"g/L)"), x = "Year") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("TP (mg/L)"), x = "Year") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TPconc_annual.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = TKN)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = TKN.mgL)) +
   geom_boxplot() +
   scale_y_log10() +
-  labs(y = expression("TKN ("*mu*"g/L)"), x = "Month") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("TKN (mg/L)"), x = "Month") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TKNconc_Monthly.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_concentration, !is.na(WS_Name)), aes(x = as.factor(Month), y = PO4)) +
+
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = NO3.mgL)) +
   geom_boxplot() +
   scale_y_log10() +
-  labs(y = expression("Orthophosphate ("*mu*"g/L)"), x = "Month") +
-  facet_wrap(vars(WS_Name, NPDES.Name), nrow = 2,  
+  labs(y = expression("Nitrate (mg/L)"), x = "Month") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
+             labeller = label_wrap_gen(width = 20, multi_line = TRUE))
+#ggsave("./Code/Output/DMR_TKNconc_Monthly.jpg", width = 8, height = 5)
+
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = PO4.mgL)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(y = expression("Orthophosphate (mg/L)"), x = "Month") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_PO4conc_Monthly.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_load, 
-              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT"))),
-       aes(x = as.factor(Month), y = TP.tonmo)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = TP.tonmo)) +
   geom_boxplot() +
   scale_y_log10() +
   labs(y = "TP (metric ton/mo)", x = "Month") +
-  facet_wrap(vars(NPDES.Name), nrow = 2,  
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_TPload_Monthly.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_load, 
-              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT", "PacifiCorp Energy"))),
-       aes(x = as.factor(Month), y = TKN.tonmo)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = TN.tonmo)) +
   geom_boxplot() +
   scale_y_log10() +
-  labs(y = "TKN load (metric ton/mo)", x = "Month") +
-  facet_wrap(vars(NPDES.Name), nrow = 2,  
+  labs(y = "TN load (metric ton/mo)", x = "Month") +
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
-#ggsave("./Code/Output/DMR_TKNload_Monthly.jpg", width = 8, height = 5)
+#ggsave("./Code/Output/DMR_TNload_Monthly.jpg", width = 8, height = 5)
 
-ggplot(subset(dmr_load, 
-              !(NPDES.Name %in% c("MCWANE DUCTILE-UTAH", "Mona Wastewater Treatment Plant", "PAYSON POWER PROJECT", "PacifiCorp Energy"))),
-       aes(x = as.factor(Month), y = PO4.tonmo)) +
+ggplot(dmr_updated_wide, aes(x = as.factor(Month), y = PO4.tonmo)) +
   geom_boxplot() +
   scale_y_log10() +
   labs(y = "Orthophosphate load (metric ton/mo)", x = "Month") +
-  facet_wrap(vars(NPDES.Name), nrow = 2,  
+  facet_wrap(vars(NPES_Name), nrow = 2,  
              labeller = label_wrap_gen(width = 20, multi_line = TRUE))
 #ggsave("./Code/Output/DMR_PO4load_Monthly.jpg", width = 8, height = 5)
 
@@ -3640,21 +3685,19 @@ loading_TimpSSD <- trib_fac_sites_intersect_downstream %>%
 # Lindon Drain
 # WFWQC represents most downstream flow, DWQ data should be added to the DMR data for PacifiCorps Energy to represent total flow and load.
 
-loading_LindonDrain_dmr <- dmr_load %>%
+loading_LindonDrain_dmr <- dmr_updated_wide %>%
   ungroup() %>%
-  full_join(dmr_flow_Lindon) %>%
-  filter(NPDES.Name == "PacifiCorp Energy") %>%
-  group_by(NPDES.Name, Month) %>%
+  filter(NPES_Name == "PacifiCorp Energy") %>%
+  group_by(NPES_Name, Month) %>%
   summarise(load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE),
-            Flow.MGD = mean(Flow.MGD, na.rm = TRUE)) %>%
+            Flow.MGD = mean(Flow.MGD, na.rm = TRUE),
+            Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE)) %>%
   distinct() %>%
   ungroup() %>%
   mutate(WS_Name = "Lindon Drain", 
          Month = Month,
          Flow.cfs.dmr = Flow.MGD/0.646317,
-         Flow.acftmo.dmr = case_when(Month %in% c(1, 3, 5, 7, 8, 10, 12) ~ Flow.cfs.dmr * 86400 * 31/43559.9,
-                                 Month %in% c(4, 6, 9, 11) ~ Flow.cfs.dmr * 86400 * 30/43559.9,
-                                 Month %in% c(2) ~ Flow.cfs.dmr * 86400 * 28/43559.9),
+         Flow.acftmo.dmr = Flow.acftmo,
          load.TP.tonmo.dmr = load.TP.tonmo) %>%
   select(-Flow.MGD, -load.TP.tonmo)
 
@@ -3697,7 +3740,7 @@ loading_LindonDrain_DWQ <- trib_fac_sites_intersect_downstream %>%
   mutate(Flow.cfs = Flow.cfs + Flow.cfs.dmr, 
          Flow.acftmo = Flow.acftmo + Flow.acftmo.dmr, 
          load.TP.tonmo = load.TP.tonmo + load.TP.tonmo.dmr) %>%
-  select(-NPDES.Name, -Flow.cfs.dmr, -Flow.acftmo.dmr, -load.TP.tonmo.dmr)
+  select(-NPES_Name, -Flow.cfs.dmr, -Flow.acftmo.dmr, -load.TP.tonmo.dmr)
 
 loading_LindonDrain_WFWQC <- trib_fac_sites_intersect_downstream %>%
   ungroup() %>%
@@ -4472,7 +4515,7 @@ loading_TimpSSD_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Timp SSD")
 
@@ -4485,7 +4528,7 @@ loading_LindonDrain_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Lindon Drain")
 
@@ -4498,7 +4541,7 @@ loading_PowellSloughMajor_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Powell Slough Major")
 
@@ -4511,7 +4554,7 @@ loading_MillRace_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Mill Race")
 
@@ -4524,7 +4567,7 @@ loading_SpringCreek_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Spring Creek - Springville")
 
@@ -4537,7 +4580,7 @@ loading_DryCreekSpanishFork_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   mutate(WS_Name = "Dry Creek - Spanish Fork")
 
@@ -4551,15 +4594,15 @@ loading_BenjaminSlough_dmr <- dmr_updated_wide %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = mean(TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = mean(PO4.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = mean(TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = mean(TN.tonmo, na.rm = TRUE)) %>%
   distinct() %>%
   group_by(Month, NPES_Name) %>%
   summarise(Flow.acftmo = mean(Flow.acftmo, na.rm = TRUE),
             load.TP.tonmo = sum(load.TP.tonmo, na.rm = TRUE), 
             load.TDP.tonmo = sum(load.TDP.tonmo, na.rm = TRUE),
-            load.TKN.tonmo = sum(load.TKN.tonmo, na.rm = TRUE)) %>%
+            load.TN.tonmo = sum(load.TN.tonmo, na.rm = TRUE)) %>%
   mutate(WS_Name = "Benjamin Slough") %>%
-  select(NPES_Name, Month, Flow.acftmo, load.TP.tonmo, load.TDP.tonmo, load.TKN.tonmo, WS_Name)
+  select(NPES_Name, Month, Flow.acftmo, load.TP.tonmo, load.TDP.tonmo, load.TN.tonmo, WS_Name)
 
 loading_AllWatersheds_dmr <- 
   rbind(loading_BenjaminSlough_dmr, loading_DryCreekSpanishFork_dmr, 
@@ -4579,7 +4622,7 @@ loading_AllWatersheds_dmr_annual <- loading_AllWatersheds_dmr %>%
   summarise(Flow.acftyr = sum(Flow.acftmo, na.rm = TRUE),
             load.TP.tonyr = sum(load.TP.tonmo, na.rm = TRUE), 
             load.TDP.tonyr = sum(load.TDP.tonmo, na.rm = TRUE), 
-            load.TKN.tonyr = sum(load.TKN.tonmo, na.rm = TRUE)) 
+            load.TN.tonyr = sum(load.TN.tonmo, na.rm = TRUE)) 
 
 
 loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
@@ -4588,14 +4631,12 @@ loading_AllWatersheds_dmr2_annual <- loading_AllWatersheds_dmr_annual %>%
   summarise(Flow.acftyr = sum(Flow.acftyr), 
             load.TP.tonyr = sum(load.TP.tonyr),
             load.TDP.tonyr = sum(load.TDP.tonyr),
-            load.TKN.tonyr = sum(load.TKN.tonyr)) %>%
+            load.TN.tonyr = sum(load.TN.tonyr)) %>%
   mutate(OrganizationIdentifier = "DMR", 
          Flow.cfs = NA, 
-         load.TN.tonyr = load.TKN.tonyr, 
          load.TDN.tonyr = NA,
          load.TOC.tonyr = NA,
          load.DOC.tonyr = NA) %>%
-  select( -load.TKN.tonyr) %>%
   select(WS_Name, Flow.cfs, load.TN.tonyr, load.TDN.tonyr, load.TP.tonyr, 
          Flow.acftyr, load.TDP.tonyr, load.TOC.tonyr, load.DOC.tonyr)
 
